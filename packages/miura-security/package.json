@@ -1,0 +1,32 @@
+{
+  "name": "@miura/miura-security",
+  "version": "1.0.0",
+  "description": "Comprehensive security module for miura Framework with enterprise-grade security features",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "lint": "eslint src/**/*.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "security",
+    "authentication",
+    "authorization",
+    "csp",
+    "csrf",
+    "xss",
+    "encryption",
+    "miura",
+    "framework"
+  ],
+  "author": "miura Framework Team",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "@types/node": "^20.0.0"
+  }
+} 

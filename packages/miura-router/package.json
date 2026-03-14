@@ -1,0 +1,23 @@
+{
+    "name": "@miura/miura-router",
+    "version": "0.0.0",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./index.ts"
+        }
+    },
+    "scripts": {
+        "build": "tsc"
+    },
+    "dependencies": {
+        "@miura/miura-debugger": "workspace:*"
+    },
+    "devDependencies": {
+        "typescript": "^5.4.5"
+    }
+}

@@ -1,0 +1,26 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "dist",
+        "rootDir": ".",
+        "composite": true,
+        "baseUrl": ".",
+        "paths": {
+            "@miura/miura-debugger": ["../miura-debugger/index.ts"],
+            "@miura/miura-router":   ["./index.ts"]
+        }
+    },
+    "include": [
+        "src/**/*",
+        "index.ts",
+        "stories/**/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ],
+    "references": [
+        {
+            "path": "../miura-debugger"
+        }
+    ]
+}

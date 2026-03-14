@@ -1,0 +1,29 @@
+{
+  "name": "@miura/miura-framework",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@miura/miura-element": "workspace:*",
+    "@miura/miura-debugger": "workspace:*",
+    "@miura/miura-data-flow": "workspace:*",
+    "@miura/miura-render": "workspace:*",
+    "@miura/miura-router": "workspace:*",
+    "@miura/miura-ui": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,23 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "dist",
+        "rootDir": ".",
+        "composite": true,
+        "baseUrl": ".",
+        "paths": {
+            "@miura/miura-element": ["../miura-element/index.ts"]
+        }
+    },
+    "include": [
+        "src/**/*",
+        "index.ts",
+        "stories/**/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ],
+    "references": [
+        { "path": "../miura-element" }
+    ]
+}

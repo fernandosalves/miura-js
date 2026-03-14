@@ -1,0 +1,13 @@
+:root {
+  --mui-primary: #0078d4;
+  --mui-secondary: #6c757d;
+  --mui-success: #28a745;
+  --mui-danger: #dc3545;
+  --mui-warning: #ffc107;
+  --mui-info: #17a2b8;
+  --mui-radius: 4px;
+  --mui-spacing-1: 0.25rem;
+  --mui-spacing-2: 0.5rem;
+  --mui-spacing-3: 1rem;
+  --mui-spacing-4: 2rem;
+} 

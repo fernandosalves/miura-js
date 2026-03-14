@@ -1,0 +1,112 @@
+export type RouterMode = 'hash' | 'history' | 'memory';
+
+/**
+ * Minimal Zod-compatible schema interface.
+ * Avoids a hard dependency on Zod — pass any schema whose `safeParse`
+ * returns `{ success, data }` / `{ success, error }` (Zod, Valibot, etc.).
+ */
+export interface ParamsSchema<TParams> {
+    safeParse(data: unknown): { success: true; data: TParams } | { success: false; error: { message: string } };
+}
+
+export interface RouteRecord<TParams extends Record<string, string> = Record<string, string>> {
+    path: string;
+    component: string;
+    renderZone?: string;
+    slot?: string;
+    meta?: Record<string, any>;
+    props?: Record<string, any>;
+    guards?: RouteGuard[];
+    loaders?: RouteLoader[];
+    redirect?: string | ((context: RouteContext) => string);
+    children?: RouteRecord[];
+    /**
+     * Optional Zod-compatible schema for runtime param validation.
+     * Set via `defineRoute<TParams>(config, schema)` — params are
+     * validated (and optionally coerced) after every route match.
+     */
+    paramsSchema?: ParamsSchema<TParams>;
+}
+
+export interface RouterEventBus {
+    emit(type: string, data?: any, priority?: number): void;
+}
+
+export interface RouterPerformance {
+    startTimer(name: string): () => void;
+}
+
+export interface RouteLocation {
+    pathname: string;
+    search: string;
+    hash: string;
+    fullPath: string;
+}
+
+export interface RouteContext<TParams extends Record<string, string> = Record<string, string>> {
+    route: RouteRecord<TParams>;
+    /** Full matched chain from root layout to leaf — use for nested outlet rendering */
+    matched: RouteRecord[];
+    pathname: string;
+    fullPath: string;
+    params: TParams;
+    query: URLSearchParams;
+    hash: string;
+    data: Record<string, any>;
+    timestamp: number;
+}
+
+export interface RouteRenderContext<TParams extends Record<string, string> = Record<string, string>> extends RouteContext<TParams> {
+    previous?: RouteContext | null;
+}
+
+export type RouteGuard = (
+    context: RouteRenderContext
+) => boolean | string | void | Promise<boolean | string | void>;
+
+export type RouteLoader = (
+    context: RouteRenderContext
+) => Promise<Record<string, any> | void> | Record<string, any> | void;
+
+export interface RouterOptions {
+    routes: RouteRecord[];
+    mode?: RouterMode;
+    base?: string;
+    fallback?: string;
+    render: (context: RouteRenderContext) => Promise<void> | void;
+    eventBus?: RouterEventBus;
+    performance?: RouterPerformance;
+}
+
+export interface NavigationOptions {
+    replace?: boolean;
+    silent?: boolean;
+    state?: any;
+}
+
+export interface NavigationSuccess {
+    ok: true;
+    context: RouteContext;
+}
+
+export interface NavigationFailure {
+    ok: false;
+    reason: 'blocked' | 'not-found' | 'error';
+    error?: Error;
+}
+
+export type NavigationResult = NavigationSuccess | NavigationFailure;
+
+export interface Router {
+    readonly current?: RouteContext;
+    readonly previous?: RouteContext | null;
+    start(): Promise<void>;
+    stop(): void;
+    destroy(): void;
+    navigate(target: string, options?: NavigationOptions): Promise<NavigationResult>;
+    replace(target: string, options?: NavigationOptions): Promise<NavigationResult>;
+    back(): void;
+    forward(): void;
+}
+
+export interface RouterInstance extends Router { }

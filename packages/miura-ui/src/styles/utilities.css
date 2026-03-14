@@ -1,0 +1,14 @@
+.mui-m-1 { margin: var(--mui-spacing-1); }
+.mui-m-2 { margin: var(--mui-spacing-2); }
+.mui-m-3 { margin: var(--mui-spacing-3); }
+.mui-p-1 { padding: var(--mui-spacing-1); }
+.mui-p-2 { padding: var(--mui-spacing-2); }
+.mui-p-3 { padding: var(--mui-spacing-3); }
+.mui-flex { display: flex; }
+.mui-items-center { align-items: center; }
+.mui-justify-center { justify-content: center; }
+.mui-gap-1 { gap: var(--mui-spacing-1); }
+.mui-gap-2 { gap: var(--mui-spacing-2); }
+.mui-gap-3 { gap: var(--mui-spacing-3); }
+.mui-w-full { width: 100%; }
+.mui-h-full { height: 100%; } 

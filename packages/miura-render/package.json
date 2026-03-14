@@ -1,0 +1,35 @@
+{
+  "name": "@miura/miura-render",
+  "version": "0.0.0",
+  "main": "./index.ts",
+  "module": "./index.ts",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.ts",
+      "require": "./index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage"
+  },
+  "type": "module",
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "dependencies": {
+    "@miura/miura-debugger": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.6",
+    "@vitest/coverage-v8": "^1.6.0",
+    "jsdom": "^24.0.0",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}

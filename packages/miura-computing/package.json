@@ -1,0 +1,24 @@
+{
+    "name": "@miura/miura-computing",
+    "version": "0.0.0",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./index.ts"
+        },
+        "./worker": {
+            "types": "./dist/src/worker-context.d.ts",
+            "import": "./src/worker-context.ts"
+        }
+    },
+    "scripts": {
+        "build": "tsc"
+    },
+    "devDependencies": {
+        "typescript": "^5.4.5"
+    }
+}

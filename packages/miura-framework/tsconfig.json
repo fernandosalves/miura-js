@@ -1,0 +1,55 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "dist",
+        "rootDir": "./src",
+        "composite": true,
+        "baseUrl": ".",
+        "paths": {
+            "@miura/miura-element": [
+                "../miura-element/index.ts"
+            ],
+            "@miura/miura-data-flow": [
+                "../miura-data-flow/index.ts"
+            ],
+            "@miura/miura-render": [
+                "../miura-render/index.ts"
+            ],
+            "@miura/miura-router": [
+                "../miura-router/index.ts"
+            ],
+            "@miura/miura-ui": [
+                "../miura-ui/index.ts"
+            ],
+            "@miura/miura-debugger": [
+                "../miura-debugger/index.ts"
+            ]
+        }
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ],
+    "references": [
+        {
+            "path": "../miura-element"
+        },
+        {
+            "path": "../miura-data-flow"
+        },
+        {
+            "path": "../miura-render"
+        },
+        {
+            "path": "../miura-router"
+        },
+        {
+            "path": "../miura-ui"
+        },
+        {
+            "path": "../miura-debugger"
+        }
+    ]
+}

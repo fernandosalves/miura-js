@@ -1,0 +1,26 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "dist",
+        "rootDir": ".",
+        "composite": true,
+        "baseUrl": ".",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "paths": {
+            "@miura/miura-element": ["../miura-element/index.ts"],
+            "@miura/miura-vite":    ["./index.ts"]
+        }
+    },
+    "include": [
+        "src/**/*",
+        "index.ts",
+        "test/**/*"
+    ],
+    "references": [
+        { "path": "../miura-element" }
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

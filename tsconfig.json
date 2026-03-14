@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "references": [
+    { "path": "./packages/miura-debugger" },
+    { "path": "./packages/miura-render" },
+    { "path": "./packages/miura-element" },
+    { "path": "./packages/miura-data-flow" },
+    { "path": "./packages/miura-router" },
+    { "path": "./packages/miura-ui" },
+    { "path": "./packages/miura-security" },
+    { "path": "./packages/miura-framework" },
+    { "path": "./packages/miura-i18n" },
+    { "path": "./packages/miura-computing" },
+    { "path": "./packages/miura" }
+  ],
+  "files": [],
+  "exclude": ["node_modules", "dist"]
+}

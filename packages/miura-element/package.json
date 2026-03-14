@@ -1,0 +1,29 @@
+{
+  "name": "@miura/miura-element",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.ts"
+    },
+    "./server": {
+      "types": "./server.d.ts",
+      "import": "./server.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "dev": "vitest"
+  },
+  "dependencies": {
+    "@miura/miura-render": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}

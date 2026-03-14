@@ -1,0 +1,67 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "dist",
+        "rootDir": "./src",
+        "composite": true,
+        "baseUrl": ".",
+        "paths": {
+            "@miura/miura-element": [
+                "../miura-element/index.ts"
+            ],
+            "@miura/miura-data-flow": [
+                "../miura-data-flow/index.ts"
+            ],
+            "@miura/miura-framework": [
+                "../miura-framework/src/index.ts"
+            ],
+            "@miura/miura-render": [
+                "../miura-render/index.ts"
+            ],
+            "@miura/miura-router": [
+                "../miura-router/index.ts"
+            ],
+            "@miura/miura-debugger": [
+                "../miura-debugger/index.ts"
+            ],
+            "@miura/miura-security": [
+                "../miura-security/index.ts"
+            ],
+            "@miura/miura-ui": [
+                "../miura-ui/index.ts"
+            ]
+        }
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ],
+    "references": [
+        {
+            "path": "../miura-data-flow"
+        },
+        {
+            "path": "../miura-element"
+        },
+        {
+            "path": "../miura-debugger"
+        },
+        {
+            "path": "../miura-framework"
+        },
+        {
+            "path": "../miura-render"
+        },
+        {
+            "path": "../miura-router"
+        },
+        {
+            "path": "../miura-security"
+        },
+        {
+            "path": "../miura-ui"
+        }
+    ]
+}

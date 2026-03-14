@@ -1,0 +1,431 @@
+import { BindingType } from './template-result';
+import { debugLog } from '../utils/debug';
+import { DirectiveManager } from '../directives/directive-manager';
+
+/**
+ * Represents a template binding.
+ * @interface TemplateBinding
+ */
+export interface TemplateBinding {
+    /** The type of the binding */
+    type: BindingType;
+    /** The name of the binding (optional) */
+    name?: string;
+    /** The index of the binding */
+    index: number;
+    /** Event modifiers (optional) */
+    modifiers?: string[];
+    /** For multi-part attribute bindings: static string segments (N+1 entries for N values) */
+    strings?: string[];
+    /** For multi-part attribute bindings: which part this is (0-based) */
+    partIndex?: number;
+    /** For multi-part attribute bindings: index of the first binding in the group */
+    groupStart?: number;
+}
+
+/**
+ * Represents the result of parsing a template string.
+ * @interface ParsedTemplate
+ */
+export interface ParsedTemplate {
+    /** The HTML string with binding markers */
+    html: string;
+    /** Array of template bindings found in the HTML */
+    bindings: TemplateBinding[];
+}
+
+/**
+ * Parser state machine states
+ */
+const enum ParserState {
+    TEXT = 0,
+    TAG = 1,
+    ATTR_NAME = 2,
+    ATTR_EQ = 3,
+    ATTR_VALUE_DQ = 4,
+    ATTR_VALUE_SQ = 5,
+    COMMENT = 6,
+}
+
+/**
+ * Context for a multi-part attribute currently being parsed
+ */
+interface AttrContext {
+    name: string;
+    prefix: string;
+    cleanName: string;
+    openQuotePos: number;
+    startBindingIndex: number;
+    strings: string[];
+    partCount: number;
+    modifiers: string[];
+}
+
+/**
+ * Parser for HTML templates with binding markers.
+ * Uses a state machine to correctly handle expressions in any context:
+ * text content, single-expression attributes, and multi-expression attributes.
+ */
+export class TemplateParser {
+    private static BINDING_MARKER = 'binding:';
+    private static ATTRIBUTE_PREFIX_REGEX = /^([.@?#&:~]|\.\.\.)/;
+
+    /**
+     * Performance tracking
+     */
+    private metrics = {
+        parseTime: 0,
+        parseCount: 0,
+        cacheHits: 0,
+        cacheMisses: 0
+    };
+
+    /**
+     * Get performance metrics
+     */
+    getPerformanceMetrics() {
+        return { ...this.metrics };
+    }
+
+    /**
+     * Reset performance metrics
+     */
+    resetMetrics() {
+        this.metrics = {
+            parseTime: 0,
+            parseCount: 0,
+            cacheHits: 0,
+            cacheMisses: 0
+        };
+    }
+
+    /**
+     * Parses template strings and extracts bindings.
+     * Handles text/node bindings, single-expression attribute bindings,
+     * and multi-expression attribute bindings (e.g. style="color: ${a}; bg: ${b}").
+     */
+    parse(strings: TemplateStringsArray): ParsedTemplate {
+        const startTime = performance.now();
+        this.metrics.parseCount++;
+
+        debugLog('parser', 'Starting template parse', {
+            stringsLength: strings.length,
+            strings: Array.from(strings)
+        });
+
+        const bindings: TemplateBinding[] = [];
+        let html = '';
+
+        // State machine
+        let state: ParserState = ParserState.TEXT;
+        let lastAttrName = '';
+        let attrNameStart = -1;
+        let attrValueContentStart = -1;
+        let openQuotePos = -1;
+
+        // Multi-part attribute tracking
+        let attrCtx: AttrContext | null = null;
+
+        for (let i = 0; i < strings.length; i++) {
+            const str = strings[i];
+            const isLast = i === strings.length - 1;
+
+            // htmlStart: position in `str` from which we start emitting to `html`.
+            // For attribute continuation strings we skip the content (captured in attrCtx.strings).
+            let htmlStart = 0;
+
+            // If we're continuing inside an attribute value from the previous string,
+            // we must first look for the closing quote.
+            if (attrCtx && (state === ParserState.ATTR_VALUE_DQ || state === ParserState.ATTR_VALUE_SQ)) {
+                const quote = state === ParserState.ATTR_VALUE_DQ ? '"' : "'";
+                const closePos = str.indexOf(quote);
+
+                if (closePos === -1) {
+                    // Still inside the attribute — entire string is attribute content
+                    if (!isLast) {
+                        // Expression inside the same attribute
+                        attrCtx.strings.push(str);
+                        attrCtx.partCount++;
+                        bindings.push({
+                            type: BindingType.Attribute,
+                            name: attrCtx.name,
+                            index: i,
+                            partIndex: attrCtx.partCount - 1,
+                            groupStart: attrCtx.startBindingIndex,
+                        });
+                    }
+                    // Don't emit anything to HTML for this string
+                    continue;
+                } else {
+                    // Attribute value closes in this string
+                    const finalStaticPart = str.substring(0, closePos);
+                    attrCtx.strings.push(finalStaticPart);
+
+                    // Assign the completed strings array to the first binding in the group
+                    const firstBinding = bindings.find(b => b.index === attrCtx!.startBindingIndex);
+                    if (firstBinding) {
+                        firstBinding.strings = attrCtx.strings;
+                    }
+
+                    // Finalize the attribute type for the group
+                    this.finalizeAttrGroup(bindings, attrCtx);
+
+                    attrCtx = null;
+                    state = ParserState.TAG;
+                    htmlStart = closePos + 1; // resume HTML after closing quote
+                }
+            }
+
+            // Scan characters to track state transitions
+            let j = htmlStart;
+            while (j < str.length) {
+                const ch = str[j];
+
+                switch (state) {
+                    case ParserState.TEXT:
+                        if (ch === '<') {
+                            if (str[j + 1] === '!' && str[j + 2] === '-' && str[j + 3] === '-') {
+                                state = ParserState.COMMENT;
+                                j += 3;
+                            } else {
+                                state = ParserState.TAG;
+                            }
+                        }
+                        break;
+
+                    case ParserState.TAG:
+                        if (ch === '>') {
+                            state = ParserState.TEXT;
+                        } else if (ch === '/' && str[j + 1] === '>') {
+                            state = ParserState.TEXT;
+                            j++;
+                        } else if (!/[\s/]/.test(ch) && ch !== '=' && ch !== '"' && ch !== "'") {
+                            attrNameStart = j;
+                            state = ParserState.ATTR_NAME;
+                        }
+                        break;
+
+                    case ParserState.ATTR_NAME:
+                        if (ch === '=') {
+                            lastAttrName = str.substring(attrNameStart, j);
+                            state = ParserState.ATTR_EQ;
+                        } else if (ch === '>' || /\s/.test(ch)) {
+                            lastAttrName = str.substring(attrNameStart, j);
+                            state = ch === '>' ? ParserState.TEXT : ParserState.TAG;
+                        }
+                        break;
+
+                    case ParserState.ATTR_EQ:
+                        if (ch === '"') {
+                            state = ParserState.ATTR_VALUE_DQ;
+                            openQuotePos = j;
+                            attrValueContentStart = j + 1;
+                        } else if (ch === "'") {
+                            state = ParserState.ATTR_VALUE_SQ;
+                            openQuotePos = j;
+                            attrValueContentStart = j + 1;
+                        } else if (!/\s/.test(ch)) {
+                            // Unquoted value — scan to whitespace or >
+                            const end = str.substring(j).search(/[\s>]/);
+                            j += (end === -1 ? str.length - j : end) - 1;
+                            state = ParserState.TAG;
+                        }
+                        break;
+
+                    case ParserState.ATTR_VALUE_DQ:
+                        if (ch === '"') {
+                            state = ParserState.TAG;
+                        }
+                        break;
+
+                    case ParserState.ATTR_VALUE_SQ:
+                        if (ch === "'") {
+                            state = ParserState.TAG;
+                        }
+                        break;
+
+                    case ParserState.COMMENT:
+                        if (ch === '-' && str[j + 1] === '-' && str[j + 2] === '>') {
+                            state = ParserState.TEXT;
+                            j += 2;
+                        }
+                        break;
+                }
+                j++;
+            }
+
+            // ── End of string part: if not last, there's an expression ${} here ──
+            if (!isLast) {
+                if (state === ParserState.ATTR_VALUE_DQ || state === ParserState.ATTR_VALUE_SQ) {
+                    // Expression is inside an attribute value
+                    const staticPart = str.substring(attrValueContentStart, str.length);
+
+                    if (!attrCtx) {
+                        // First expression in this attribute — start a new group
+                        const prefix = lastAttrName.match(TemplateParser.ATTRIBUTE_PREFIX_REGEX)?.[0] || '';
+                        const cleanName = prefix ? lastAttrName.slice(1) : lastAttrName;
+                        let modifiers: string[] = [];
+
+                        if (prefix === '@') {
+                            const parts = cleanName.split('|');
+                            const modParts = parts[1] ? parts[1].split(',').map(mod => {
+                                const [n, v] = mod.split(':');
+                                return v ? `${n}:${v}` : n;
+                            }) : [];
+                            modifiers = modParts;
+                        }
+
+                        attrCtx = {
+                            name: lastAttrName,
+                            prefix,
+                            cleanName: prefix === '@' ? cleanName.split('|')[0] : cleanName,
+                            openQuotePos,
+                            startBindingIndex: i,
+                            strings: [staticPart],
+                            partCount: 1,
+                            modifiers,
+                        };
+
+                        // Emit HTML: everything from htmlStart up to and including the opening quote,
+                        // then a binding marker as placeholder, then closing quote
+                        html += str.substring(htmlStart, openQuotePos + 1);
+                        html += `${TemplateParser.BINDING_MARKER}${i}"`;
+
+                        bindings.push({
+                            type: BindingType.Attribute, // provisional — finalized when attr closes
+                            name: lastAttrName,
+                            index: i,
+                            partIndex: 0,
+                            groupStart: i,
+                        });
+                    } else {
+                        // Subsequent expression in same attribute
+                        attrCtx.strings.push(staticPart);
+                        attrCtx.partCount++;
+
+                        bindings.push({
+                            type: BindingType.Attribute,
+                            name: attrCtx.name,
+                            index: i,
+                            partIndex: attrCtx.partCount - 1,
+                            groupStart: attrCtx.startBindingIndex,
+                        });
+
+                        // Don't emit HTML for intermediate parts
+                    }
+
+                    // Next string's attribute content starts at position 0
+                    attrValueContentStart = 0;
+
+                } else if (state === ParserState.ATTR_EQ) {
+                    // Expression IS the entire attribute value (unquoted): attr=${val}
+                    const prefix = lastAttrName.match(TemplateParser.ATTRIBUTE_PREFIX_REGEX)?.[0] || '';
+                    const cleanName = prefix ? lastAttrName.slice(1) : lastAttrName;
+                    let modifiers: string[] = [];
+                    let bindingName = cleanName;
+
+                    if (prefix === '@') {
+                        const parts = cleanName.split('|');
+                        bindingName = parts[0];
+                        modifiers = parts[1] ? parts[1].split(',').map(mod => {
+                            const [n, v] = mod.split(':');
+                            return v ? `${n}:${v}` : n;
+                        }) : [];
+                    }
+
+                    const type = this.getSpecializedType(prefix, bindingName);
+                    bindings.push({
+                        type,
+                        name: prefix === '@' ? bindingName : lastAttrName,
+                        index: i,
+                        modifiers: modifiers.length > 0 ? modifiers : undefined,
+                        strings: ['', ''],
+                        partIndex: 0,
+                        groupStart: i,
+                    });
+
+                    // Emit HTML: up to the = sign, replace with marker
+                    // Find where the attribute name starts by going backwards
+                    const eqPos = str.lastIndexOf('=');
+                    html += str.substring(htmlStart, eqPos + 1);
+                    html += `"${TemplateParser.BINDING_MARKER}${i}"`;
+
+                    state = ParserState.TAG;
+
+                } else {
+                    // Expression in text content — NodeBinding
+                    html += str.substring(htmlStart);
+                    html += `<!--binding:${i}--><!--/binding:${i}-->`;
+
+                    bindings.push({
+                        type: BindingType.Node,
+                        index: i,
+                    });
+                }
+            } else {
+                // Last string part — just emit remaining HTML
+                html += str.substring(htmlStart);
+            }
+        }
+
+        this.metrics.parseTime = performance.now() - startTime;
+        debugLog('parser', 'Final parsed template', { html, bindings });
+        return { html, bindings };
+    }
+
+    /**
+     * After an attribute value closes, determine the final binding type(s) for the group.
+     * Single-expression attributes with special prefixes/names use specialized types.
+     * Multi-expression or plain attributes use BindingType.Attribute.
+     */
+    private finalizeAttrGroup(bindings: TemplateBinding[], ctx: AttrContext): void {
+        const isSingleExpr = ctx.partCount === 1 && ctx.strings[0] === '' && ctx.strings[1] === '';
+        const firstBinding = bindings.find(b => b.index === ctx.startBindingIndex);
+        if (!firstBinding) return;
+
+        if (isSingleExpr) {
+            // Entire attribute value is a single expression — use specialized binding type
+            const type = this.getSpecializedType(ctx.prefix, ctx.cleanName);
+            firstBinding.type = type;
+            firstBinding.name = ctx.prefix === '@' ? ctx.cleanName : ctx.name;
+            firstBinding.modifiers = ctx.modifiers.length > 0 ? ctx.modifiers : undefined;
+        } else {
+            // Multi-expression or has static content — stays as Attribute
+            firstBinding.name = ctx.name;
+        }
+    }
+
+    /**
+     * Determine the specialized binding type for a single-expression attribute.
+     */
+    private getSpecializedType(prefix: string, name: string): BindingType {
+        switch (prefix) {
+            case '@':
+                return BindingType.Event;
+            case '?':
+                return BindingType.Boolean;
+            case '.':
+                return BindingType.Property;
+            case '&':
+                return BindingType.Bind;
+            case ':':
+                if (name === 'class') return BindingType.ObjectClass;
+                if (name === 'style') return BindingType.ObjectStyle;
+                return BindingType.Property;
+            case '~':
+                return BindingType.Async;
+            case '...':
+                return BindingType.Spread;
+            case '#': {
+                const directiveName = name.replace(/^#/, '');
+                const hasDirective = DirectiveManager.has(directiveName);
+                return hasDirective ? BindingType.Directive : BindingType.Reference;
+            }
+            default:
+                if (name === 'class') return BindingType.Class;
+                if (name === 'style') return BindingType.Style;
+                return BindingType.Attribute;
+        }
+    }
+
+}

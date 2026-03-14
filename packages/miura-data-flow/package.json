@@ -1,0 +1,30 @@
+{
+  "name": "@miura/miura-data-flow",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.ts",
+      "require": "./index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "dev": "vitest watch"
+  },
+  "dependencies": {
+    "@miura/miura-debugger": "workspace:*"
+  },
+  "optionalDependencies": {
+    "@aws-sdk/client-s3": "^3.1005.0",
+    "graphql-request": "^6.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}

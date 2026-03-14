@@ -1,0 +1,18 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "dist",
+        "rootDir": ".",
+        "composite": true,
+        "baseUrl": ".",
+        "lib": ["ESNext", "DOM", "WebWorker"]
+    },
+    "include": [
+        "src/**/*",
+        "index.ts",
+        "stories/**/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

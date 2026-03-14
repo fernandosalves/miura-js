@@ -1,0 +1,31 @@
+{
+  "name": "miura",
+  "version": "0.0.0",
+  "description": "The main package for the miura framework, bundling all core modules.",
+  "type": "module",
+  "main": "./index.js",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@miura/miura-data-flow": "workspace:*",
+    "@miura/miura-element": "workspace:*",
+    "@miura/miura-framework": "workspace:*",
+    "@miura/miura-render": "workspace:*",
+    "@miura/miura-router": "workspace:*",
+    "@miura/miura-debugger": "workspace:*",
+    "@miura/miura-security": "workspace:*",
+    "@miura/miura-ui": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
