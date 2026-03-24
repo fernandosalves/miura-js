@@ -113,13 +113,18 @@ export class ForDirective extends StructuralDirective {
     // ── Callback mode (existing) ─────────────────────────
 
     protected async updateContent(items: unknown[]): Promise<void> {
-        if (!Array.isArray(items) || !this.startMarker?.parentNode || !this.callback) {
+        if (!Array.isArray(items) || !this.startMarker?.parentNode) {
             debugLog('for', 'Cannot update: missing requirements', {
                 isArray: Array.isArray(items),
                 hasMarker: !!this.startMarker,
-                hasCallback: !!this.callback,
                 items: items
             });
+            return;
+        }
+
+        // Only proceed if we have a callback (callback mode)
+        if (!this.callback) {
+            debugLog('for', 'No callback available - likely template mode');
             return;
         }
 
@@ -139,7 +144,7 @@ export class ForDirective extends StructuralDirective {
             const item = items[index];
             debugLog('for', 'Rendering item', { item, index });
 
-            const result = this.callback!(item, index);
+            const result = this.callback(item, index);
 
             if (result instanceof TemplateResult && this.processor) {
                 const instance = await this.processor.createInstance(result, { item, index });
