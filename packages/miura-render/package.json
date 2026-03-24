@@ -1,14 +1,13 @@
 {
   "name": "@miurajs/miura-render",
-  "version": "0.1.0",
-  "main": "./index.ts",
-  "module": "./index.ts",
-  "types": "./index.d.ts",
+  "version": "0.1.1",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
-      "import": "./index.ts",
-      "require": "./index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "scripts": {
@@ -19,8 +18,7 @@
   },
   "type": "module",
   "files": [
-    "index.js",
-    "index.d.ts"
+    "dist"
   ],
   "dependencies": {
     "@miurajs/miura-debugger": "^0.1.0"
