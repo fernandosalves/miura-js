@@ -111,8 +111,8 @@ export abstract class MiuraFramework extends MiuraElement {
                 ttl: 3600000
             },
             router: {
-                enabled: false,
-                mode: 'hash',
+                enabled: true,
+                mode: 'history',
                 base: '/',
                 fallback: '/'
             },
@@ -163,6 +163,11 @@ export abstract class MiuraFramework extends MiuraElement {
             // Set up router if configured
             const constructor = this.getConstructor();
             if (constructor.router.length > 0) {
+                // Auto-enable router when routes are provided
+                const config = this.getConfig();
+                if (!config.router.enabled) {
+                    config.router.enabled = true;
+                }
                 await this._setupRouter();
             }
 
@@ -348,7 +353,12 @@ export abstract class MiuraFramework extends MiuraElement {
         if (!layoutEl) {
             previous?.remove();
             this._activeRouteElements.delete(routeKey);
-            layoutEl = document.createElement(rootRecord.component) as HTMLElement;
+            const component = this.componentRegistry.get(rootRecord.component);
+            if (!component) {
+                console.warn(`Component ${rootRecord.component} not registered for route ${rootRecord.path}`);
+                return;
+            }
+            layoutEl = new component();
             this._injectRouteData(layoutEl, context);
             zoneElement.appendChild(layoutEl);
             this._activeRouteElements.set(routeKey, layoutEl);
@@ -399,7 +409,7 @@ export abstract class MiuraFramework extends MiuraElement {
             return;
         }
 
-        const element = document.createElement(context.route.component);
+        const element = new component();
         this._injectRouteData(element, context);
         zoneElement.appendChild(element);
         this._activeRouteElements.set(routeKey, element as HTMLElement);
