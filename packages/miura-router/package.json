@@ -15,7 +15,7 @@
         "build": "tsc"
     },
     "dependencies": {
-        "@miura/miura-debugger": "workspace:*"
+        "@miurajs/miura-debugger": "workspace:*"
     },
     "devDependencies": {
         "typescript": "^5.4.5"

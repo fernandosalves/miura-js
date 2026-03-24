@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { createRouter, defineRoute, buildPath } from '@miura/miura-router';
-import type { RouteRenderContext } from '@miura/miura-router';
+import { createRouter, defineRoute, buildPath } from '@miurajs/miura-router';
+import type { RouteRenderContext } from '@miurajs/miura-router';
 
 // ── Typed route definitions ────────────────────────────────────────────────────
 

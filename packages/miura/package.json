@@ -1,25 +1,22 @@
 {
-  "name": "@miura/miura",
-  "version": "1.0.0-alpha.1",
+  "name": "@miurajs/miura",
+  "version": "1.0.0-alpha.2",
   "description": "The main package for the miura framework, bundling all core modules.",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "files": ["src"],
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
     }
   },
   "scripts": {
-    "build": "vite build",
-    "build:tsc": "tsc",
-    "dev": "vite build --watch",
-    "prepublishOnly": "npm run build:tsc"
+    "build": "echo 'No build needed - using source files'",
+    "build:tsc": "echo 'No build needed - using source files'",
+    "dev": "echo 'No dev needed - using source files'",
+    "prepublishOnly": "echo 'Publishing source files'"
   },
   "keywords": [
     "web-components",
@@ -38,14 +35,14 @@
   },
   "homepage": "https://github.com/fernandosalves/miura-js#readme",
   "dependencies": {
-    "@miurajs/miura-data-flow": "workspace:*",
-    "@miurajs/miura-element": "workspace:*",
-    "@miurajs/miura-framework": "workspace:*",
-    "@miurajs/miura-render": "workspace:*",
-    "@miurajs/miura-router": "workspace:*",
-    "@miurajs/miura-debugger": "workspace:*",
-    "@miurajs/miura-security": "workspace:*",
-    "@miurajs/miura-ui": "workspace:*"
+    "@miurajs/miura-data-flow": "^0.0.1",
+    "@miurajs/miura-element": "^0.0.1",
+    "@miurajs/miura-framework": "^0.0.0",
+    "@miurajs/miura-render": "^0.0.0",
+    "@miurajs/miura-router": "^0.0.0",
+    "@miurajs/miura-debugger": "^0.0.1",
+    "@miurajs/miura-security": "^1.0.0",
+    "@miurajs/miura-ui": "^0.0.1"
   },
   "devDependencies": {
     "typescript": "^5.4.5"

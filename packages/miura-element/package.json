@@ -36,7 +36,7 @@
   },
   "homepage": "https://github.com/fernandosalves/miura-js#readme",
   "dependencies": {
-    "@miurajs/miura-render": "workspace:*"
+    "@miurajs/miura-render": "^0.0.0"
   },
   "devDependencies": {
     "typescript": "^5.0.0",

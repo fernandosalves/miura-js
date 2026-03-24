@@ -1,7 +1,7 @@
-import { MiuraElement, html, css } from '@miura/miura-element';
+import { MiuraElement, html, css } from '@miurajs/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { component } from '@miura/miura-element';
-import { PropertyValues } from '@miura/miura-element';
+import { component } from '@miurajs/miura-element';
+import { PropertyValues } from '@miurajs/miura-element';
 
 // ── Lifecycle Demo ──────────────────────────────────────
 

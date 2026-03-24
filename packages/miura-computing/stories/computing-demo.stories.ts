@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { WorkerBridge } from '@miura/miura-computing';
+import { WorkerBridge } from '@miurajs/miura-computing';
 
 // ── Inline worker via Blob URL ─────────────────────────────────────────────────
 // This avoids needing a separate worker file in Storybook.
@@ -331,7 +331,7 @@ const meta: Meta = {
         docs: {
             description: {
                 component: `
-**\`@miura/miura-computing\`** — Reactive Web Worker bridge.
+**\`@miurajs/miura-computing\`** — Reactive Web Worker bridge.
 
 Move CPU-heavy work off the main thread with a typed \`call()\` / \`stream()\` protocol.
 The worker is created from an inline Blob URL here; in real apps point to a compiled worker file.

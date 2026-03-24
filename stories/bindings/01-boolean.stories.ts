@@ -1,6 +1,6 @@
-import { MiuraElement, html } from '@miura/miura-element';
+import { MiuraElement, html } from '@miurajs/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { component } from '@miura/miura-element';
+import { component } from '@miurajs/miura-element';
 
 
 @component({

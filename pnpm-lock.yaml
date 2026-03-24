@@ -48,28 +48,28 @@ importers:
 
   packages/miura:
     dependencies:
-      '@miura/miura-data-flow':
+      '@miurajs/miura-data-flow':
         specifier: workspace:*
         version: link:../miura-data-flow
-      '@miura/miura-debugger':
+      '@miurajs/miura-debugger':
         specifier: workspace:*
         version: link:../miura-debugger
-      '@miura/miura-element':
+      '@miurajs/miura-element':
         specifier: workspace:*
         version: link:../miura-element
-      '@miura/miura-framework':
+      '@miurajs/miura-framework':
         specifier: workspace:*
         version: link:../miura-framework
-      '@miura/miura-render':
+      '@miurajs/miura-render':
         specifier: workspace:*
         version: link:../miura-render
-      '@miura/miura-router':
+      '@miurajs/miura-router':
         specifier: workspace:*
         version: link:../miura-router
-      '@miura/miura-security':
+      '@miurajs/miura-security':
         specifier: workspace:*
         version: link:../miura-security
-      '@miura/miura-ui':
+      '@miurajs/miura-ui':
         specifier: workspace:*
         version: link:../miura-ui
     devDependencies:
@@ -85,7 +85,7 @@ importers:
 
   packages/miura-data-flow:
     dependencies:
-      '@miura/miura-debugger':
+      '@miurajs/miura-debugger':
         specifier: workspace:*
         version: link:../miura-debugger
     devDependencies:
@@ -114,7 +114,7 @@ importers:
 
   packages/miura-element:
     dependencies:
-      '@miura/miura-render':
+      '@miurajs/miura-render':
         specifier: workspace:*
         version: link:../miura-render
     devDependencies:
@@ -127,22 +127,22 @@ importers:
 
   packages/miura-framework:
     dependencies:
-      '@miura/miura-data-flow':
+      '@miurajs/miura-data-flow':
         specifier: workspace:*
         version: link:../miura-data-flow
-      '@miura/miura-debugger':
+      '@miurajs/miura-debugger':
         specifier: workspace:*
         version: link:../miura-debugger
-      '@miura/miura-element':
+      '@miurajs/miura-element':
         specifier: workspace:*
         version: link:../miura-element
-      '@miura/miura-render':
+      '@miurajs/miura-render':
         specifier: workspace:*
         version: link:../miura-render
-      '@miura/miura-router':
+      '@miurajs/miura-router':
         specifier: workspace:*
         version: link:../miura-router
-      '@miura/miura-ui':
+      '@miurajs/miura-ui':
         specifier: workspace:*
         version: link:../miura-ui
     devDependencies:
@@ -158,7 +158,7 @@ importers:
 
   packages/miura-render:
     dependencies:
-      '@miura/miura-debugger':
+      '@miurajs/miura-debugger':
         specifier: workspace:*
         version: link:../miura-debugger
     devDependencies:
@@ -180,7 +180,7 @@ importers:
 
   packages/miura-router:
     dependencies:
-      '@miura/miura-debugger':
+      '@miurajs/miura-debugger':
         specifier: workspace:*
         version: link:../miura-debugger
     devDependencies:
@@ -202,9 +202,9 @@ importers:
 
   packages/miura-ui:
     dependencies:
-      '@miura/miura-element':
-        specifier: workspace:*
-        version: link:../miura-element
+      '@miurajs/miura-element':
+        specifier: ^0.0.1
+        version: 0.0.1
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6
@@ -221,6 +221,12 @@ importers:
       vitest:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@24.12.0)(jsdom@24.1.3)
+
+  packages/miura-vite:
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
 
 packages:
 
@@ -875,6 +881,9 @@ packages:
     peerDependencies:
       '@types/react': '>=16'
       react: '>=16'
+
+  '@miurajs/miura-element@0.0.1':
+    resolution: {integrity: sha512-H/ZDt57k+xTb4crCxgeCt9CNp8G9Kiz4z2U5PSBbvYDP/cX3XJm12jcB4fzJwQ6V2n4Xp/5nPuBNGqqqImLCiw==}
 
   '@napi-rs/wasm-runtime@0.2.4':
     resolution: {integrity: sha512-9zESzOO5aDByvhIAsOy9TbpZ0Ur2AJbUI7UT73kcUTS2mxAMHOBaa1st/jAymNoCtvrit99kkzT1FZuXVcgfIQ==}
@@ -5171,6 +5180,10 @@ snapshots:
       '@types/mdx': 2.0.13
       '@types/react': 19.2.14
       react: 19.2.4
+
+  '@miurajs/miura-element@0.0.1':
+    dependencies:
+      '@miurajs/miura-render': link:packages/miura-render
 
   '@napi-rs/wasm-runtime@0.2.4':
     dependencies:

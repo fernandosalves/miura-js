@@ -23,7 +23,7 @@
     "index.d.ts"
   ],
   "dependencies": {
-    "@miura/miura-debugger": "workspace:*"
+    "@miurajs/miura-debugger": "^0.0.1"
   },
   "devDependencies": {
     "@types/jsdom": "^21.1.6",

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { MiuraI18n } from '../src/i18n.js';
 import { I18nMixin } from '../src/mixin.js';
-import { MiuraElement, html } from '@miura/miura-element';
+import { MiuraElement, html } from '@miurajs/miura-element';
 
 // ── Shared catalog ────────────────────────────────────────────────────────────
 

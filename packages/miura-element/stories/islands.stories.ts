@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { MiuraElement, html, css, component } from '@miura/miura-element';
+import { MiuraElement, html, css, component } from '@miurajs/miura-element';
 
 // Import MiuraIsland to ensure the element is registered
-import '@miura/miura-element';
+import '@miurajs/miura-element';
 
 // ── Demo components that act as "island" targets ───────────────────────────────
 
