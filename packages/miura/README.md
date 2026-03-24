@@ -1,4 +1,4 @@
-# `@miura/miura`
+# `@miurajs/miura`
 
 The main package for the miura framework.
 

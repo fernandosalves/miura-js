@@ -1,5 +1,5 @@
 import { MuiBase } from '../base/mui-base';
-import { html, css } from '@miura/miura-element';
+import { html, css } from '@miurajs/miura-element';
 
 export class MuiSelect extends MuiBase {
   static properties = {};

@@ -19,14 +19,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@miura/miura-debugger': resolve(__dirname, '../miura-debugger/index.ts'),
-      '@miura/miura-element': resolve(__dirname, '../miura-element/index.ts'),
-      '@miura/miura-framework': resolve(__dirname, '../miura-framework/src/index.ts'),
-      '@miura/miura-render': resolve(__dirname, '../miura-render/index.ts'),
-      '@miura/miura-router': resolve(__dirname, '../miura-router/index.ts'),
-      '@miura/miura-security': resolve(__dirname, '../miura-security/index.ts'),
-      '@miura/miura-ui': resolve(__dirname, '../miura-ui/index.ts'),
-      '@miura/miura-data-flow': resolve(__dirname, '../miura-data-flow/index.ts')
+      '@miurajs/miura-debugger': resolve(__dirname, '../miura-debugger/index.ts'),
+      '@miurajs/miura-element': resolve(__dirname, '../miura-element/index.ts'),
+      '@miurajs/miura-framework': resolve(__dirname, '../miura-framework/src/index.ts'),
+      '@miurajs/miura-render': resolve(__dirname, '../miura-render/index.ts'),
+      '@miurajs/miura-router': resolve(__dirname, '../miura-router/index.ts'),
+      '@miurajs/miura-security': resolve(__dirname, '../miura-security/index.ts'),
+      '@miurajs/miura-ui': resolve(__dirname, '../miura-ui/index.ts'),
+      '@miurajs/miura-data-flow': resolve(__dirname, '../miura-data-flow/index.ts')
     }
   }
 });

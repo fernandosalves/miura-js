@@ -193,7 +193,7 @@ export class SecurityManager {
         superAdminRole: 'admin'
       },
       csp: {
-        enabled: true,
+        enabled: false,
         directives: {
           'default-src': ["'self'"],
           'script-src': ["'self'", "'unsafe-inline'"],

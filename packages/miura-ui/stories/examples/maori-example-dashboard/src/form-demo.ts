@@ -1,5 +1,5 @@
-import { MiuraElement, html, css } from '@miura/miura-element';
-import { component } from '@miura/miura-element';
+import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { component } from '@miurajs/miura-element';
 
 @component({ tag: 'form-demo' })
 export class FormDemo extends MiuraElement {

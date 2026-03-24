@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { MiuraElement, html, css, component } from '@miurajs/miura-element';
-import '@miurajs/miura-ai'; // auto-registers StreamDirective as '#stream'
+import { MiuraElement, html, css, component } from '@miurajsjs/miura-element';
+import '@miurajsjs/miura-ai'; // auto-registers StreamDirective as '#stream'
 
 /**
  * miura-ai — `#stream` directive
@@ -448,14 +448,14 @@ const meta: Meta = {
         docs: {
             description: {
                 component: `
-**\`@miurajs/miura-ai\`** — Progressive token streaming for the miura framework.
+**\`@miurajsjs/miura-ai\`** — Progressive token streaming for the miura framework.
 
 The \`#stream\` structural directive consumes a \`ReadableStream\`, SSE \`EventSource\`,
 or \`WebSocket\` and progressively appends tokens to the bound element — no manual reader
 loops, no scroll listeners, no re-renders.
 
 \`\`\`typescript
-import '@miurajs/miura-ai'; // registers #stream directive
+import '@miurajsjs/miura-ai'; // registers #stream directive
 
 template() {
   return html\`<div #stream=\${this.responseStream}></div>\`;

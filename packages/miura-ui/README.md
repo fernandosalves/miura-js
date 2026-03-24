@@ -116,7 +116,7 @@ A modern, unstyled, accessible UI component library for [miura](https://github.c
 ## 📦 Installation
 
 ```bash
-npm install @miura/ui
+npm install @miurajs/ui
 ```
 
 ---
@@ -124,7 +124,7 @@ npm install @miura/ui
 ## 🛠 Usage Example
 
 ```ts
-import '@miura/ui/button';
+import '@miurajs/ui/button';
 ```
 
 ```html

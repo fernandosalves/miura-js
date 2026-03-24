@@ -1,4 +1,4 @@
-# `@miura/miura-computing`
+# `@miurajs/miura-computing`
 
 Reactive Web Worker bridge for the miura framework. Move CPU-heavy work off the main thread without boilerplate — typed `call()` / `stream()` protocol, reactive status signal, zero-copy `Transferable` support.
 
@@ -14,7 +14,7 @@ Reactive Web Worker bridge for the miura framework. Move CPU-heavy work off the 
 ## Installation
 
 ```bash
-pnpm add @miura/miura-computing
+pnpm add @miurajs/miura-computing
 ```
 
 ## Usage
@@ -23,7 +23,7 @@ pnpm add @miura/miura-computing
 
 ```typescript
 // worker.ts
-import { expose } from '@miura/miura-computing';
+import { expose } from '@miurajs/miura-computing';
 
 expose({
   // Single-result handler
@@ -44,7 +44,7 @@ expose({
 ### Main thread — `WorkerBridge`
 
 ```typescript
-import { WorkerBridge } from '@miura/miura-computing';
+import { WorkerBridge } from '@miurajs/miura-computing';
 
 const bridge = new WorkerBridge(
   new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' }),
@@ -98,7 +98,7 @@ Worker-side registration. `handlers` is a plain object mapping method names to f
 - Async generator (streaming): `async function*(payload) { yield chunk; ... }`
 
 ```typescript
-import { expose } from '@miura/miura-computing';
+import { expose } from '@miurajs/miura-computing';
 
 expose({
   heavyCalc: (n: number) => n ** 2,

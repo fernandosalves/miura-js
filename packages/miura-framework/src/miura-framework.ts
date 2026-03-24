@@ -1,11 +1,11 @@
-import { MiuraElement, html } from '@miura/miura-element';
-import { Store } from '@miura/miura-data-flow';
-import { createRouter } from '@miura/miura-router';
+import { MiuraElement, html } from '@miurajs/miura-element';
+import { Store } from '@miurajs/miura-data-flow';
+import { createRouter } from '@miurajs/miura-router';
 import type {
     RouterInstance,
     RouteRenderContext,
     NavigationOptions,
-} from '@miura/miura-router';
+} from '@miurajs/miura-router';
 import { AppLifecycle } from './lifecycle.js';
 import { ComponentRegistry } from './component-registry.js';
 import { DataManager } from './data-manager.js';

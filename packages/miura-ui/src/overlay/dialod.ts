@@ -1,4 +1,4 @@
-import { MiuraElement, html, css } from '@miura/miura-element';
+import { MiuraElement, html, css } from '@miurajs/miura-element';
 
 /**
  * <mui-dialod open>...</mui-dialod>

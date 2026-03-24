@@ -6,7 +6,7 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
-      "@miura/miura-debugger": ["../miura-debugger/index.ts"]
+      "@miurajs/miura-debugger": ["../miura-debugger/index.ts"]
     }
   },
   "include": ["index.ts", "src/**/*"],

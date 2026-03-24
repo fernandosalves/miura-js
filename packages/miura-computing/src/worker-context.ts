@@ -16,7 +16,7 @@ import type {
  *
  * ── Worker file example ───────────────────────────────────────────────────────
  *
- *   import { expose } from '@miura/miura-computing/worker';
+ *   import { expose } from '@miurajs/miura-computing/worker';
  *
  *   expose({
  *     // Single result

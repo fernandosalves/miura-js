@@ -1,4 +1,4 @@
-import { html, css } from '@miura/miura-element';
+import { html, css } from '@miurajs/miura-element';
 import { MuiBase } from '../base/mui-base.js';
 
 type SnackbarPlacement = 'bottom-center' | 'bottom-left' | 'bottom-right' | 'top-center' | 'top-left' | 'top-right';

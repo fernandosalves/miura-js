@@ -10,5 +10,5 @@ export const Default = {
 };
 
 export const LongCode = {
-  render: () => `<mui-code>npm install @miurajs/ui --save-dev</mui-code>`
+  render: () => `<mui-code>npm install @miurajsjs/ui --save-dev</mui-code>`
 }; 

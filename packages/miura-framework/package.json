@@ -1,6 +1,6 @@
 {
   "name": "@miurajs/miura-framework",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -35,12 +35,12 @@
   },
   "homepage": "https://github.com/fernandosalves/miura-js#readme",
   "dependencies": {
-    "@miurajs/miura-data-flow": "^0.0.2",
-    "@miurajs/miura-debugger": "^0.1.0",
-    "@miurajs/miura-element": "^0.1.0",
-    "@miurajs/miura-render": "^0.1.0",
-    "@miurajs/miura-router": "^0.1.0",
-    "@miurajs/miura-ui": "^0.1.0"
+    "@miurajs/miura-data-flow": "^0.1.2",
+    "@miurajs/miura-debugger": "^0.2.0",
+    "@miurajs/miura-element": "^0.1.2",
+    "@miurajs/miura-render": "^0.2.0",
+    "@miurajs/miura-router": "^0.1.2",
+    "@miurajs/miura-ui": "^0.1.1"
   },
   "devDependencies": {
     "typescript": "^5.4.5"

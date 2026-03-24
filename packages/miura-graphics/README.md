@@ -1,4 +1,4 @@
-# `@miura/miura-graphics` (Coming Soon)
+# `@miurajs/miura-graphics` (Coming Soon)
 
 A library for 2D/3D rendering and animations within the miura framework.
 

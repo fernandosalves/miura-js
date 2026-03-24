@@ -6,22 +6,22 @@
         "composite": true,
         "baseUrl": ".",
         "paths": {
-            "@miura/miura-element": [
+            "@miurajs/miura-element": [
                 "../miura-element/index.ts"
             ],
-            "@miura/miura-data-flow": [
+            "@miurajs/miura-data-flow": [
                 "../miura-data-flow/index.ts"
             ],
-            "@miura/miura-render": [
+            "@miurajs/miura-render": [
                 "../miura-render/index.ts"
             ],
-            "@miura/miura-router": [
+            "@miurajs/miura-router": [
                 "../miura-router/index.ts"
             ],
-            "@miura/miura-ui": [
+            "@miurajs/miura-ui": [
                 "../miura-ui/index.ts"
             ],
-            "@miura/miura-debugger": [
+            "@miurajs/miura-debugger": [
                 "../miura-debugger/index.ts"
             ]
         }

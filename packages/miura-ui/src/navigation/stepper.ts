@@ -1,4 +1,4 @@
-import { MiuraElement, html, css } from '@miura/miura-element';
+import { MiuraElement, html, css } from '@miurajs/miura-element';
 
 /**
  * <mui-stepper steps="3" activeStep="1">

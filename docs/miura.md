@@ -1,6 +1,6 @@
 # miura Framework
 
-`@miura/miura` is the meta-package that re-exports everything from every framework package. Import from here when you want a single entry-point.
+`@miurajs/miura` is the meta-package that re-exports everything from every framework package. Import from here when you want a single entry-point.
 
 ```typescript
 import {
@@ -8,7 +8,7 @@ import {
   repeat, when, choose, resolveAsync, createAsyncTracker,
   TemplateCompiler,
   $signal, $computed,
-} from '@miura/miura';
+} from '@miurajs/miura';
 ```
 
 ---
@@ -17,18 +17,18 @@ import {
 
 | Package | Role | Status |
 |---------|------|--------|
-| `@miura/miura-element` | Base class, reactive properties, lifecycle, AOT/JIT compiler flag | ✅ Stable |
-| `@miura/miura-render` | `html`/`css` templates, parser, bindings, directives, AOT `CodeFactory` | ✅ Stable |
-| `@miura/miura-framework` | Orchestration — plugin manager, event bus, performance monitor | ✅ Stable |
-| `@miura/miura-data-flow` | Store, middleware, 9 data providers | ✅ Stable |
-| `@miura/miura-ui` | 70+ pre-built UI components | ✅ Stable |
-| `@miura/miura-router` | Client-side routing, guards, loaders, nested routes | ✅ Stable |
-| `@miura/miura-security` | Auth, AuthZ, CSP, input validation | ✅ Stable |
-| `@miura/miura-debugger` | Category/level logger | ✅ Stable |
-| `@miura/miura-i18n` | Internationalization — `t()`, plurals, interpolation, fallback locale | ✅ Skeleton |
-| `@miura/miura-computing` | Reactive Web Worker bridge — `WorkerBridge`, `expose()` | ✅ Skeleton |
-| `@miura/miura-ai` | `#stream` directive for progressive token rendering | 🔨 Planned |
-| `@miura/miura-graphics` | 2D/3D rendering | 🔨 Planned |
+| `@miurajs/miura-element` | Base class, reactive properties, lifecycle, AOT/JIT compiler flag | ✅ Stable |
+| `@miurajs/miura-render` | `html`/`css` templates, parser, bindings, directives, AOT `CodeFactory` | ✅ Stable |
+| `@miurajs/miura-framework` | Orchestration — plugin manager, event bus, performance monitor | ✅ Stable |
+| `@miurajs/miura-data-flow` | Store, middleware, 9 data providers | ✅ Stable |
+| `@miurajs/miura-ui` | 70+ pre-built UI components | ✅ Stable |
+| `@miurajs/miura-router` | Client-side routing, guards, loaders, nested routes | ✅ Stable |
+| `@miurajs/miura-security` | Auth, AuthZ, CSP, input validation | ✅ Stable |
+| `@miurajs/miura-debugger` | Category/level logger | ✅ Stable |
+| `@miurajs/miura-i18n` | Internationalization — `t()`, plurals, interpolation, fallback locale | ✅ Skeleton |
+| `@miurajs/miura-computing` | Reactive Web Worker bridge — `WorkerBridge`, `expose()` | ✅ Skeleton |
+| `@miurajs/miura-ai` | `#stream` directive for progressive token rendering | 🔨 Planned |
+| `@miurajs/miura-graphics` | 2D/3D rendering | 🔨 Planned |
 
 ---
 
@@ -62,7 +62,7 @@ Every `static properties` field is backed by a `Signal`. Setting `this.foo = val
 
 ### Routing
 
-Use `createRouter()` from `@miura/miura-router`. Define a `render` callback that mounts the matched component. See [`docs/miura-router.md`](./miura-router.md).
+Use `createRouter()` from `@miurajs/miura-router`. Define a `render` callback that mounts the matched component. See [`docs/miura-router.md`](./miura-router.md).
 
 ### i18n
 

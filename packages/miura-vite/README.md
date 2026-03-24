@@ -1,4 +1,4 @@
-# `@miura/miura-vite`
+# `@miurajs/miura-vite`
 
 Vite plugins for the miura framework.
 
@@ -17,7 +17,7 @@ At build time, scans all HTML files for `<miura-island>` elements and:
 ```ts
 // vite.config.ts
 import { defineConfig } from 'vite';
-import { islandsPlugin } from '@miura/miura-vite';
+import { islandsPlugin } from '@miurajs/miura-vite';
 
 export default defineConfig({
   plugins: [
@@ -95,7 +95,7 @@ export default defineConfig({
 
 ## Notes
 
-- **Non-nested islands only** — the HTML transform uses a non-greedy regex and does not support `<miura-island>` elements nested inside other `<miura-island>` elements. For deeply nested cases, use `createIslandHTML()` from `@miura/miura-element/server` at the template level.
+- **Non-nested islands only** — the HTML transform uses a non-greedy regex and does not support `<miura-island>` elements nested inside other `<miura-island>` elements. For deeply nested cases, use `createIslandHTML()` from `@miurajs/miura-element/server` at the template level.
 - The plugin runs `enforce: 'pre'` so it processes HTML before other plugins.
 
 ## License

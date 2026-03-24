@@ -1,3 +1,3 @@
 # miura Framework
 
-Documentation for `@miura/miura-framework`. 
+Documentation for `@miurajs/miura-framework`. 

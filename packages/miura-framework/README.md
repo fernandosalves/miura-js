@@ -22,8 +22,8 @@ miuraFramework is a **declarative base class** that you extend to create your ap
 ### Basic App Setup
 
 ```typescript
-import { miuraFramework } from '@miura/miura-framework';
-import { MiuraElement, html } from '@miura/miura-element';
+import { miuraFramework } from '@miurajs/miura-framework';
+import { MiuraElement, html } from '@miurajs/miura-element';
 
 // Your components
 class MyHeader extends MiuraElement {
@@ -130,7 +130,7 @@ class MyApp extends miuraFramework {
     ui: {
       theme: 'dark',
       locale: 'en-US',
-      components: ['@miura/miura-ui']
+      components: ['@miurajs/miura-ui']
     },
     telemetry: {
       enabled: true,

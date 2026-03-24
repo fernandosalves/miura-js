@@ -1,4 +1,4 @@
-# `@miura/miura-ai`
+# `@miurajs/miura-ai`
 
 Progressive streaming text rendering for the miura framework. First-class support for LLM token streams, SSE feeds, WebSocket messages, and browser `ReadableStream` — without any custom scroll logic or manual DOM updates.
 
@@ -13,7 +13,7 @@ Progressive streaming text rendering for the miura framework. First-class suppor
 ## Quick Start
 
 ```typescript
-import '@miura/miura-ai'; // registers the #stream directive globally
+import '@miurajs/miura-ai'; // registers the #stream directive globally
 
 @component({ tag: 'chat-message' })
 class ChatMessage extends MiuraElement {
@@ -77,8 +77,8 @@ chatEl.stream = new WebSocket('wss://api.example.com/stream');
 ## Manual Registration
 
 ```typescript
-import { StreamDirective } from '@miura/miura-ai';
-import { DirectiveManager } from '@miura/miura-render';
+import { StreamDirective } from '@miurajs/miura-ai';
+import { DirectiveManager } from '@miurajs/miura-render';
 
 DirectiveManager.register('stream', StreamDirective);
 ```

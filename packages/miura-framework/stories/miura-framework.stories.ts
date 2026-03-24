@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { MiuraFramework } from '../src/miura-framework.js';
-import { MiuraElement, html } from '@miurajs/miura-element';
+import { MiuraElement, html } from '@miurajsjs/miura-element';
 
 // Example components for the story
 class DemoHeader extends MiuraElement {

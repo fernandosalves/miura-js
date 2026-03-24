@@ -1,4 +1,4 @@
-import { MiuraElement } from '@miura/miura-element';
+import { MiuraElement } from '@miurajs/miura-element';
 
 // Utility: Debounce
 function debounce(fn: Function, delay: number) {

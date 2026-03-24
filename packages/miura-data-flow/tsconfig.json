@@ -6,11 +6,11 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
-      "@miura/miura-debugger": ["../miura-debugger/index.ts"]
+      "@miurajs/miura-debugger": ["../miura-debugger/index.ts"]
     }
   },
   "include": ["index.ts", "src/**/*"],
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules", "src/providers/graphql-provider.ts", "src/providers/s3-provider.ts", "src/providers/firebase-provider.ts", "src/providers/supabase-provider.ts", "src/providers/grpc-web-provider.ts"],
   "references": [
     { "path": "../miura-debugger" }
   ]

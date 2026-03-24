@@ -1,4 +1,4 @@
-# @miura/miura-element
+# @miurajs/miura-element
 
 The core component system for the miura framework. Provides the `MiuraElement` base class for creating reactive web components with properties, computed properties, lifecycle hooks, error boundaries, two-way binding, and slot utilities.
 
@@ -20,13 +20,13 @@ The core component system for the miura framework. Provides the `MiuraElement` b
 ## Installation
 
 ```bash
-pnpm add @miura/miura-element
+pnpm add @miurajs/miura-element
 ```
 
 ## Quick Start
 
 ```typescript
-import { MiuraElement, html, css, component } from '@miura/miura-element';
+import { MiuraElement, html, css, component } from '@miurajs/miura-element';
 
 @component({ tag: 'my-counter' })
 class Counter extends MiuraElement {
@@ -229,7 +229,7 @@ Event modifiers via `|`: `@click|prevent=${handler}`, `@click|prevent,stop=${han
 ### Conditional Rendering
 
 ```typescript
-import { when, choose } from '@miura/miura-element';
+import { when, choose } from '@miurajs/miura-element';
 
 // when(condition, trueCase, falseCase?)
 ${when(this.loggedIn,
@@ -248,7 +248,7 @@ ${choose(this.status, [
 ### Keyed List Rendering
 
 ```typescript
-import { repeat } from '@miura/miura-element';
+import { repeat } from '@miurajs/miura-element';
 
 ${repeat(this.items,
   (item) => item.id,                              // key function
@@ -261,7 +261,7 @@ Uses an **LIS-based (Longest Increasing Subsequence) diffing algorithm** to comp
 ### Async Rendering
 
 ```typescript
-import { createAsyncTracker, resolveAsync } from '@miura/miura-element';
+import { createAsyncTracker, resolveAsync } from '@miurajs/miura-element';
 
 // Create tracker (e.g. in onMount or event handler)
 this.userTracker = createAsyncTracker(
@@ -298,7 +298,7 @@ template() {
 The lower-level `computeVirtualSlice()` function is also available for custom implementations:
 
 ```typescript
-import { computeVirtualSlice } from '@miura/miura-element';
+import { computeVirtualSlice } from '@miurajs/miura-element';
 
 const vs = computeVirtualSlice({
   items: this.items,
@@ -372,7 +372,7 @@ class DataRow extends MiuraElement {
 Create reactive values outside of components:
 
 ```typescript
-import { $signal, $computed } from '@miura/miura-element';
+import { $signal, $computed } from '@miurajs/miura-element';
 
 const count = $signal(0);
 const label = $computed(() => `Count: ${count.get()}`);
@@ -394,12 +394,12 @@ Signals created with `$signal()` / `$computed()` can be passed directly into `ht
 7. **Clean up in `onUnmount`** — abort controllers, remove global listeners, dispose resources
 8. **Use `&` binding for forms** — cleaner than manual `@input` + `.value` wiring
 
-## 🖥️ Server-side Utilities (`@miura/miura-element/server`)
+## 🖥️ Server-side Utilities (`@miurajs/miura-element/server`)
 
-Import from `@miura/miura-element/server` in Node.js / SSR / SSG contexts. **Zero DOM dependency.**
+Import from `@miurajs/miura-element/server` in Node.js / SSR / SSG contexts. **Zero DOM dependency.**
 
 ```ts
-import { createIslandHTML, IslandRegistry, renderIslands } from '@miura/miura-element/server';
+import { createIslandHTML, IslandRegistry, renderIslands } from '@miurajs/miura-element/server';
 ```
 
 ### `createIslandHTML(def)`

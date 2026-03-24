@@ -1,5 +1,5 @@
 import { Store, StoreState, StoreActions } from './store';
-import { debugLog } from '@miura/miura-debugger';
+import { debugLog } from '@miurajs/miura-debugger';
 
 /**
  * Global state interface

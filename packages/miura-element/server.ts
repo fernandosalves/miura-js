@@ -1,11 +1,11 @@
 /**
- * Server-side entry point for `@miura/miura-element`.
+ * Server-side entry point for `@miurajs/miura-element`.
  *
- * Import from `@miura/miura-element/server` in Node.js / SSR / SSG contexts.
+ * Import from `@miurajs/miura-element/server` in Node.js / SSR / SSG contexts.
  * This module has **zero browser DOM dependencies** — safe to use in any runtime.
  *
  * ```ts
- * import { createIslandHTML, IslandRegistry } from '@miura/miura-element/server';
+ * import { createIslandHTML, IslandRegistry } from '@miurajs/miura-element/server';
  * ```
  */
 export {

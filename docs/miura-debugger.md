@@ -1,3 +1,3 @@
 # miura Debugger
 
-Documentation for `@miura/miura-debugger`. 
+Documentation for `@miurajs/miura-debugger`. 

@@ -57,7 +57,7 @@ export interface RenderedIsland {
  * Serialise a single island definition into a `<miura-island>` HTML string.
  *
  * ```ts
- * import { createIslandHTML } from '@miura/miura-element/server';
+ * import { createIslandHTML } from '@miurajs/miura-element/server';
  *
  * const html = createIslandHTML({
  *   component: 'my-counter',
@@ -174,7 +174,7 @@ export function buildManifest(islands: RenderedIsland[]): IslandManifest {
  * them everywhere.
  *
  * ```ts
- * import { IslandRegistry } from '@miura/miura-element/server';
+ * import { IslandRegistry } from '@miurajs/miura-element/server';
  *
  * IslandRegistry.register('my-counter',  { props: { count: 0 },    hydrate: 'load'    });
  * IslandRegistry.register('app-chart',   { props: { data: [] },    hydrate: 'visible' });

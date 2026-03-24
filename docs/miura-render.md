@@ -2,7 +2,7 @@
 
 > Full package README: [`packages/miura-render/README.md`](../packages/miura-render/README.md)
 
-`@miura/miura-render` is the rendering engine for the miura framework. It provides the `html`/`css` tagged template literals, a state-machine parser, a binding manager, structural directives, and both JIT and AOT rendering paths.
+`@miurajs/miura-render` is the rendering engine for the miura framework. It provides the `html`/`css` tagged template literals, a state-machine parser, a binding manager, structural directives, and both JIT and AOT rendering paths.
 
 ---
 

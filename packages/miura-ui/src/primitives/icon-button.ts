@@ -1,4 +1,4 @@
-import { MiuraElement, html, css } from '@miura/miura-element';
+import { MiuraElement, html, css } from '@miurajs/miura-element';
 
 export class MuiIconButton extends MiuraElement {
   static properties = {};

@@ -6,9 +6,9 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
-      "@miura/miura-render":  ["../miura-render/index.ts"],
-      "@miura/miura-debugger": ["../miura-debugger/index.ts"],
-      "@miura/miura-element": ["./index.ts"]
+      "@miurajs/miura-render":  ["../miura-render/index.ts"],
+      "@miurajs/miura-debugger": ["../miura-debugger/index.ts"],
+      "@miurajs/miura-element": ["./index.ts"]
     }
   },
   "include": ["index.ts", "server.ts", "src/**/*"],

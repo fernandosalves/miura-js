@@ -1,4 +1,4 @@
-# @miura/miura-render
+# @miurajs/miura-render
 
 The rendering engine for the miura framework. Provides tagged template literals (`html`/`css`), a state-machine parser, a binding manager, structural directives, and performance utilities including LIS-based keyed diffing, async rendering, and virtual scrolling.
 
@@ -16,7 +16,7 @@ The rendering engine for the miura framework. Provides tagged template literals 
 ## Installation
 
 ```bash
-pnpm add @miura/miura-render
+pnpm add @miurajs/miura-render
 ```
 
 ## Template Syntax
@@ -139,7 +139,7 @@ The algorithm identifies items already in correct relative order (via Longest In
 Declarative promise-based rendering.
 
 ```typescript
-import { createAsyncTracker, resolveAsync } from '@miura/miura-render';
+import { createAsyncTracker, resolveAsync } from '@miurajs/miura-render';
 
 // Create a tracker
 const tracker = createAsyncTracker(
@@ -204,7 +204,7 @@ The directive:
 Lower-level pure function for custom virtual scroll implementations:
 
 ```typescript
-import { computeVirtualSlice } from '@miura/miura-render';
+import { computeVirtualSlice } from '@miurajs/miura-render';
 
 const vs = computeVirtualSlice({
   items: this.allItems,
@@ -296,7 +296,7 @@ Template string → TemplateParser → ParsedTemplate (HTML + TemplateBinding[])
 ### Direct usage
 
 ```typescript
-import { TemplateCompiler } from '@miura/miura-render';
+import { TemplateCompiler } from '@miurajs/miura-render';
 
 const compiler = new TemplateCompiler();
 
@@ -314,7 +314,7 @@ compiled.update(refs, newResult.values);
 ## CSS Tagged Template
 
 ```typescript
-import { css } from '@miura/miura-render';
+import { css } from '@miurajs/miura-render';
 
 const styles = css`
   :host { display: block; }

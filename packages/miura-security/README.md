@@ -1,4 +1,4 @@
-# @miura/miura-security
+# @miurajs/miura-security
 
 Comprehensive security module for miura Framework with enterprise-grade security features.
 
@@ -16,7 +16,7 @@ Comprehensive security module for miura Framework with enterprise-grade security
 ## 🚀 Quick Start
 
 ```typescript
-import { security, auth, authz, validation } from '@miura/miura-security';
+import { security, auth, authz, validation } from '@miurajs/miura-security';
 
 // Initialize security with custom configuration
 const securityManager = security.getInstance({
@@ -51,7 +51,7 @@ const validationResult = validation.validate(data, schema);
 ### Basic Usage
 
 ```typescript
-import { auth } from '@miura/miura-security';
+import { auth } from '@miurajs/miura-security';
 
 // Login
 const result = await auth.login({
@@ -93,7 +93,7 @@ auth.on('auth_failure', (event) => {
 ### Role-Based Access Control
 
 ```typescript
-import { authz } from '@miura/miura-security';
+import { authz } from '@miurajs/miura-security';
 
 // Check permissions
 if (authz.can('posts', 'create')) {
@@ -121,7 +121,7 @@ console.log('User permissions:', permissions);
 ### Custom Roles and Permissions
 
 ```typescript
-import { authz, Role, Permission } from '@miura/miura-security';
+import { authz, Role, Permission } from '@miurajs/miura-security';
 
 // Create custom role
 const editorRole: Role = {
@@ -143,7 +143,7 @@ authz.addRole(editorRole);
 ### Basic Usage
 
 ```typescript
-import { csp } from '@miura/miura-security';
+import { csp } from '@miurajs/miura-security';
 
 // Apply CSP to current page
 csp.applyToPage();
@@ -172,7 +172,7 @@ csp.on('xss_attempt', (event) => {
 ### Basic Validation
 
 ```typescript
-import { validation, ValidationSchema } from '@miura/miura-security';
+import { validation, ValidationSchema } from '@miurajs/miura-security';
 
 // Define validation schema
 const userSchema: ValidationSchema = {
@@ -241,7 +241,7 @@ if (validation.detectSQLInjection(userInput)) {
 ### Unified Security Interface
 
 ```typescript
-import { security } from '@miura/miura-security';
+import { security } from '@miurajs/miura-security';
 
 // Get security status
 const status = security.getSecurityStatus();
@@ -266,7 +266,7 @@ security.on('auth_failure', (event) => {
 ### Custom Configuration
 
 ```typescript
-import { security, SecurityConfig } from '@miura/miura-security';
+import { security, SecurityConfig } from '@miurajs/miura-security';
 
 const config: Partial<SecurityConfig> = {
   authentication: {
@@ -302,7 +302,7 @@ const securityManager = security.getInstance(config);
 ### Basic CSRF Protection
 
 ```typescript
-import { security } from '@miura/miura-security';
+import { security } from '@miurajs/miura-security';
 
 // CSRF protection is automatically enabled
 // The framework will:
@@ -316,7 +316,7 @@ import { security } from '@miura/miura-security';
 ### Security Event Monitoring
 
 ```typescript
-import { security } from '@miura/miura-security';
+import { security } from '@miurajs/miura-security';
 
 // Listen to all security events
 security.on('auth_success', (event) => {
@@ -345,8 +345,8 @@ security.on('injection_attempt', (event) => {
 ### Framework Integration
 
 ```typescript
-import { miuraFramework } from '@miura/miura-framework';
-import { security } from '@miura/miura-security';
+import { miuraFramework } from '@miurajs/miura-framework';
+import { security } from '@miurajs/miura-security';
 
 class SecureApp extends miuraFramework {
   static tagName = 'secure-app';
@@ -375,8 +375,8 @@ class SecureApp extends miuraFramework {
 ### Component-Level Security
 
 ```typescript
-import { MiuraElement, html } from '@miura/miura-element';
-import { authz, validation } from '@miura/miura-security';
+import { MiuraElement, html } from '@miurajs/miura-element';
+import { authz, validation } from '@miurajs/miura-security';
 
 class SecureComponent extends MiuraElement {
   static properties = {
@@ -500,12 +500,12 @@ interface SecurityConfig {
 
 1. **Install the package:**
    ```bash
-   npm install @miura/miura-security
+   npm install @miurajs/miura-security
    ```
 
 2. **Import and initialize:**
    ```typescript
-   import { security } from '@miura/miura-security';
+   import { security } from '@miurajs/miura-security';
    
    const securityManager = security.getInstance({
      authentication: { enabled: true },
@@ -515,7 +515,7 @@ interface SecurityConfig {
 
 3. **Start using security features:**
    ```typescript
-   import { auth, authz, validation } from '@miura/miura-security';
+   import { auth, authz, validation } from '@miurajs/miura-security';
    
    // Authentication
    await auth.login(credentials);

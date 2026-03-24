@@ -6,8 +6,8 @@
         "composite": true,
         "baseUrl": ".",
         "paths": {
-            "@miura/miura-render": ["../miura-render/index.ts"],
-            "@miura/miura-element": ["../miura-element/index.ts"]
+            "@miurajs/miura-render": ["../miura-render/index.ts"],
+            "@miurajs/miura-element": ["../miura-element/index.ts"]
         }
     },
     "include": [

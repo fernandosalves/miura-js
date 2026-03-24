@@ -62,7 +62,7 @@ These are loaded **on demand**—only if you use them in your template. This kee
 
 ### Using Decorators
 ```typescript
-import { directive, lazyDirective, BaseDirective } from '@miura/render';
+import { directive, lazyDirective, BaseDirective } from '@miurajs/render';
 
 @directive('my-directive')
 export class MyDirective extends BaseDirective {
@@ -79,7 +79,7 @@ export class MyLazyDirective extends BaseDirective {
 
 ### Manual Registration
 ```typescript
-import { DirectiveManager } from '@miura/render';
+import { DirectiveManager } from '@miurajs/render';
 DirectiveManager.register('my-directive', MyDirective);
 DirectiveManager.registerLazyDirective('my-lazy', async () => {
   const { MyLazyDirective } = await import('./my-lazy');
@@ -97,7 +97,7 @@ DirectiveManager.registerLazyDirective('my-lazy', async () => {
 ## Debugging
 Enable debug logging for directives:
 ```typescript
-import { enableDebug } from '@miura/render';
+import { enableDebug } from '@miurajs/render';
 enableDebug({ directives: true, directiveManager: true });
 ```
 

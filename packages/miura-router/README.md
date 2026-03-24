@@ -1,4 +1,4 @@
-# `@miura/miura-router`
+# `@miurajs/miura-router`
 
 Modern, declarative routing for miura applications. Built for Web Components, the router handles hash/history/memory navigation modes, async guards, data loaders, redirects, and DOM rendering hooks.
 
@@ -15,7 +15,7 @@ Modern, declarative routing for miura applications. Built for Web Components, th
 ## 🚦 Quick Start
 
 ```ts
-import { createRouter } from '@miura/miura-router';
+import { createRouter } from '@miurajs/miura-router';
 
 const router = createRouter({
   mode: 'history',
@@ -112,7 +112,7 @@ template() {
 The `<router-outlet>` custom element is a passive mount-point. The router's render callback uses `context.matched` to determine which components to mount at each level.
 
 ```typescript
-import { RouterOutlet } from '@miura/miura-router';
+import { RouterOutlet } from '@miurajs/miura-router';
 // RouterOutlet registers itself as <router-outlet> when imported
 ```
 
@@ -161,7 +161,7 @@ if (!result.ok) console.log('blocked:', result.reason);
 Use `defineRoute<TParams>()` to get typed `buildPath()` and `navigate()` helpers with compile-time safety on route params.
 
 ```ts
-import { defineRoute, createRouter } from '@miura/miura-router';
+import { defineRoute, createRouter } from '@miurajs/miura-router';
 
 // No params
 const homeRoute  = defineRoute({ path: '/', component: 'app-home' });

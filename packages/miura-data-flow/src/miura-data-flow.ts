@@ -101,14 +101,15 @@ export default {
     createProvider: providers.createProvider,
     factories: {
       RestProviderFactory: providers.RestProviderFactory,
-      GraphQLProviderFactory: providers.GraphQLProviderFactory,
-      S3ProviderFactory: providers.S3ProviderFactory,
       LocalStorageProviderFactory: providers.LocalStorageProviderFactory,
       IndexedDBProviderFactory: providers.IndexedDBProviderFactory,
       WebSocketProviderFactory: providers.WebSocketProviderFactory,
-      FirebaseProviderFactory: providers.FirebaseProviderFactory,
-      SupabaseProviderFactory: providers.SupabaseProviderFactory,
-      GrpcWebProviderFactory: providers.GrpcWebProviderFactory,
+      // Optional providers (require additional dependencies):
+      // GraphQLProviderFactory: providers.GraphQLProviderFactory, // requires graphql-request
+      // S3ProviderFactory: providers.S3ProviderFactory, // requires @aws-sdk/client-s3
+      // FirebaseProviderFactory: providers.FirebaseProviderFactory, // requires firebase
+      // SupabaseProviderFactory: providers.SupabaseProviderFactory, // requires @supabase/supabase-js
+      // GrpcWebProviderFactory: providers.GrpcWebProviderFactory, // requires grpc-web
     }
   }
 };

@@ -32,7 +32,7 @@ const config: StorybookConfig = {
     for (const pkg of packages) {
       const pkgPath = path.resolve(process.cwd(), `packages/${pkg}/index.ts`);
       if (fs.existsSync(pkgPath)) {
-        aliases[`@miurajs/${pkg}`] = pkgPath;
+        aliases[`@miurajsjs/${pkg}`] = pkgPath;
       }
     }
     

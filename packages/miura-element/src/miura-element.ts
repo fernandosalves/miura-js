@@ -2,9 +2,9 @@ import { PropertyValues } from './property-values';
 import { PropertyDeclarations, createProperties, createStateProperties, SIGNAL_KEY_PREFIX } from './properties';
 import { signal, computed, Signal, ReadonlySignal } from './signals.js';
 
-import { TemplateResult, CSSResult, debugLog } from '@miura/miura-render';
-import { TemplateProcessor, TemplateCompiler, NodeBinding, DirectiveBinding } from '@miura/miura-render';
-import type { CompiledTemplate } from '@miura/miura-render';
+import { TemplateResult, CSSResult, debugLog } from '@miurajs/miura-render';
+import { TemplateProcessor, TemplateCompiler, NodeBinding, DirectiveBinding } from '@miurajs/miura-render';
+import type { CompiledTemplate } from '@miurajs/miura-render';
 
 /** Shared AOT compiler singleton — one instance for the whole application */
 let _aotCompiler: TemplateCompiler | null = null;

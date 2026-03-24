@@ -1,4 +1,4 @@
-import { MiuraElement } from '@miura/miura-element';
+import { MiuraElement } from '@miurajs/miura-element';
 import { ComponentDefinition, ComponentRegistry as IComponentRegistry } from './types.js';
 
 /**

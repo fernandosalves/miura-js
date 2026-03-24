@@ -1,4 +1,4 @@
-import { html } from '@miura/miura-element';
+import { html } from '@miurajs/miura-element';
 import { MuiBase } from '../base/mui-base.js';
 
 /**

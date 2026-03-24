@@ -7,9 +7,9 @@ import {
   createCacheMiddleware,
   createDevToolsMiddleware,
   StoreState
-} from '@miurajs/miura-data-flow';
-import { html } from '@miurajs/miura-element';
-import { MiuraElement } from '@miurajs/miura-element';
+} from '@miurajsjs/miura-data-flow';
+import { html } from '@miurajsjs/miura-element';
+import { MiuraElement } from '@miurajsjs/miura-element';
 
 // Define the store state interface
 interface DemoStoreState extends StoreState {
@@ -55,7 +55,7 @@ This story demonstrates the comprehensive state management features of miura Dat
 ## Usage Examples
 
 \`\`\`typescript
-import { Store, globalState, createLoggerMiddleware } from '@miurajs/miura-data-flow';
+import { Store, globalState, createLoggerMiddleware } from '@miurajsjs/miura-data-flow';
 
 // Create a store
 const store = new Store({ count: 0, user: null });
@@ -627,7 +627,7 @@ export const WithInitialData: Story = {
   `,
   play: async () => {
     // Initialize with some data
-    const { globalState } = await import('@miurajs/miura-data-flow');
+    const { globalState } = await import('@miurajsjs/miura-data-flow');
     
     // Set initial global state
     globalState.set('theme', 'dark');

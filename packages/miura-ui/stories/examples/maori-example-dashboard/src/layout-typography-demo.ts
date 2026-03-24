@@ -1,5 +1,5 @@
-import { MiuraElement, html, css } from '@miura/miura-element';
-import { component } from '@miura/miura-element';
+import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { component } from '@miurajs/miura-element';
 
 @component({ tag: 'layout-typography-demo' })
 export class LayoutTypographyDemo extends MiuraElement {

@@ -40,7 +40,7 @@ This story demonstrates all the security features available in the miura Securit
 ## Usage Examples
 
 \`\`\`typescript
-import { security, auth, authz, validation } from '@miurajs/miura-security';
+import { security, auth, authz, validation } from '@miurajsjs/miura-security';
 
 // Initialize security
 const securityManager = security.getInstance({

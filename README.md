@@ -1,8 +1,8 @@
 # miura Framework
 
 [![MiuraJS Status: Beta](https://img.shields.io/badge/MiuraJS-Beta-f97316?style=flat-square&labelColor=0f172a)](#)
-[![npm version](https://img.shields.io/npm/v/@miurajs/miura/alpha?style=flat-square&labelColor=0f172a)](https://www.npmjs.com/package/@miurajs/miura)
-[![npm downloads](https://img.shields.io/npm/dm/@miurajs/miura?style=flat-square&labelColor=0f172a)](https://www.npmjs.com/package/@miurajs/miura)
+[![npm version](https://img.shields.io/npm/v/@miurajsjs/miura/alpha?style=flat-square&labelColor=0f172a)](https://www.npmjs.com/package/@miurajsjs/miura)
+[![npm downloads](https://img.shields.io/npm/dm/@miurajsjs/miura?style=flat-square&labelColor=0f172a)](https://www.npmjs.com/package/@miurajsjs/miura)
 
 miura is a lightweight, enterprise-ready web component framework designed for building modern, scalable web applications with a simple and intuitive development experience.
 
@@ -83,17 +83,17 @@ miura-js/
 
 ### Published Packages
 
-All packages are published under the `@miurajs` organization:
+All packages are published under the `@miurajsjs` organization:
 
-- **@miurajs/miura** - Complete framework bundle
-- **@miurajs/miura-element** - Component system
-- **@miurajs/miura-framework** - Framework base class
-- **@miurajs/miura-render** - Rendering engine
-- **@miurajs/miura-router** - Routing system
-- **@miurajs/miura-data-flow** - State management
-- **@miurajs/miura-debugger** - Debugging tools
-- **@miurajs/miura-security** - Security features
-- **@miurajs/miura-ui** - UI components
+- **@miurajsjs/miura** - Complete framework bundle
+- **@miurajsjs/miura-element** - Component system
+- **@miurajsjs/miura-framework** - Framework base class
+- **@miurajsjs/miura-render** - Rendering engine
+- **@miurajsjs/miura-router** - Routing system
+- **@miurajsjs/miura-data-flow** - State management
+- **@miurajsjs/miura-debugger** - Debugging tools
+- **@miurajsjs/miura-security** - Security features
+- **@miurajsjs/miura-ui** - UI components
 
 ## Installation
 
@@ -102,7 +102,7 @@ All packages are published under the `@miurajs` organization:
 Install the complete framework (recommended):
 
 ```bash
-npm install @miurajs/miura@alpha
+npm install @miurajsjs/miura@alpha
 ```
 
 ### Individual Packages
@@ -111,21 +111,21 @@ You can also install individual packages:
 
 ```bash
 # Core framework
-npm install @miurajs/miura-element
-npm install @miurajs/miura-framework
-npm install @miurajs/miura-render
+npm install @miurajsjs/miura-element
+npm install @miurajsjs/miura-framework
+npm install @miurajsjs/miura-render
 
 # Optional packages
-npm install @miurajs/miura-router
-npm install @miurajs/miura-data-flow
-npm install @miurajs/miura-ui
-npm install @miurajs/miura-security
+npm install @miurajsjs/miura-router
+npm install @miurajsjs/miura-data-flow
+npm install @miurajsjs/miura-ui
+npm install @miurajsjs/miura-security
 ```
 
 ### Usage Example
 
 ```typescript
-import { MiuraFramework, html } from '@miurajs/miura';
+import { MiuraFramework, html } from '@miurajsjs/miura';
 
 class MyApp extends MiuraFramework {
   static tagName = 'my-app';
@@ -165,19 +165,19 @@ The framework is structured as a monorepo with the following packages:
 
 | Package | Description |
 |---------|-------------|
-| **`@miurajs/miura`** | Meta-package that bundles and re-exports all framework features |
-| **`@miurajs/miura-element`** | Base class for reactive web components — properties, lifecycle, decorators. [README →](./packages/miura-element/README.md) |
-| **`@miurajs/miura-render`** | Rendering engine — `html`/`css` tagged templates, parser, bindings, directives. [README →](./packages/miura-render/README.md) |
-| **`@miurajs/miura-framework`** | Orchestration layer — plugin manager, event bus, performance monitor |
-| **`@miurajs/miura-data-flow`** | State management — store, middleware, 9 data providers (REST, GraphQL, Firebase, etc.) |
-| **`@miurajs/miura-ui`** | 70+ pre-built UI components (primitives, navigation, overlay, layout, typography) |
-| **`@miurajs/miura-router`** | Client-side router — hash/history/memory modes, guards, loaders, nested routes, layout outlets |
-| **`@miurajs/miura-security`** | Auth, AuthZ, CSP, input validation |
-| **`@miurajs/miura-debugger`** | Category/level logger for development |
-| **`@miurajs/miura-i18n`** | Internationalization — `t()`, dot-notation keys, pluralization, interpolation, fallback locale |
-| **`@miurajs/miura-computing`** | Reactive Web Worker bridge — `WorkerBridge`, `expose()`, typed call/stream protocol |
-| **`@miurajs/miura-graphics`** | *(Coming Soon)* 2D/3D rendering and animations |
-| **`@miurajs/miura-ai`** | *(Coming Soon)* `#stream` directive — progressive token rendering from SSE/WebSocket/ReadableStream |
+| **`@miurajsjs/miura`** | Meta-package that bundles and re-exports all framework features |
+| **`@miurajsjs/miura-element`** | Base class for reactive web components — properties, lifecycle, decorators. [README →](./packages/miura-element/README.md) |
+| **`@miurajsjs/miura-render`** | Rendering engine — `html`/`css` tagged templates, parser, bindings, directives. [README →](./packages/miura-render/README.md) |
+| **`@miurajsjs/miura-framework`** | Orchestration layer — plugin manager, event bus, performance monitor |
+| **`@miurajsjs/miura-data-flow`** | State management — store, middleware, 9 data providers (REST, GraphQL, Firebase, etc.) |
+| **`@miurajsjs/miura-ui`** | 70+ pre-built UI components (primitives, navigation, overlay, layout, typography) |
+| **`@miurajsjs/miura-router`** | Client-side router — hash/history/memory modes, guards, loaders, nested routes, layout outlets |
+| **`@miurajsjs/miura-security`** | Auth, AuthZ, CSP, input validation |
+| **`@miurajsjs/miura-debugger`** | Category/level logger for development |
+| **`@miurajsjs/miura-i18n`** | Internationalization — `t()`, dot-notation keys, pluralization, interpolation, fallback locale |
+| **`@miurajsjs/miura-computing`** | Reactive Web Worker bridge — `WorkerBridge`, `expose()`, typed call/stream protocol |
+| **`@miurajsjs/miura-graphics`** | *(Coming Soon)* 2D/3D rendering and animations |
+| **`@miurajsjs/miura-ai`** | *(Coming Soon)* `#stream` directive — progressive token rendering from SSE/WebSocket/ReadableStream |
 
 ## Features
 
@@ -313,7 +313,7 @@ The AOT compiler generates JS functions via `new Function()` with cached element
 All `static properties` are backed by `Signal` objects internally. You can also create standalone reactive signals:
 
 ```typescript
-import { $signal, $computed } from '@miura/miura-element';
+import { $signal, $computed } from '@miurajs/miura-element';
 
 const count = $signal(0);
 const double = $computed(() => count.get() * 2);
@@ -324,7 +324,7 @@ count.set(5); // double automatically becomes 10
 ### Internationalization (`miura-i18n`)
 
 ```typescript
-import { miuraI18n, I18nMixin } from '@miura/miura-i18n';
+import { miuraI18n, I18nMixin } from '@miurajs/miura-i18n';
 
 miuraI18n.load('en', { greeting: 'Hello, {name}!', items: '{count} item | {count} items' });
 
@@ -343,11 +343,11 @@ class MyWidget extends I18nMixin(MiuraElement) {
 
 ```typescript
 // worker.ts
-import { expose } from '@miura/miura-computing';
+import { expose } from '@miurajs/miura-computing';
 expose({ heavyCalc: (n: number) => n * n });
 
 // component.ts
-import { WorkerBridge } from '@miura/miura-computing';
+import { WorkerBridge } from '@miurajs/miura-computing';
 const bridge = new WorkerBridge(new Worker('./worker.ts', { type: 'module' }));
 const result = await bridge.call('heavyCalc', 42); // non-blocking
 ```
@@ -380,7 +380,7 @@ pnpm test
 ## Quick Example
 
 ```typescript
-import { MiuraElement, html, css, component, repeat } from '@miura/miura-element';
+import { MiuraElement, html, css, component, repeat } from '@miurajs/miura-element';
 
 interface Task { id: number; text: string; done: boolean; }
 

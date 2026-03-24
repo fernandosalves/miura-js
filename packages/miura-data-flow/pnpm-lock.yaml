@@ -11,7 +11,7 @@ importers:
       '@aws-sdk/client-s3':
         specifier: ^3.1005.0
         version: 3.1005.0
-      '@miura/miura-render':
+      '@miurajs/miura-render':
         specifier: file:../miura-render
         version: file:../miura-render
       graphql-request:
@@ -336,13 +336,13 @@ packages:
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
-  '@miura/miura-debugger@file:../miura-debugger':
+  '@miurajs/miura-debugger@file:../miura-debugger':
     resolution: {directory: ../miura-debugger, type: directory}
 
-  '@miura/miura-element@file:../miura-element':
+  '@miurajs/miura-element@file:../miura-element':
     resolution: {directory: ../miura-element, type: directory}
 
-  '@miura/miura-render@file:../miura-render':
+  '@miurajs/miura-render@file:../miura-render':
     resolution: {directory: ../miura-render, type: directory}
 
   '@rollup/rollup-android-arm-eabi@4.59.0':
@@ -1588,16 +1588,16 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
-  '@miura/miura-debugger@file:../miura-debugger': {}
+  '@miurajs/miura-debugger@file:../miura-debugger': {}
 
-  '@miura/miura-element@file:../miura-element':
+  '@miurajs/miura-element@file:../miura-element':
     dependencies:
-      '@miura/miura-render': file:../miura-render
+      '@miurajs/miura-render': file:../miura-render
 
-  '@miura/miura-render@file:../miura-render':
+  '@miurajs/miura-render@file:../miura-render':
     dependencies:
-      '@miura/miura-debugger': file:../miura-debugger
-      '@miura/miura-element': file:../miura-element
+      '@miurajs/miura-debugger': file:../miura-debugger
+      '@miurajs/miura-element': file:../miura-element
 
   '@rollup/rollup-android-arm-eabi@4.59.0':
     optional: true

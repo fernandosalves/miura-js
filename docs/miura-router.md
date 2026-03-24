@@ -2,14 +2,14 @@
 
 > Full package README: [`packages/miura-router/README.md`](../packages/miura-router/README.md)
 
-`@miura/miura-router` is the client-side router for the miura framework. It supports hash, history, and in-memory navigation modes; async guards and data loaders; nested routes with layout outlets; and redirects.
+`@miurajs/miura-router` is the client-side router for the miura framework. It supports hash, history, and in-memory navigation modes; async guards and data loaders; nested routes with layout outlets; and redirects.
 
 ---
 
 ## Quick Start
 
 ```typescript
-import { createRouter } from '@miura/miura-router';
+import { createRouter } from '@miurajs/miura-router';
 
 const router = createRouter({
   mode: 'history',

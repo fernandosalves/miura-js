@@ -1,3 +1,3 @@
 # miura Graphics
 
-Documentation for `@miura/miura-graphics`. 
+Documentation for `@miurajs/miura-graphics`. 

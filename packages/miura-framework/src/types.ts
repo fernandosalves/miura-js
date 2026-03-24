@@ -1,6 +1,6 @@
-import { MiuraElement } from '@miura/miura-element';
-import { Store } from '@miura/miura-data-flow';
-import type { RouteRecord, Router } from '@miura/miura-router';
+import { MiuraElement } from '@miurajs/miura-element';
+import { Store } from '@miurajs/miura-data-flow';
+import type { RouteRecord, Router } from '@miurajs/miura-router';
 
 // Forward declaration for miuraFramework
 declare class miuraFramework { }

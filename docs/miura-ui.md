@@ -1,3 +1,3 @@
 # miura UI
 
-Documentation for `@miura/miura-ui`. 
+Documentation for `@miurajs/miura-ui`. 

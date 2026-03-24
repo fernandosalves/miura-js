@@ -8,8 +8,8 @@
         "module": "ESNext",
         "moduleResolution": "bundler",
         "paths": {
-            "@miura/miura-element": ["../miura-element/index.ts"],
-            "@miura/miura-vite":    ["./index.ts"]
+            "@miurajs/miura-element": ["../miura-element/index.ts"],
+            "@miurajs/miura-vite":    ["./index.ts"]
         }
     },
     "include": [

@@ -1,3 +1,3 @@
 # miura Data Flow
 
-Documentation for `@miura/miura-data-flow`. 
+Documentation for `@miurajs/miura-data-flow`. 

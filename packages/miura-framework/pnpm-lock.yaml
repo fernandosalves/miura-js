@@ -8,22 +8,22 @@ importers:
 
   .:
     dependencies:
-      '@miura/miura-data-flow':
+      '@miurajs/miura-data-flow':
         specifier: file:../miura-data-flow
         version: file:../miura-data-flow(graphql@16.13.1)
-      '@miura/miura-debugger':
+      '@miurajs/miura-debugger':
         specifier: file:../miura-debugger
         version: file:../miura-debugger
-      '@miura/miura-element':
+      '@miurajs/miura-element':
         specifier: file:../miura-element
         version: file:../miura-element
-      '@miura/miura-render':
+      '@miurajs/miura-render':
         specifier: file:../miura-render
         version: file:../miura-render
-      '@miura/miura-router':
+      '@miurajs/miura-router':
         specifier: file:../miura-router
         version: file:../miura-router
-      '@miura/miura-ui':
+      '@miurajs/miura-ui':
         specifier: file:../miura-ui
         version: file:../miura-ui
     devDependencies:
@@ -197,22 +197,22 @@ packages:
     peerDependencies:
       graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
 
-  '@miura/miura-data-flow@file:../miura-data-flow':
+  '@miurajs/miura-data-flow@file:../miura-data-flow':
     resolution: {directory: ../miura-data-flow, type: directory}
 
-  '@miura/miura-debugger@file:../miura-debugger':
+  '@miurajs/miura-debugger@file:../miura-debugger':
     resolution: {directory: ../miura-debugger, type: directory}
 
-  '@miura/miura-element@file:../miura-element':
+  '@miurajs/miura-element@file:../miura-element':
     resolution: {directory: ../miura-element, type: directory}
 
-  '@miura/miura-render@file:../miura-render':
+  '@miurajs/miura-render@file:../miura-render':
     resolution: {directory: ../miura-render, type: directory}
 
-  '@miura/miura-router@file:../miura-router':
+  '@miurajs/miura-router@file:../miura-router':
     resolution: {directory: ../miura-router, type: directory}
 
-  '@miura/miura-ui@file:../miura-ui':
+  '@miurajs/miura-ui@file:../miura-ui':
     resolution: {directory: ../miura-ui, type: directory}
 
   '@smithy/abort-controller@4.2.11':
@@ -931,34 +931,34 @@ snapshots:
     dependencies:
       graphql: 16.13.1
 
-  '@miura/miura-data-flow@file:../miura-data-flow(graphql@16.13.1)':
+  '@miurajs/miura-data-flow@file:../miura-data-flow(graphql@16.13.1)':
     dependencies:
       '@aws-sdk/client-s3': 3.1005.0
-      '@miura/miura-render': file:../miura-render
+      '@miurajs/miura-render': file:../miura-render
       graphql-request: 6.1.0(graphql@16.13.1)
     transitivePeerDependencies:
       - aws-crt
       - encoding
       - graphql
 
-  '@miura/miura-debugger@file:../miura-debugger': {}
+  '@miurajs/miura-debugger@file:../miura-debugger': {}
 
-  '@miura/miura-element@file:../miura-element':
+  '@miurajs/miura-element@file:../miura-element':
     dependencies:
-      '@miura/miura-render': file:../miura-render
+      '@miurajs/miura-render': file:../miura-render
 
-  '@miura/miura-render@file:../miura-render':
+  '@miurajs/miura-render@file:../miura-render':
     dependencies:
-      '@miura/miura-debugger': file:../miura-debugger
-      '@miura/miura-element': file:../miura-element
+      '@miurajs/miura-debugger': file:../miura-debugger
+      '@miurajs/miura-element': file:../miura-element
 
-  '@miura/miura-router@file:../miura-router':
+  '@miurajs/miura-router@file:../miura-router':
     dependencies:
-      '@miura/miura-debugger': file:../miura-debugger
+      '@miurajs/miura-debugger': file:../miura-debugger
 
-  '@miura/miura-ui@file:../miura-ui':
+  '@miurajs/miura-ui@file:../miura-ui':
     dependencies:
-      '@miura/miura-element': file:../miura-element
+      '@miurajs/miura-element': file:../miura-element
 
   '@smithy/abort-controller@4.2.11':
     dependencies:

@@ -1,6 +1,6 @@
 # miura Data Flow
 
-Modern, reactive state management for miura applications. Combines the best of Redux, Zustand, and modern patterns with zero boilerplate and maximum performance.
+Modern, reactive state management for miura applications. Combines the best of Redux, Zustand, and modern patterns with zero boilerplate and maximum performance. **Now with optional dependencies for optimal bundle size!**
 
 ## Features
 
@@ -12,11 +12,26 @@ Modern, reactive state management for miura applications. Combines the best of R
 - **🛠️ DevTools Support** - Redux DevTools integration
 - **📝 TypeScript First** - Full type safety and IntelliSense
 - **⚡ Performance Optimized** - Efficient subscriptions and updates
+- **📦 Optional Dependencies** - Only install what you need for optimal bundle size
+
+## Installation
+
+```bash
+# Core package (includes built-in providers)
+npm install @miurajs/miura-data-flow
+
+# Optional providers (install as needed)
+npm install graphql-request          # For GraphQL provider
+npm install @aws-sdk/client-s3       # For AWS S3 provider  
+npm install firebase                 # For Firebase provider
+npm install @supabase/supabase-js    # For Supabase provider
+npm install grpc-web                 # For gRPC-Web provider
+```
 
 ## Quick Start
 
 ```typescript
-import { Store, globalState, createLoggerMiddleware } from '@miura/miura-data-flow';
+import { Store, globalState, createLoggerMiddleware } from '@miurajs/miura-data-flow';
 
 // Create a store
 const store = new Store({ count: 0, user: null });
@@ -47,7 +62,7 @@ await store.dispatch('setUser', { id: '1', name: 'John' });
 The main state container that manages your application state.
 
 ```typescript
-import { Store } from '@miura/miura-data-flow';
+import { Store } from '@miurajs/miura-data-flow';
 
 interface AppState {
   count: number;
@@ -118,7 +133,7 @@ const unsubscribeUser = store.subscribe(
 #### Logger Middleware
 
 ```typescript
-import { createLoggerMiddleware } from '@miura/miura-data-flow';
+import { createLoggerMiddleware } from '@miurajs/miura-data-flow';
 
 store.use(createLoggerMiddleware());
 // Logs all actions and state changes to console
@@ -127,7 +142,7 @@ store.use(createLoggerMiddleware());
 #### Persistence Middleware
 
 ```typescript
-import { createPersistenceMiddleware } from '@miura/miura-data-flow';
+import { createPersistenceMiddleware } from '@miurajs/miura-data-flow';
 
 store.use(createPersistenceMiddleware(['user', 'settings']));
 // Automatically saves/loads specified properties to localStorage
@@ -136,7 +151,7 @@ store.use(createPersistenceMiddleware(['user', 'settings']));
 #### API Middleware
 
 ```typescript
-import { createApiMiddleware } from '@miura/miura-data-flow';
+import { createApiMiddleware } from '@miurajs/miura-data-flow';
 
 store.use(createApiMiddleware({
   baseURL: 'https://api.example.com',
@@ -159,7 +174,7 @@ await store.dispatch('api_createUser', { method: 'POST', data: userData });
 #### Cache Middleware
 
 ```typescript
-import { createCacheMiddleware } from '@miura/miura-data-flow';
+import { createCacheMiddleware } from '@miurajs/miura-data-flow';
 
 store.use(createCacheMiddleware(5 * 60 * 1000)); // 5 minutes TTL
 // Caches API responses for 5 minutes
@@ -168,7 +183,7 @@ store.use(createCacheMiddleware(5 * 60 * 1000)); // 5 minutes TTL
 #### DevTools Middleware
 
 ```typescript
-import { createDevToolsMiddleware } from '@miura/miura-data-flow';
+import { createDevToolsMiddleware } from '@miurajs/miura-data-flow';
 
 store.use(createDevToolsMiddleware('MyApp'));
 // Enables Redux DevTools integration
@@ -194,7 +209,7 @@ Redux DevTools is a powerful browser extension that provides real-time debugging
 
 2. **Enable in Your Code:**
    ```typescript
-   import { createDevToolsMiddleware } from '@miura/miura-data-flow';
+   import { createDevToolsMiddleware } from '@miurajs/miura-data-flow';
    
    store.use(createDevToolsMiddleware('MyApp'));
    ```
@@ -222,7 +237,7 @@ State After:  { count: 1, user: { id: '1', name: 'John' } }
 #### Complete Example:
 
 ```typescript
-import { Store, createDevToolsMiddleware } from '@miura/miura-data-flow';
+import { Store, createDevToolsMiddleware } from '@miurajs/miura-data-flow';
 
 // Create store
 const store = new Store({
@@ -339,7 +354,7 @@ See the [examples directory](./examples) for complete working examples.
 ### Custom Middleware
 
 ```typescript
-import { StoreMiddleware } from '@miura/miura-data-flow';
+import { StoreMiddleware } from '@miurajs/miura-data-flow';
 
 const analyticsMiddleware: StoreMiddleware = {
   name: 'analytics',
@@ -365,7 +380,7 @@ store.use(analyticsMiddleware);
 ### Using Global State
 
 ```typescript
-import { globalState } from '@miura/miura-data-flow';
+import { globalState } from '@miurajs/miura-data-flow';
 
 // Set global properties
 globalState.set('theme', 'dark');
@@ -384,8 +399,8 @@ const unsubscribe = globalState.subscribeTo('my-component', 'theme', (theme) => 
 ### Global State in Components
 
 ```typescript
-import { MiuraElement, html } from '@miura/miura-element';
-import { globalState } from '@miura/miura-data-flow';
+import { MiuraElement, html } from '@miurajs/miura-element';
+import { globalState } from '@miurajs/miura-data-flow';
 
 class ThemeToggle extends MiuraElement {
   static properties = {
@@ -426,12 +441,168 @@ class ThemeToggle extends MiuraElement {
 }
 ```
 
+## Data Providers
+
+miura Data Flow includes a flexible provider system for connecting to various data sources. 
+
+### Built-in Providers (Always Available)
+
+These providers are included by default and have no external dependencies:
+
+```typescript
+import { 
+  RestProviderFactory,
+  LocalStorageProviderFactory, 
+  IndexedDBProviderFactory,
+  WebSocketProviderFactory 
+} from '@miurajs/miura-data-flow';
+
+// Register and use built-in providers
+import { registerProvider, createProvider } from '@miurajs/miura-data-flow';
+
+// Register REST API provider
+registerProvider('api', new RestProviderFactory());
+
+// Create provider instance
+const apiProvider = createProvider('api', { 
+  baseUrl: 'https://api.example.com' 
+});
+
+// Use the provider
+const users = await apiProvider.get('users');
+```
+
+### Optional Providers (Require Additional Dependencies)
+
+These providers are available as separate imports to keep the core package lightweight:
+
+#### GraphQL Provider
+
+```bash
+# Install the optional dependency
+npm install graphql-request
+```
+
+```typescript
+// Import the GraphQL provider separately
+import { GraphQLProviderFactory } from '@miurajs/miura-data-flow/providers/graphql';
+
+// Register and use
+registerProvider('graphql', new GraphQLProviderFactory());
+const graphqlProvider = createProvider('graphql', { 
+  endpoint: 'https://api.example.com/graphql' 
+});
+
+const result = await graphqlProvider.query({
+  query: 'query { users { id name } }'
+});
+```
+
+#### AWS S3 Provider
+
+```bash
+# Install the optional dependency
+npm install @aws-sdk/client-s3
+```
+
+```typescript
+// Import the S3 provider separately
+import { S3ProviderFactory } from '@miurajs/miura-data-flow/providers/s3';
+
+// Register and use
+registerProvider('s3', new S3ProviderFactory());
+const s3Provider = createProvider('s3', { 
+  region: 'us-east-1',
+  bucket: 'my-bucket' 
+});
+
+const data = await s3Provider.get('file.json');
+await s3Provider.put('file.json', jsonData);
+```
+
+#### Firebase Provider
+
+```bash
+# Install the optional dependency
+npm install firebase
+```
+
+```typescript
+// Import the Firebase provider separately
+import { FirebaseProviderFactory } from '@miurajs/miura-data-flow/providers/firebase';
+
+// Register and use
+registerProvider('firebase', new FirebaseProviderFactory());
+const firebaseProvider = createProvider('firebase', { 
+  apiKey: 'your-api-key',
+  authDomain: 'your-project.firebaseapp.com',
+  projectId: 'your-project-id'
+});
+```
+
+#### Supabase Provider
+
+```bash
+# Install the optional dependency
+npm install @supabase/supabase-js
+```
+
+```typescript
+// Import the Supabase provider separately
+import { SupabaseProviderFactory } from '@miurajs/miura-data-flow/providers/supabase';
+
+// Register and use
+registerProvider('supabase', new SupabaseProviderFactory());
+const supabaseProvider = createProvider('supabase', { 
+  url: 'https://your-project.supabase.co',
+  anonKey: 'your-anon-key'
+});
+```
+
+#### gRPC-Web Provider
+
+```bash
+# Install the optional dependency
+npm install grpc-web
+```
+
+```typescript
+// Import the gRPC-Web provider separately
+import { GrpcWebProviderFactory } from '@miurajs/miura-data-flow/providers/grpc-web';
+
+// Register and use
+registerProvider('grpc', new GrpcWebProviderFactory());
+const grpcProvider = createProvider('grpc', { 
+  host: 'localhost:8080',
+  protoPath: './service.proto'
+});
+```
+
+### Why This Structure?
+
+1. **Bundle Size Optimization** - Only include providers you actually use
+2. **Dependency Management** - Avoid forcing installation of large libraries
+3. **Tree Shaking** - Better optimization for production builds
+4. **Flexibility** - Use only what you need, when you need it
+
+### Provider Usage in Middleware
+
+```typescript
+import { createApiMiddleware } from '@miurajs/miura-data-flow';
+
+// Use any registered provider in middleware
+store.use(createApiMiddleware({
+  provider: 's3', // Use the S3 provider we registered
+  bucket: 'my-app-data'
+}));
+```
+
 ## Integration with miura Framework
 
 ### Framework Setup
 
 ```typescript
-import { Store, createApiMiddleware, createCacheMiddleware } from '@miura/miura-data-flow';
+import { Store, createApiMiddleware, createCacheMiddleware } from '@miurajs/miura-data-flow';
 
 class miuraFramework {
   private store: Store;
@@ -548,7 +719,7 @@ class MyComponent {
 ### Enable Debug Logging
 
 ```typescript
-import { enableDebug } from '@miura/miura-render';
+import { enableDebug } from '@miurajs/miura-render';
 
 enableDebug({
   element: true, // Shows data flow logs

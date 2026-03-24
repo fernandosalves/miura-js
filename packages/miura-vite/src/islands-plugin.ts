@@ -60,7 +60,7 @@ export interface IslandsPluginOptions {
  *
  * **Usage** (`vite.config.ts`):
  * ```ts
- * import { islandsPlugin } from '@miura/miura-vite';
+ * import { islandsPlugin } from '@miurajs/miura-vite';
  *
  * export default defineConfig({
  *   plugins: [

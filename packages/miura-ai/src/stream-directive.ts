@@ -1,4 +1,4 @@
-import { BaseDirective, DirectiveManager } from '@miura/miura-render';
+import { BaseDirective, DirectiveManager } from '@miurajs/miura-render';
 
 // ── Types accepted as stream sources ──────────────────────────────────────────
 

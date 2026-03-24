@@ -6,7 +6,7 @@ import {
     DataProvider,
     StoreState,
     StoreActions,
-} from '@miura/miura-data-flow';
+} from '@miurajs/miura-data-flow';
 import type { DataStore, DataStream, DataStoreConfig } from './types.js';
 
 interface StoreEntry {
