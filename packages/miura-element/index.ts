@@ -1,6 +1,6 @@
-export * from './src/miura-element';
-export * from './src/decorators';
-export * from './src/types';
+export * from './src/miura-element.js';
+export * from './src/decorators.js';
+export * from './src/types.js';
 export { MiuraIsland } from './src/miura-island.js';
 export { signal, computed, isSignal } from './src/signals.js';
 export type { Signal, ReadonlySignal } from './src/signals.js';

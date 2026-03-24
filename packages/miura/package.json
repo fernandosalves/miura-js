@@ -1,20 +1,42 @@
 {
   "name": "miura",
-  "version": "0.0.0",
+  "version": "1.0.0-alpha.1",
   "description": "The main package for the miura framework, bundling all core modules.",
   "type": "module",
-  "main": "./index.js",
-  "module": "./index.js",
-  "types": "./index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
-      "types": "./index.d.ts",
-      "import": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "scripts": {
-    "build": "tsc"
+    "build": "vite build",
+    "build:tsc": "tsc",
+    "dev": "vite build --watch",
+    "prepublishOnly": "npm run build"
   },
+  "keywords": [
+    "web-components",
+    "framework",
+    "javascript",
+    "typescript"
+  ],
+  "author": "Fernando Alves",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fernandosalves/miura-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fernandosalves/miura-js/issues"
+  },
+  "homepage": "https://github.com/fernandosalves/miura-js#readme",
   "dependencies": {
     "@miura/miura-data-flow": "workspace:*",
     "@miura/miura-element": "workspace:*",

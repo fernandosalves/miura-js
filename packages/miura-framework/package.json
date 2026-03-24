@@ -15,6 +15,22 @@
     "build": "tsc",
     "dev": "tsc --watch"
   },
+  "keywords": [
+    "web-components",
+    "framework",
+    "javascript",
+    "typescript"
+  ],
+  "author": "Fernando Alves",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fernandosalves/miura-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fernandosalves/miura-js/issues"
+  },
+  "homepage": "https://github.com/fernandosalves/miura-js#readme",
   "dependencies": {
     "@miura/miura-element": "workspace:*",
     "@miura/miura-debugger": "workspace:*",

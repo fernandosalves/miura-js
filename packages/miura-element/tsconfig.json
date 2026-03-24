@@ -11,8 +11,8 @@
       "@miura/miura-element": ["./index.ts"]
     }
   },
-  "include": ["index.ts", "server.ts", "src/**/*", "stories/**/*"],
-  "exclude": ["node_modules"],
+  "include": ["index.ts", "server.ts", "src/**/*"],
+  "exclude": ["node_modules", "stories/**/*", "dist/**/*"],
   "references": [
     { "path": "../miura-render" }
   ]

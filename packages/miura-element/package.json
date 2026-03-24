@@ -2,16 +2,16 @@
   "name": "@miura/miura-element",
   "version": "0.0.1",
   "type": "module",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
-      "import": "./index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./server": {
-      "types": "./server.d.ts",
-      "import": "./server.ts"
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
     }
   },
   "scripts": {
@@ -19,6 +19,22 @@
     "test": "vitest run",
     "dev": "vitest"
   },
+  "keywords": [
+    "web-components",
+    "framework",
+    "javascript",
+    "typescript"
+  ],
+  "author": "Fernando Alves",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fernandosalves/miura-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fernandosalves/miura-js/issues"
+  },
+  "homepage": "https://github.com/fernandosalves/miura-js#readme",
   "dependencies": {
     "@miura/miura-render": "workspace:*"
   },

@@ -182,11 +182,10 @@ export class SecurityManager {
     return {
       authentication: {
         enabled: true,
-        jwtSecret: 'your-secret-key-change-this',
-        jwtExpiresIn: 24 * 60 * 60 * 1000, // 24 hours
-        refreshTokenExpiresIn: 7 * 24 * 60 * 60 * 1000, // 7 days
-        maxLoginAttempts: 5,
-        lockoutDuration: 15 * 60 * 1000 // 15 minutes
+        config: {
+          maxLoginAttempts: 5,
+          lockoutDuration: 15 * 60 * 1000 // 15 minutes
+        }
       },
       authorization: {
         enabled: true,
