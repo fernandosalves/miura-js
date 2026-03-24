@@ -1,33 +1,47 @@
 {
   "name": "@miurajs/miura-ui",
-  "version": "0.0.0",
-  "main": "./index.js",
-  "module": "./index.js",
-  "types": "./index.d.ts",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "files": ["index.ts", "src/**/*"],
   "exports": {
     ".": {
-      "types": "./index.d.ts",
+      "types": "./index.ts",
       "import": "./index.ts"
     }
   },
   "scripts": {
-    "build": "tsc",
-    "test": "vitest",
+    "build": "echo 'Skipping build for now'",
+    "dev": "echo 'Skipping dev for now'",
+    "test": "vitest run",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage"
   },
-  "type": "module",
-  "files": [
-    "index.js",
-    "index.d.ts"
+  "keywords": [
+    "web-components",
+    "ui",
+    "components",
+    "design-system",
+    "framework"
   ],
+  "author": "Fernando Alves",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fernandosalves/miura-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fernandosalves/miura-js/issues"
+  },
+  "homepage": "https://github.com/fernandosalves/miura-js#readme",
   "dependencies": {
-    "@miura/miura-element": "workspace:*"
+    "@miurajs/miura-element": "^0.0.1"
   },
   "devDependencies": {
     "@types/jsdom": "^21.1.6",
     "@vitest/coverage-v8": "^1.6.0",
-    "jsdom": "^24.0.0",
+    "jsdom": "^^24.0.0",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
   }

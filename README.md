@@ -6,6 +6,95 @@
 
 miura is a lightweight, enterprise-ready web component framework designed for building modern, scalable web applications with a simple and intuitive development experience.
 
+## Development
+
+### For Contributors
+
+If you want to contribute to miura or fork the repository:
+
+```bash
+# Clone the repository
+git clone https://github.com/fernandosalves/miura-js.git
+cd miura-js
+
+# Install dependencies (use npm for this monorepo)
+npm install
+
+# If npm install fails due to workspace dependencies:
+rm -rf node_modules package-lock.json
+npm install --legacy-peer-deps
+
+# Start Storybook for component development
+npm start
+
+# Alternative: Use Vite dev server if Storybook fails
+npm run start:dev
+
+# Run tests
+npm test
+
+# Build all packages
+npm run build
+```
+
+### Troubleshooting
+
+#### Storybook Issues
+If Storybook fails to start with dependency errors:
+
+```bash
+# Option 1: Reinstall Storybook dependencies
+npm install @storybook/addon-essentials @storybook/web-components-vite @storybook/web-components
+
+# Option 2: Initialize Storybook fresh
+npx storybook@latest init
+
+# Option 3: Use Vite dev server instead
+npm run start:dev
+```
+
+#### Workspace Dependency Issues
+If you encounter "workspace:*" dependency errors:
+
+```bash
+# Clean install with legacy peer deps
+rm -rf node_modules package-lock.json
+npm install --legacy-peer-deps
+
+# Or use pnpm (recommended for monorepos)
+npm install -g pnpm
+pnpm install
+pnpm start
+```
+
+### Project Structure
+
+```
+miura-js/
+├── packages/           # Individual framework packages
+│   ├── miura/         # Main framework bundle
+│   ├── miura-element/ # Component system
+│   ├── miura-ui/      # UI components (101 files!)
+│   └── ...
+├── stories/           # Storybook stories
+├── .storybook/        # Storybook configuration
+└── docs/             # Documentation
+```
+
+### Published Packages
+
+All packages are published under the `@miurajs` organization:
+
+- **@miurajs/miura** - Complete framework bundle
+- **@miurajs/miura-element** - Component system
+- **@miurajs/miura-framework** - Framework base class
+- **@miurajs/miura-render** - Rendering engine
+- **@miurajs/miura-router** - Routing system
+- **@miurajs/miura-data-flow** - State management
+- **@miurajs/miura-debugger** - Debugging tools
+- **@miurajs/miura-security** - Security features
+- **@miurajs/miura-ui** - UI components
+
 ## Installation
 
 ### Quick Start

@@ -12,6 +12,7 @@
         "build": "tsc && vite build",
         "preview": "vite preview",
         "start": "storybook dev -p 6006",
+        "start:dev": "vite --port 3000",
         "build-storybook": "storybook build",
         "test": "vitest run"
     },

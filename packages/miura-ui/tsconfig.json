@@ -2,17 +2,11 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": ".",
     "composite": true,
-    "baseUrl": ".",
-    "paths": {
-      "@miura/miura-element": ["../miura-element/index.ts"],
-      "@miura/miura-render": ["../miura-render/index.ts"],
-      "@miura/miura-debugger": ["../miura-debugger/index.ts"]
-    }
+    "baseUrl": "."
   },
   "include": ["index.ts", "src/**/*"],
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules", "dist"],
   "references": [
     { "path": "../miura-element" }
   ]

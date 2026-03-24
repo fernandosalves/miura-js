@@ -1,5 +1,5 @@
 {
-  "name": "@miurajs/miura",
+  "name": "@miura/miura",
   "version": "1.0.0-alpha.1",
   "description": "The main package for the miura framework, bundling all core modules.",
   "type": "module",
