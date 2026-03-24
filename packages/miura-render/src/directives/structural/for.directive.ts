@@ -144,6 +144,12 @@ export class ForDirective extends StructuralDirective {
             const item = items[index];
             debugLog('for', 'Rendering item', { item, index });
 
+            // Defensive check - ensure callback exists before calling
+            if (!this.callback) {
+                debugLog('for', 'Callback became undefined during iteration');
+                return;
+            }
+
             const result = this.callback(item, index);
 
             if (result instanceof TemplateResult && this.processor) {
