@@ -1,6 +1,8 @@
 # miura Framework
 
 [![MiuraJS Status: Beta](https://img.shields.io/badge/MiuraJS-Beta-f97316?style=flat-square&labelColor=0f172a)](#)
+[![npm version](https://img.shields.io/npm/v/@miurajs/miura/alpha?style=flat-square&labelColor=0f172a)](https://www.npmjs.com/package/@miurajs/miura)
+[![npm downloads](https://img.shields.io/npm/dm/@miurajs/miura?style=flat-square&labelColor=0f172a)](https://www.npmjs.com/package/@miurajs/miura)
 
 miura is a lightweight, enterprise-ready web component framework designed for building modern, scalable web applications with a simple and intuitive development experience.
 
@@ -74,19 +76,19 @@ The framework is structured as a monorepo with the following packages:
 
 | Package | Description |
 |---------|-------------|
-| **`@miura/miura`** | Meta-package that bundles and re-exports all framework features |
-| **`@miura/miura-element`** | Base class for reactive web components — properties, lifecycle, decorators. [README →](./packages/miura-element/README.md) |
-| **`@miura/miura-render`** | Rendering engine — `html`/`css` tagged templates, parser, bindings, directives. [README →](./packages/miura-render/README.md) |
-| **`@miura/miura-framework`** | Orchestration layer — plugin manager, event bus, performance monitor |
-| **`@miura/miura-data-flow`** | State management — store, middleware, 9 data providers (REST, GraphQL, Firebase, etc.) |
-| **`@miura/miura-ui`** | 70+ pre-built UI components (primitives, navigation, overlay, layout, typography) |
-| **`@miura/miura-router`** | Client-side router — hash/history/memory modes, guards, loaders, nested routes, layout outlets |
-| **`@miura/miura-security`** | Auth, AuthZ, CSP, input validation |
-| **`@miura/miura-debugger`** | Category/level logger for development |
-| **`@miura/miura-i18n`** | Internationalization — `t()`, dot-notation keys, pluralization, interpolation, fallback locale |
-| **`@miura/miura-computing`** | Reactive Web Worker bridge — `WorkerBridge`, `expose()`, typed call/stream protocol |
-| **`@miura/miura-graphics`** | *(Coming Soon)* 2D/3D rendering and animations |
-| **`@miura/miura-ai`** | *(Coming Soon)* `#stream` directive — progressive token rendering from SSE/WebSocket/ReadableStream |
+| **`@miurajs/miura`** | Meta-package that bundles and re-exports all framework features |
+| **`@miurajs/miura-element`** | Base class for reactive web components — properties, lifecycle, decorators. [README →](./packages/miura-element/README.md) |
+| **`@miurajs/miura-render`** | Rendering engine — `html`/`css` tagged templates, parser, bindings, directives. [README →](./packages/miura-render/README.md) |
+| **`@miurajs/miura-framework`** | Orchestration layer — plugin manager, event bus, performance monitor |
+| **`@miurajs/miura-data-flow`** | State management — store, middleware, 9 data providers (REST, GraphQL, Firebase, etc.) |
+| **`@miurajs/miura-ui`** | 70+ pre-built UI components (primitives, navigation, overlay, layout, typography) |
+| **`@miurajs/miura-router`** | Client-side router — hash/history/memory modes, guards, loaders, nested routes, layout outlets |
+| **`@miurajs/miura-security`** | Auth, AuthZ, CSP, input validation |
+| **`@miurajs/miura-debugger`** | Category/level logger for development |
+| **`@miurajs/miura-i18n`** | Internationalization — `t()`, dot-notation keys, pluralization, interpolation, fallback locale |
+| **`@miurajs/miura-computing`** | Reactive Web Worker bridge — `WorkerBridge`, `expose()`, typed call/stream protocol |
+| **`@miurajs/miura-graphics`** | *(Coming Soon)* 2D/3D rendering and animations |
+| **`@miurajs/miura-ai`** | *(Coming Soon)* `#stream` directive — progressive token rendering from SSE/WebSocket/ReadableStream |
 
 ## Features
 
