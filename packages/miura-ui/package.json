@@ -1,6 +1,6 @@
 {
   "name": "@miurajs/miura-ui",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "main": "./index.ts",
   "types": "./index.ts",
@@ -36,7 +36,7 @@
   },
   "homepage": "https://github.com/fernandosalves/miura-js#readme",
   "dependencies": {
-    "@miurajs/miura-element": "^0.0.1"
+    "@miurajs/miura-element": "^0.1.0"
   },
   "devDependencies": {
     "@types/jsdom": "^21.1.6",
