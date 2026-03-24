@@ -31,7 +31,6 @@ export class MuiCard extends MuiBase {
             color: var(--mui-color-text);
             display: flex;
             flex-direction: column;
-            gap: var(--mui-spacing-md);
         }
 
         :host([variant='outlined']) {
@@ -82,6 +81,10 @@ export class MuiCard extends MuiBase {
                 <slot name="footer" part="footer"></slot>
             </article>
         `;
+    }
+
+    connectedCallback() {
+        super.connectedCallback();
     }
 }
 
