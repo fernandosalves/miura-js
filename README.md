@@ -4,6 +4,63 @@
 
 miura is a lightweight, enterprise-ready web component framework designed for building modern, scalable web applications with a simple and intuitive development experience.
 
+## Installation
+
+### Quick Start
+
+Install the complete framework (recommended):
+
+```bash
+npm install @miurajs/miura@alpha
+```
+
+### Individual Packages
+
+You can also install individual packages:
+
+```bash
+# Core framework
+npm install @miurajs/miura-element
+npm install @miurajs/miura-framework
+npm install @miurajs/miura-render
+
+# Optional packages
+npm install @miurajs/miura-router
+npm install @miurajs/miura-data-flow
+npm install @miurajs/miura-ui
+npm install @miurajs/miura-security
+```
+
+### Usage Example
+
+```typescript
+import { MiuraFramework, html } from '@miurajs/miura';
+
+class MyApp extends MiuraFramework {
+  static tagName = 'my-app';
+  
+  static config = {
+    app: {
+      name: 'My App',
+      version: '1.0.0'
+    }
+  };
+  
+  render() {
+    return html`
+      <div class="app">
+        <h1>${this.config.app.name}</h1>
+        <p>Welcome to miura framework!</p>
+      </div>
+    `;
+  }
+}
+
+// Register and mount
+customElements.define(MyApp.tagName, MyApp);
+document.body.appendChild(new MyApp());
+```
+
 ## Core Philosophy
 
 - **Lightweight and Performant**: Minimal core with LIS-based keyed diffing, template instance reuse, and virtual scrolling for large lists.

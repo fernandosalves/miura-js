@@ -1,5 +1,5 @@
 {
-  "name": "miura",
+  "name": "@miurajs/miura",
   "version": "1.0.0-alpha.1",
   "description": "The main package for the miura framework, bundling all core modules.",
   "type": "module",
@@ -19,7 +19,7 @@
     "build": "vite build",
     "build:tsc": "tsc",
     "dev": "vite build --watch",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build:tsc"
   },
   "keywords": [
     "web-components",
