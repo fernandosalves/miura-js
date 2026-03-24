@@ -1,5 +1,5 @@
 {
-    "name": "@miura/miura-i18n",
+    "name": "@miurajs/miura-i18n",
     "version": "0.0.0",
     "type": "module",
     "main": "./dist/index.js",

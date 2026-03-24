@@ -1,5 +1,5 @@
 {
-  "name": "@miura/miura-render",
+  "name": "@miurajs/miura-render",
   "version": "0.0.0",
   "main": "./index.ts",
   "module": "./index.ts",

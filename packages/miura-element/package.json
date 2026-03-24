@@ -1,5 +1,5 @@
 {
-  "name": "@miura/miura-element",
+  "name": "@miurajs/miura-element",
   "version": "0.0.1",
   "type": "module",
   "main": "dist/index.js",
@@ -36,7 +36,7 @@
   },
   "homepage": "https://github.com/fernandosalves/miura-js#readme",
   "dependencies": {
-    "@miura/miura-render": "workspace:*"
+    "@miurajs/miura-render": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.0.0",

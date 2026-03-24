@@ -1,5 +1,5 @@
 {
-  "name": "@miura/miura-security",
+  "name": "@miurajs/miura-security",
   "version": "1.0.0",
   "description": "Comprehensive security module for miura Framework with enterprise-grade security features",
   "main": "index.ts",

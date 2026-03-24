@@ -38,14 +38,14 @@
   },
   "homepage": "https://github.com/fernandosalves/miura-js#readme",
   "dependencies": {
-    "@miura/miura-data-flow": "workspace:*",
-    "@miura/miura-element": "workspace:*",
-    "@miura/miura-framework": "workspace:*",
-    "@miura/miura-render": "workspace:*",
-    "@miura/miura-router": "workspace:*",
-    "@miura/miura-debugger": "workspace:*",
-    "@miura/miura-security": "workspace:*",
-    "@miura/miura-ui": "workspace:*"
+    "@miurajs/miura-data-flow": "workspace:*",
+    "@miurajs/miura-element": "workspace:*",
+    "@miurajs/miura-framework": "workspace:*",
+    "@miurajs/miura-render": "workspace:*",
+    "@miurajs/miura-router": "workspace:*",
+    "@miurajs/miura-debugger": "workspace:*",
+    "@miurajs/miura-security": "workspace:*",
+    "@miurajs/miura-ui": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.4.5"

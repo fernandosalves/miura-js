@@ -1,14 +1,31 @@
 {
-  "name": "@miura/miura-debugger",
+  "name": "@miurajs/miura-debugger",
   "version": "0.0.1",
   "type": "module",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
     "dev": "vitest"
   },
+  "keywords": [
+    "web-components",
+    "framework",
+    "debugging",
+    "typescript"
+  ],
+  "author": "Fernando Alves",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fernandosalves/miura-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fernandosalves/miura-js/issues"
+  },
+  "homepage": "https://github.com/fernandosalves/miura-js#readme",
   "dependencies": {
   
   },
