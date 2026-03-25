@@ -43,6 +43,7 @@ export * from './navigation/breadcrumbs.js';
 export * from './navigation/dropdown.js';
 export * from './navigation/nav-drawer.js';
 export * from './navigation/command-bar.js';
+export * from './navigation/tabs.js';
 
 // Overlay & Feedback
 export * from './overlay/dialog.js';
