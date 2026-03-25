@@ -16,8 +16,12 @@ export class MuiTabs extends MiuraElement {
 
     _onTabClick(idx: number) {
         this.selected = idx;
-        this._updateTabs();
         this.requestUpdate();
+
+        // Emit custom event for parent to listen
+        this.dispatchEvent(new CustomEvent('tab-change', {
+            detail: { selected: idx }
+        }));
     }
 
     template() {
@@ -33,22 +37,39 @@ export class MuiTabs extends MiuraElement {
 
     connectedCallback() {
         super.connectedCallback();
-        this._updateTabs();
+        this._setupTabs();
     }
 
-    _updateTabs() {
+    _setupTabs() {
+        // Find all tab elements and set up click handlers
         const tabs = this.querySelectorAll('[slot="tab"]');
         const panels = this.querySelectorAll('[slot="panel"]');
 
         tabs.forEach((tab, i) => {
             const tabEl = tab as HTMLElement;
-            tabEl.classList.toggle('active', i === this.selected);
             tabEl.onclick = () => this._onTabClick(i);
+            tabEl.classList.add('mui-tab-btn');
         });
 
+        this._updatePanels();
+    }
+
+    updated() {
+        this._updatePanels();
+    }
+
+    _updatePanels() {
+        const panels = this.querySelectorAll('[slot="panel"]');
         panels.forEach((panel, i) => {
             const panelEl = panel as HTMLElement;
             panelEl.style.display = i === this.selected ? 'block' : 'none';
+        });
+
+        // Update active tab styling
+        const tabs = this.querySelectorAll('[slot="tab"]');
+        tabs.forEach((tab, i) => {
+            const tabEl = tab as HTMLElement;
+            tabEl.classList.toggle('active', i === this.selected);
         });
     }
 
@@ -84,17 +105,3 @@ export class MuiTabs extends MiuraElement {
   `;
 }
 customElements.define('mui-tabs', MuiTabs);
-
-export class MuiTab extends MiuraElement {
-    template() {
-        return html`<slot></slot>`;
-    }
-}
-customElements.define('mui-tab', MuiTab);
-
-export class MuiTabPanel extends MiuraElement {
-    template() {
-        return html`<slot></slot>`;
-    }
-}
-customElements.define('mui-tab-panel', MuiTabPanel); 
