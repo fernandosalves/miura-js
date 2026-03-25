@@ -73,34 +73,36 @@ export class MuiTabs extends MiuraElement {
         });
     }
 
-    styles = css`
+    static styles = css`
     .mui-tabs-list {
       display: flex;
-      gap: var(--mui-spacing-2);
-      border-bottom: 1px solid #eee;
+      gap: 0;
+      border-bottom: 1px solid var(--color-border, #e2e8f0);
     }
-    
+
     ::slotted([slot="tab"]) {
       background: none;
       border: none;
-      padding: var(--mui-spacing-2) var(--mui-spacing-3);
+      border-bottom: 2px solid transparent;
+      padding: 0.75rem 1rem;
       cursor: pointer;
       font: inherit;
-      border-bottom: 2px solid transparent;
-      transition: border-color 0.2s;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-text-muted, #64748b);
+      transition: color 0.15s, border-color 0.15s;
+      margin-bottom: -1px;
+      outline: none;
     }
-    
+
     ::slotted([slot="tab"].active) {
-      border-bottom-color: var(--mui-primary, #0078d4);
-      color: var(--mui-primary, #0078d4);
+      border-bottom-color: var(--color-primary, #6366f1);
+      color: var(--color-primary, #6366f1);
+      font-weight: 600;
     }
-    
+
     .mui-tabs-panels {
-      padding: var(--mui-spacing-3) 0;
-    }
-    
-    ::slotted([slot="panel"]) {
-      display: none;
+      padding: 0;
     }
   `;
 }

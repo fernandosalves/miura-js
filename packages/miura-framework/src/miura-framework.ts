@@ -413,6 +413,11 @@ export abstract class MiuraFramework extends MiuraElement {
         this._injectRouteData(element, context);
         zoneElement.appendChild(element);
         this._activeRouteElements.set(routeKey, element as HTMLElement);
+
+        // Allow one render tick for the component to initialise its shadow DOM
+        // This fixes the timing issue where components try to render before framework is ready
+        await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+
         this.eventBus.emit('router:rendered', { route: context.route, element }, 5);
     }
 

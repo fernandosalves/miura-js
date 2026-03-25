@@ -1,6 +1,6 @@
 {
     "name": "@miurajs/miura",
-    "version": "2.1.4",
+    "version": "2.1.5",
     "description": "The main package for the miura framework, bundling all core modules.",
     "type": "module",
     "main": "./src/index.ts",
@@ -39,7 +39,7 @@
     "dependencies": {
         "@miurajs/miura-data-flow": "^0.1.4",
         "@miurajs/miura-element": "^0.1.4",
-        "@miurajs/miura-framework": "^0.1.11",
+        "@miurajs/miura-framework": "^0.1.12",
         "@miurajs/miura-render": "^0.2.4",
         "@miurajs/miura-router": "^0.1.4",
         "@miurajs/miura-debugger": "^0.2.2",

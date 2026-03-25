@@ -70,12 +70,20 @@ export class MuiDialog extends MuiBase {
         ::slotted([slot='header']) {
             font-size: var(--mui-type-font-size-lg);
             font-weight: var(--mui-type-font-weight-semibold);
+            flex-shrink: 0;
+        }
+
+        .dialog-body {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
         }
 
         ::slotted([slot='actions']) {
             display: flex;
             justify-content: flex-end;
             gap: var(--mui-spacing-sm);
+            flex-shrink: 0;
         }
     `;
 
@@ -112,7 +120,9 @@ export class MuiDialog extends MuiBase {
             <div class="backdrop" part="backdrop" @click=${this.handleBackdropClick}></div>
             <div class="dialog" part="dialog" role="dialog" aria-modal=${this.modal}>
                 <slot name="header"></slot>
-                <slot></slot>
+                <div class="dialog-body">
+                    <slot></slot>
+                </div>
                 <slot name="actions"></slot>
             </div>
         `;
