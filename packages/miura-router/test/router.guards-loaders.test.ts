@@ -28,6 +28,23 @@ const routes: RouteRecord[] = [
             async () => ({ permissions: ['view', 'edit'] }),
         ],
     },
+    {
+        path: '/loader-state/:id',
+        component: 'router-sandbox-loader-state',
+        loaders: [
+            {
+                key: 'profile',
+                load: ({ params }) => ({ id: params.id, name: `User ${params.id}` }),
+            },
+            {
+                key: 'preferences',
+                optional: true,
+                load: async () => {
+                    throw new Error('preferences unavailable');
+                },
+            },
+        ],
+    },
 ];
 
 describe('MiuraRouter guards and loaders', () => {
@@ -107,6 +124,30 @@ describe('MiuraRouter guards and loaders', () => {
             profile: { id: '42' },
             permissions: ['view', 'edit'],
         });
+
+        router.destroy();
+    });
+
+    it('exposes named loader state and keeps optional loader failures in context', async () => {
+        const router = createTestRouter();
+        await router.start();
+        renderSpy.mockClear();
+
+        const result = await router.navigate('/loader-state/7');
+
+        expect(result.ok).toBe(true);
+        const context = renderSpy.mock.calls.at(-1)?.[0];
+        expect(context?.data).toEqual({
+            profile: { id: '7', name: 'User 7' },
+        });
+        expect(context?.loaders.status).toBe('rejected');
+        expect(context?.loaders.entries.profile).toMatchObject({
+            status: 'resolved',
+            data: { id: '7', name: 'User 7' },
+        });
+        expect(context?.loaders.entries.preferences.status).toBe('rejected');
+        expect((context?.loaders.entries.preferences.error as Error)?.message).toBe('preferences unavailable');
+        expect((context?.loaders.error as Error)?.message).toBe('preferences unavailable');
 
         router.destroy();
     });

@@ -265,11 +265,25 @@ class UserProfile extends MiuraElement {
     query: URLSearchParams;
     hash: string;
     data: Record<string, unknown>;
+    loaders: {
+      status: 'idle' | 'pending' | 'resolved' | 'rejected';
+      entries: Record<string, { status: string; data?: unknown; error?: unknown }>;
+      error?: unknown;
+    };
   };
 
   template() {
-    const { params, data, query } = this.routeContext ?? { params: {}, data: {}, query: new URLSearchParams() };
-    return html`<h1>User ${params.id}</h1><pre>${JSON.stringify(data)}</pre>`;
+    const { params, data, loaders, query } = this.routeContext ?? {
+      params: {},
+      data: {},
+      loaders: { status: 'idle', entries: {} },
+      query: new URLSearchParams(),
+    };
+    return html`
+      <h1>User ${params.id}</h1>
+      <p>Loader status: ${loaders.status}</p>
+      <pre>${JSON.stringify(data)}</pre>
+    `;
   }
 }
 ```
@@ -386,10 +400,17 @@ class MyApp extends MiuraFramework {
       renderZone: '#main-content',
       meta: { 
         requiresAuth: true,
-        title: 'Dashboard'
+        title: ({ data }) => `Dashboard (${data.stats?.total ?? 0})`
       },
       guards: [async ({ data }) => data.user?.isAdmin || '/login'],
-      loaders: [async () => ({ stats: await fetchStats() })]
+      loaders: [
+        async () => ({ stats: await fetchStats() }),
+        {
+          key: 'announcements',
+          optional: true,
+          load: async () => fetchAnnouncements()
+        }
+      ]
     },
     {
       path: '/profile/:id',
@@ -412,6 +433,8 @@ class MyApp extends MiuraFramework {
   ];
 }
 ```
+
+`meta.title` is applied automatically by `MiuraFramework`, and named loaders are exposed under `routeContext.data.<key>` with per-loader state in `routeContext.loaders`.
 
 ## 📊 Performance Monitoring
 

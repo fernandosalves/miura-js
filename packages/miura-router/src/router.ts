@@ -6,6 +6,8 @@ import type {
     RouteRenderContext,
     NavigationOptions,
     NavigationResult,
+    RouteLoaderConfig,
+    RouteLoaderState,
 } from './types.js';
 
 import {
@@ -32,6 +34,11 @@ interface InternalNavigationOptions extends NavigationOptions {
 }
 
 const MAX_REDIRECT_DEPTH = 10;
+const EMPTY_LOADER_STATE: RouteLoaderState = {
+    status: 'idle',
+    data: {},
+    entries: {},
+};
 
 export class MiuraRouter implements RouterInstance {
     private readonly mode: RouterMode;
@@ -177,6 +184,7 @@ export class MiuraRouter implements RouterInstance {
                 query: parseQuery(location.search),
                 hash: location.hash,
                 data: {},
+                loaders: { ...EMPTY_LOADER_STATE, data: {}, entries: {} },
                 timestamp: Date.now(),
             };
 
@@ -211,7 +219,8 @@ export class MiuraRouter implements RouterInstance {
                 return { ok: false, reason: 'blocked' };
             }
 
-            renderContext.data = await this.loadData(renderContext);
+            renderContext.loaders = await this.loadData(renderContext);
+            renderContext.data = renderContext.loaders.data;
 
             if (!options.silent) {
                 this.emit('router:navigating', { to: renderContext, from: this.current });
@@ -251,17 +260,86 @@ export class MiuraRouter implements RouterInstance {
         return true;
     }
 
-    private async loadData(context: RouteRenderContext): Promise<Record<string, any>> {
+    private async loadData(context: RouteRenderContext): Promise<RouteLoaderState> {
         const loaders = context.route.loaders || [];
-        if (loaders.length === 0) return {};
-        const data: Record<string, any> = {};
-        for (const loader of loaders) {
-            const result = await loader(context);
-            if (result) {
-                Object.assign(data, result);
+        if (loaders.length === 0) {
+            return {
+                status: 'idle',
+                data: {},
+                entries: {},
+            };
+        }
+
+        const state: RouteLoaderState = {
+            status: 'pending',
+            data: {},
+            entries: {},
+        };
+
+        for (let index = 0; index < loaders.length; index++) {
+            const loaderConfig = loaders[index];
+            const descriptor = this.normalizeLoader(loaderConfig, index);
+            state.entries[descriptor.key] = {
+                key: descriptor.key,
+                status: 'pending',
+                optional: descriptor.optional,
+            };
+
+            try {
+                const result = await descriptor.load(context);
+                state.entries[descriptor.key] = {
+                    ...state.entries[descriptor.key],
+                    status: 'resolved',
+                    data: result,
+                };
+
+                if (descriptor.named) {
+                    state.data[descriptor.key] = result;
+                } else if (result && typeof result === 'object') {
+                    Object.assign(state.data, result);
+                }
+            } catch (error) {
+                state.entries[descriptor.key] = {
+                    ...state.entries[descriptor.key],
+                    status: 'rejected',
+                    error,
+                };
+                state.error = error;
+                state.status = 'rejected';
+
+                if (!descriptor.optional) {
+                    throw error;
+                }
             }
         }
-        return data;
+
+        if (state.status !== 'rejected') {
+            state.status = 'resolved';
+        }
+
+        return state;
+    }
+
+    private normalizeLoader(loader: RouteLoaderConfig, index: number): {
+        key: string;
+        load: (context: RouteRenderContext) => Promise<Record<string, any> | void> | Record<string, any> | void;
+        optional?: boolean;
+        named: boolean;
+    } {
+        if (typeof loader === 'function') {
+            return {
+                key: `loader:${index}`,
+                load: loader,
+                named: false,
+            };
+        }
+
+        return {
+            key: loader.key || `loader:${index}`,
+            load: loader.load,
+            optional: loader.optional,
+            named: true,
+        };
     }
 
     private resolveTarget(target: string): LocationParts {

@@ -9,15 +9,34 @@ export interface ParamsSchema<TParams> {
     safeParse(data: unknown): { success: true; data: TParams } | { success: false; error: { message: string } };
 }
 
+export interface RouteLoaderEntryState {
+    key: string;
+    status: 'pending' | 'resolved' | 'rejected';
+    data?: unknown;
+    error?: unknown;
+    optional?: boolean;
+}
+
+export interface RouteLoaderState {
+    status: 'idle' | 'pending' | 'resolved' | 'rejected';
+    data: Record<string, any>;
+    entries: Record<string, RouteLoaderEntryState>;
+    error?: unknown;
+}
+
+export interface RouteMeta extends Record<string, any> {
+    title?: string | ((context: RouteRenderContext) => string | undefined | null);
+}
+
 export interface RouteRecord<TParams extends Record<string, string> = Record<string, string>> {
     path: string;
     component: string;
     renderZone?: string;
     slot?: string;
-    meta?: Record<string, any>;
+    meta?: RouteMeta;
     props?: Record<string, any>;
     guards?: RouteGuard[];
-    loaders?: RouteLoader[];
+    loaders?: RouteLoaderConfig[];
     redirect?: string | ((context: RouteContext) => string);
     children?: RouteRecord[];
     /**
@@ -53,6 +72,7 @@ export interface RouteContext<TParams extends Record<string, string> = Record<st
     query: URLSearchParams;
     hash: string;
     data: Record<string, any>;
+    loaders: RouteLoaderState;
     timestamp: number;
 }
 
@@ -67,6 +87,14 @@ export type RouteGuard = (
 export type RouteLoader = (
     context: RouteRenderContext
 ) => Promise<Record<string, any> | void> | Record<string, any> | void;
+
+export interface NamedRouteLoader {
+    key: string;
+    load: RouteLoader;
+    optional?: boolean;
+}
+
+export type RouteLoaderConfig = RouteLoader | NamedRouteLoader;
 
 export interface RouterOptions {
     routes: RouteRecord[];

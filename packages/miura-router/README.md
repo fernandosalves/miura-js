@@ -58,7 +58,7 @@ const routes = [
 
 ## 📦 Route Loaders
 
-Loaders run after guards and before rendering. Each loader can return any object; objects are shallow-merged in order.
+Loaders run after guards and before rendering. Existing function loaders still work as before and their returned objects are shallow-merged into `context.data`.
 
 ```ts
 const routes = [
@@ -74,6 +74,36 @@ const routes = [
 ```
 
 Access loader results inside the render callback (or components via `routeContext`) through `context.data`.
+
+For richer route state, you can also use named loaders:
+
+```ts
+const routes = [
+  {
+    path: '/profile/:id',
+    component: 'app-profile',
+    loaders: [
+      {
+        key: 'profile',
+        load: ({ params }) => fetchProfile(params.id),
+      },
+      {
+        key: 'permissions',
+        optional: true,
+        load: async ({ params }) => fetchPermissions(params.id),
+      },
+    ],
+  },
+];
+```
+
+Named loader results are exposed under `context.data.<key>`, and the full loader lifecycle is available on `context.loaders`:
+- `context.loaders.status`
+- `context.loaders.entries.profile`
+- `context.loaders.entries.permissions`
+- `context.loaders.error`
+
+Optional loaders may fail without aborting navigation, which makes it easier to render partial route data.
 
 ## 🗂️ Nested Routes & Layout Outlets
 
@@ -235,3 +265,15 @@ The repository contains `test/router.guards-loaders.test.ts` covering redirects,
 ## 📚 Framework Integration
 
 `MiuraFramework` wires this router automatically. Define a static `router` config in your framework subclass, and the framework handles instantiation, DOM zones, and navigation helpers (`navigate`, `replaceRoute`, `goBack`, `goForward`).
+
+When a route defines `meta.title`, `MiuraFramework` also updates `document.title` automatically:
+
+```ts
+{
+  path: '/dashboard',
+  component: 'app-dashboard',
+  meta: {
+    title: ({ data }) => `Dashboard (${data.stats?.total ?? 0})`,
+  },
+}
+```

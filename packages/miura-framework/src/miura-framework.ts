@@ -281,6 +281,7 @@ export abstract class MiuraFramework extends MiuraElement {
         const routes = constructor.router;
 
         const render = async (context: RouteRenderContext) => {
+            this._applyRouteMeta(context);
             await this._renderRoute(context);
         };
 
@@ -472,6 +473,25 @@ export abstract class MiuraFramework extends MiuraElement {
             query: Object.fromEntries(context.query.entries()),
             hash: context.hash,
         }));
+    }
+
+    private _applyRouteMeta(context: RouteRenderContext): void {
+        if (typeof document === 'undefined') return;
+
+        const matched = context.matched ?? [context.route];
+        for (let index = matched.length - 1; index >= 0; index--) {
+            const title = matched[index]?.meta?.title;
+            if (!title) continue;
+
+            const resolvedTitle = typeof title === 'function'
+                ? title(context)
+                : title;
+
+            if (resolvedTitle) {
+                document.title = resolvedTitle;
+            }
+            return;
+        }
     }
 
     /**
