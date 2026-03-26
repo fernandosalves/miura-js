@@ -919,9 +919,7 @@ export class MiuraElement extends HTMLElement {
      * @private
      * @returns {void}
      */
-    private initializeObservers(): void {
-        // TODO: Implement observer initialization
-    }
+    protected initializeObservers(): void {}
 
     /**
      * Cleans up observers and event listeners.
@@ -929,9 +927,7 @@ export class MiuraElement extends HTMLElement {
      * @private
      * @returns {void}
      */
-    private cleanupObservers(): void {
-        // TODO: Implement observer cleanup
-    }
+    protected cleanupObservers(): void {}
 
     /**
      * Subclasses can override to define internal, non-reflected state fields.

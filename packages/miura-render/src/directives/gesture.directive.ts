@@ -52,6 +52,7 @@ export class GestureDirective extends BaseDirective {
     private longPressTimer: number | null = null;
     private lastTapTime = 0;
     private isDragging = false;
+    private listeningElement: HTMLElement | null = null;
 
     mount(element: Element) {
         debugLog('gesture', 'Mounting gesture directive');
@@ -66,15 +67,16 @@ export class GestureDirective extends BaseDirective {
         };
 
         if (element instanceof HTMLElement) {
+            this.listeningElement = element;
             // Touch events
-            element.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
-            element.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
-            element.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
+            element.addEventListener('touchstart', this.handleTouchStart, { passive: false });
+            element.addEventListener('touchmove', this.handleTouchMove, { passive: false });
+            element.addEventListener('touchend', this.handleTouchEnd, { passive: false });
 
             // Mouse events for desktop
-            element.addEventListener('mousedown', this.handleMouseDown.bind(this));
-            element.addEventListener('mousemove', this.handleMouseMove.bind(this));
-            element.addEventListener('mouseup', this.handleMouseUp.bind(this));
+            element.addEventListener('mousedown', this.handleMouseDown);
+            element.addEventListener('mousemove', this.handleMouseMove);
+            element.addEventListener('mouseup', this.handleMouseUp);
         }
     }
 
@@ -106,11 +108,11 @@ export class GestureDirective extends BaseDirective {
             this.element.dispatchEvent(customEvent);
         }
         
-        // Also call the callback functions if they exist
+        // Also call the callback functions if they exist, matching the public typed API.
         if (typeof option === 'function') {
-            (option as Function)(customEvent);
+            (option as (...cbArgs: unknown[]) => void)(...args);
         } else if (typeof legacyCallback === 'function') {
-            (legacyCallback as Function)(customEvent);
+            (legacyCallback as (...cbArgs: unknown[]) => void)(...args);
         }
     }
 
@@ -400,5 +402,14 @@ export class GestureDirective extends BaseDirective {
         if (this.longPressTimer) {
             clearTimeout(this.longPressTimer);
         }
+        if (this.listeningElement) {
+            this.listeningElement.removeEventListener('touchstart', this.handleTouchStart);
+            this.listeningElement.removeEventListener('touchmove', this.handleTouchMove);
+            this.listeningElement.removeEventListener('touchend', this.handleTouchEnd);
+            this.listeningElement.removeEventListener('mousedown', this.handleMouseDown);
+            this.listeningElement.removeEventListener('mousemove', this.handleMouseMove);
+            this.listeningElement.removeEventListener('mouseup', this.handleMouseUp);
+            this.listeningElement = null;
+        }
     }
-} 
+}

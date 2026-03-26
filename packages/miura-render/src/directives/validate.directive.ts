@@ -31,9 +31,11 @@ interface ValidationResult {
 export class ValidateDirective extends BaseDirective {
     private options: ValidationOptions = {};
     private currentErrors: string[] = [];
+    private listeningElement: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null = null;
 
     mount(element: Element) {
         debugLog('validate', 'Mounting validate directive');
+        this.element = element;
 
         this.options = {
             validateOnInput: true,
@@ -44,11 +46,12 @@ export class ValidateDirective extends BaseDirective {
         };
 
         if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) {
+            this.listeningElement = element;
             if (this.options.validateOnInput) {
-                element.addEventListener('input', this.handleInput.bind(this));
+                element.addEventListener('input', this.handleInput);
             }
             if (this.options.validateOnBlur) {
-                element.addEventListener('blur', this.handleBlur.bind(this));
+                element.addEventListener('blur', this.handleBlur);
             }
         }
     }
@@ -183,9 +186,10 @@ export class ValidateDirective extends BaseDirective {
     }
 
     unmount() {
-        if (this.element instanceof HTMLInputElement) {
-            this.element.removeEventListener('input', this.handleInput);
-            this.element.removeEventListener('blur', this.handleBlur);
+        if (this.listeningElement) {
+            this.listeningElement.removeEventListener('input', this.handleInput);
+            this.listeningElement.removeEventListener('blur', this.handleBlur);
+            this.listeningElement = null;
         }
     }
 

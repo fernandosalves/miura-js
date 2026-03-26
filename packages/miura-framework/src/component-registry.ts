@@ -8,14 +8,25 @@ export class ComponentRegistry implements IComponentRegistry {
   private components = new Map<string, ComponentDefinition>();
 
   register(definition: ComponentDefinition): void {
-    if (this.components.has(definition.name)) {
-      console.warn(`Component ${definition.name} is already registered. Overwriting...`);
+    const existingDefinition = this.components.get(definition.name);
+    const existingElement = customElements.get(definition.name);
+
+    if (existingElement && existingElement !== definition.element) {
+      throw new Error(
+        `Component ${definition.name} is already defined in customElements with a different constructor.`,
+      );
     }
-    
+
+    if (existingDefinition && existingDefinition.element !== definition.element) {
+      throw new Error(
+        `Component ${definition.name} is already registered with a different constructor.`,
+      );
+    }
+
     this.components.set(definition.name, definition);
-    
+
     // Register the custom element if not already registered
-    if (!customElements.get(definition.name)) {
+    if (!existingElement) {
       customElements.define(definition.name, definition.element);
     }
   }
