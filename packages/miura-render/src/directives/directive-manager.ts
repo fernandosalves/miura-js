@@ -79,6 +79,11 @@ export class DirectiveManager {
         return instance;
     }
 
+    static removeInstance(id: string): void {
+        if (!id) return;
+        this.instances.delete(id);
+    }
+
     static has(name: string): boolean {
         return this.directives.has(name) || this.directiveLoaders.has(name);
     }
@@ -134,4 +139,8 @@ export class DirectiveManager {
         await Promise.all(promises);
         debugLog('directives', 'Preloaded all directives');
     }
-} 
+
+    static clearInstances(): void {
+        this.instances.clear();
+    }
+}

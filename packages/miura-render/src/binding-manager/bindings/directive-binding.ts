@@ -7,6 +7,7 @@ export class DirectiveBinding implements Binding {
     private directive: Directive | null = null;
     private isLoading = false;
     private loadingPromise: Promise<void> | null = null;
+    private directiveId: string | null = null;
 
     constructor(
         private element: Element,
@@ -34,6 +35,7 @@ export class DirectiveBinding implements Binding {
             
             try {
                 this.directive = await DirectiveManager.create(this.directiveName, this.element);
+                this.directiveId = this.element.getAttribute('directive-id');
                 debugLog('directiveBinding', 'Created directive', {
                     directive: this.directive
                 });
@@ -58,7 +60,15 @@ export class DirectiveBinding implements Binding {
         if (this.directive?.unmount) {
             this.directive.unmount();
         }
+        if (this.directiveId) {
+            DirectiveManager.removeInstance(this.directiveId);
+            const currentId = this.element.getAttribute('directive-id');
+            if (currentId === this.directiveId) {
+                this.element.removeAttribute('directive-id');
+            }
+        }
         this.directive = null;
+        this.directiveId = null;
         this.isLoading = false;
         this.loadingPromise = null;
         this.element.removeAttribute('data-directive-loading');

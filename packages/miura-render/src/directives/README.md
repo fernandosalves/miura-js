@@ -184,8 +184,7 @@ Handles touch and mouse gestures:
 miura provides decorators for easy directive registration:
 
 ```typescript
-import { directive, lazyDirective } from '@miurajs/render';
-import { BaseDirective } from '@miurajs/render';
+import { directive, lazyDirective, BaseDirective } from '@miurajs/miura-render';
 
 // Regular directive (always loaded)
 @directive('my-directive')
@@ -215,7 +214,7 @@ export class MyLazyDirective extends BaseDirective {
 ### Manual Registration
 
 ```typescript
-import { DirectiveManager } from '@miurajs/render';
+import { DirectiveManager } from '@miurajs/miura-render';
 
 // Register regular directive
 DirectiveManager.register('my-directive', MyDirective);
@@ -264,7 +263,7 @@ DirectiveManager.registerLazyDirective('my-lazy-directive', async () => {
 Enable debug logging for directives:
 
 ```typescript
-import { enableDebug } from '@miurajs/render';
+import { enableDebug } from '@miurajs/miura-render';
 
 enableDebug({
     directives: true,

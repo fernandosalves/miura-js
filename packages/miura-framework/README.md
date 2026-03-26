@@ -28,14 +28,14 @@ import { MiuraElement, html } from '@miurajs/miura-element';
 // Your components
 class MyHeader extends MiuraElement {
   static tagName = 'my-header';
-  render() {
+  template() {
     return html`<header>🚀 My App</header>`;
   }
 }
 
 class MyContent extends MiuraElement {
   static tagName = 'my-content';
-  render() {
+  template() {
     return html`<main>Welcome to my app!</main>`;
   }
 }
@@ -262,12 +262,13 @@ Mounted components receive route context automatically:
 class UserProfile extends MiuraElement {
   routeContext?: {
     params: Record<string, string>;
-    query: Record<string, string>;
+    query: URLSearchParams;
+    hash: string;
     data: Record<string, unknown>;
   };
 
   template() {
-    const { params, data } = this.routeContext ?? { params: {}, data: {} };
+    const { params, data, query } = this.routeContext ?? { params: {}, data: {}, query: new URLSearchParams() };
     return html`<h1>User ${params.id}</h1><pre>${JSON.stringify(data)}</pre>`;
   }
 }
@@ -331,19 +332,22 @@ class MyApp extends MiuraFramework {
       name: 'analytics',
       version: '1.0.0',
       install(framework) {
-        // Set up analytics tracking
-        framework.eventBus.on('component:registered', (event) => {
+        const offRegistered = framework.eventBus.on('component:registered', (event) => {
           analytics.track('component_registered', event.data);
         });
         
-        framework.eventBus.on('framework:ready', () => {
+        const offReady = framework.eventBus.on('framework:ready', () => {
           analytics.track('app_ready');
+        });
+        
+        // Set up analytics tracking
+        framework.data.set('plugin:analytics:cleanup', () => {
+          offRegistered();
+          offReady();
         });
       },
       uninstall(framework) {
-        // Cleanup analytics
-        framework.eventBus.off('component:registered');
-        framework.eventBus.off('framework:ready');
+        framework.data.get('plugin:analytics:cleanup')?.();
       }
     },
     {
@@ -351,13 +355,13 @@ class MyApp extends MiuraFramework {
       version: '1.0.0',
       dependencies: ['analytics'],
       install(framework) {
-        framework.eventBus.on('framework:error', (event) => {
+        const offError = framework.eventBus.on('framework:error', (event) => {
           errorTracker.captureException(event.data.error);
         });
+        framework.data.set('plugin:error-tracking:cleanup', offError);
       },
       uninstall(framework) {
-        // Cleanup error tracking
-        framework.eventBus.off('framework:error');
+        framework.data.get('plugin:error-tracking:cleanup')?.();
       }
     }
   ];
