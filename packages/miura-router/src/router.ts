@@ -182,6 +182,7 @@ export class MiuraRouter implements RouterInstance {
 
             const redirectTarget = await this.resolveRedirect(baseContext, options);
             if (redirectTarget) {
+                this.assertRedirectDepth(options.depth);
                 return this.handleNavigation(this.resolveTarget(redirectTarget), {
                     ...options,
                     replace: options.replace ?? true,
@@ -197,6 +198,7 @@ export class MiuraRouter implements RouterInstance {
 
             const guardResult = await this.runGuards(renderContext);
             if (typeof guardResult === 'string') {
+                this.assertRedirectDepth(options.depth);
                 return this.handleNavigation(this.resolveTarget(guardResult), {
                     ...options,
                     replace: options.replace ?? true,
@@ -216,8 +218,11 @@ export class MiuraRouter implements RouterInstance {
             }
 
             const stopTimer = this.options.performance?.startTimer?.('router:render');
-            await this.options.render(renderContext);
-            stopTimer?.();
+            try {
+                await this.options.render(renderContext);
+            } finally {
+                stopTimer?.();
+            }
 
             this.previous = this.current ?? null;
             this.current = { ...renderContext };
@@ -301,14 +306,18 @@ export class MiuraRouter implements RouterInstance {
     ): Promise<string | null> {
         const redirect = context.route.redirect;
         if (!redirect) return null;
-        if ((options.depth || 0) > MAX_REDIRECT_DEPTH) {
-            throw new Error('Router redirect overflow');
-        }
+        this.assertRedirectDepth(options.depth);
         if (typeof redirect === 'function') {
             const target = redirect(context);
             return target || null;
         }
         return redirect;
+    }
+
+    private assertRedirectDepth(depth?: number): void {
+        if ((depth || 0) >= MAX_REDIRECT_DEPTH) {
+            throw new Error('Router redirect overflow');
+        }
     }
 
     private commitLocation(location: LocationParts, options: InternalNavigationOptions): void {

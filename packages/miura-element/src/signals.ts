@@ -55,7 +55,11 @@ export interface ReadonlySignal<T> {
 
 // ── Tracking context (computed dependency collection) ─────────────────────────
 
-type ComputedNode = { _addSource(unsub: () => void): void };
+type SubscribableSignal<T = unknown> = {
+    subscribe(fn: (value: T) => void): () => void;
+};
+
+type ComputedNode = { _registerDependency(source: SubscribableSignal): void };
 let _currentComputed: ComputedNode | null = null;
 
 // ── signal() ──────────────────────────────────────────────────────────────────
@@ -77,10 +81,8 @@ export function signal<T>(initial: T): Signal<T> {
     function fn(value: T): void;
     function fn(value?: T): T | void {
         if (arguments.length === 0) {
-            // Track read in computed context
             if (_currentComputed) {
-                const unsub = _subs.values().next; // just registering access
-                _currentComputed._addSource(() => {});
+                _currentComputed._registerDependency(fn as Signal<T>);
             }
             return _value;
         }
@@ -118,16 +120,34 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
     let _dirty = true;
     const _subs = new Set<(v: T) => void>();
     const _sourcesUnsubs: (() => void)[] = [];
+    const _sources = new Set<SubscribableSignal>();
 
     const node: ComputedNode = {
-        _addSource(unsub: () => void) {
+        _registerDependency(source: SubscribableSignal) {
+            if (_sources.has(source)) return;
+            _sources.add(source);
+
+            const unsub = source.subscribe(() => {
+                if (_subs.size === 0) {
+                    _dirty = true;
+                    return;
+                }
+
+                const wasDirty = _dirty;
+                const previous = wasDirty ? undefined : _value;
+                const next = recompute();
+                if (wasDirty || !Object.is(previous, next)) {
+                    _subs.forEach((subscriber) => subscriber(next));
+                }
+            });
+
             _sourcesUnsubs.push(unsub);
         },
     };
 
     function recompute(): T {
-        // Unsubscribe from previous sources
         _sourcesUnsubs.splice(0).forEach(u => u());
+        _sources.clear();
 
         const prev = _currentComputed;
         _currentComputed = node;
@@ -141,6 +161,9 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
     }
 
     function rfn(): T {
+        if (_currentComputed) {
+            _currentComputed._registerDependency(rfn as ReadonlySignal<T>);
+        }
         if (_dirty) recompute();
         return _value;
     }

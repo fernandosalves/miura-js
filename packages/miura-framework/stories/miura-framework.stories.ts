@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { MiuraFramework } from '../src/miura-framework.js';
-import { MiuraElement, html } from '@miurajsjs/miura-element';
+import { MiuraElement, html } from '@miurajs/miura-element';
 
 // Example components for the story
 class DemoHeader extends MiuraElement {
@@ -9,7 +9,7 @@ class DemoHeader extends MiuraElement {
     template() {
         return html`
       <header style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; text-align: center; border-radius: 8px 8px 0 0;">
-        <h1 style="margin: 0; font-size: 2rem;">🚀 miuraFramework Demo</h1>
+        <h1 style="margin: 0; font-size: 2rem;">🚀 MiuraFramework Demo</h1>
         <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">Declarative Framework Base Class</p>
       </header>
     `;
@@ -46,7 +46,7 @@ class DemoContent extends MiuraElement {
         return html`
       <main style="padding: 2rem; background: ${bgColor}; color: ${textColor}; min-height: 300px; transition: all 0.3s ease;">
         <div style="max-width: 600px; margin: 0 auto;">
-          <h2 style="margin-top: 0;">Welcome to miuraFramework!</h2>
+          <h2 style="margin-top: 0;">Welcome to MiuraFramework!</h2>
           <p>This is a <strong>declarative framework base class</strong> that makes application development incredibly clean and intuitive.</p>
           
           <div style="background: ${featureBg}; padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0;">
@@ -86,14 +86,14 @@ class DemoFooter extends MiuraElement {
     template() {
         return html`
       <footer style="background: #2d3748; color: white; padding: 1rem; text-align: center; border-radius: 0 0 8px 8px;">
-        <p style="margin: 0;">Built with ❤️ using <strong>miuraFramework</strong> - The Declarative Framework Base Class</p>
+        <p style="margin: 0;">Built with ❤️ using <strong>MiuraFramework</strong> - The Declarative Framework Base Class</p>
       </footer>
     `;
     }
 }
 
 // Main demo app class
-class DemoApp extends miuraFramework {
+class DemoApp extends MiuraFramework {
     static tagName = 'demo-app';
 
     // Framework configuration
@@ -217,9 +217,9 @@ const meta: Meta<DemoApp> = {
         docs: {
             description: {
                 component: `
-# miuraFramework Demo
+# MiuraFramework Demo
 
-This story demonstrates the **declarative framework base class** approach of miuraFramework.
+This story demonstrates the **declarative framework base class** approach of MiuraFramework.
 
 ## Key Features Shown:
 
@@ -232,7 +232,7 @@ This story demonstrates the **declarative framework base class** approach of miu
 
 ## How It Works:
 
-1. **Extend miuraFramework** - Create your app class
+1. **Extend MiuraFramework** - Create your app class
 2. **Configure statically** - Set up config, dataLake, components, plugins
 3. **Define template** - Implement the abstract template() method
 4. **Register and use** - The framework handles everything else!
@@ -270,7 +270,7 @@ export const Default: Story = {
                 story: `
 ## Basic Demo App
 
-This demonstrates a complete miuraFramework application with:
+This demonstrates a complete MiuraFramework application with:
 
 - **Header component** with gradient styling
 - **Content component** with interactive counter and theme toggle
@@ -297,7 +297,7 @@ export const FrameworkFeatures: Story = {
         container.style.cssText = 'padding: 2rem; background: #f7fafc; min-height: 100vh;';
 
         container.innerHTML = `
-      <h1 style="text-align: center; margin-bottom: 2rem;">miuraFramework Features</h1>
+      <h1 style="text-align: center; margin-bottom: 2rem;">MiuraFramework Features</h1>
       
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto;">
         
@@ -380,7 +380,7 @@ this.lifecycle.on('running', (event) => {
                 story: `
 ## Framework Features Overview
 
-This story showcases all the key features of miuraFramework in an interactive format.
+This story showcases all the key features of MiuraFramework in an interactive format.
 
 ### What You'll See:
 

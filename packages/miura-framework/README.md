@@ -1,10 +1,10 @@
-# miuraFramework 🚀
+# MiuraFramework 🚀
 
-**The Declarative Framework Base Class** - Extend miuraFramework to create your application with static configurations, making framework setup as simple as class inheritance.
+**The Declarative Framework Base Class** - Extend `MiuraFramework` to create your application with static configurations, making framework setup as simple as class inheritance.
 
-## 🌟 What Makes miuraFramework Special?
+## 🌟 What Makes MiuraFramework Special?
 
-miuraFramework is a **declarative base class** that you extend to create your application. All configuration is done through static properties, making it incredibly clean and intuitive!
+`MiuraFramework` is a **declarative base class** that you extend to create your application. All configuration is done through static properties, making it incredibly clean and intuitive!
 
 ### ✨ Key Features
 
@@ -22,7 +22,7 @@ miuraFramework is a **declarative base class** that you extend to create your ap
 ### Basic App Setup
 
 ```typescript
-import { miuraFramework } from '@miurajs/miura-framework';
+import { MiuraFramework } from '@miurajs/miura-framework';
 import { MiuraElement, html } from '@miurajs/miura-element';
 
 // Your components
@@ -41,7 +41,7 @@ class MyContent extends MiuraElement {
 }
 
 // Your main app class
-class MyApp extends miuraFramework {
+class MyApp extends MiuraFramework {
   static tagName = 'my-app';
   
   // Framework configuration
@@ -105,7 +105,7 @@ customElements.define(MyApp.tagName, MyApp);
 ### Advanced Configuration
 
 ```typescript
-class MyApp extends miuraFramework {
+class MyApp extends MiuraFramework {
   static tagName = 'my-app';
   
   static config = {
@@ -278,7 +278,7 @@ class UserProfile extends MiuraElement {
 The Data Lake is configured declaratively and automatically loaded on startup.
 
 ```typescript
-class MyApp extends miuraFramework {
+class MyApp extends MiuraFramework {
   // Initial data lake data
   static dataLake = {
     'app:settings': { theme: 'light', locale: 'en' },
@@ -306,7 +306,7 @@ class MyApp extends miuraFramework {
 Components are loaded on-demand using dynamic imports.
 
 ```typescript
-class MyApp extends miuraFramework {
+class MyApp extends MiuraFramework {
   // Component definitions with dynamic imports
   static components = {
     'my-header': async () => import('./components/my-header.js'),
@@ -325,7 +325,7 @@ class MyApp extends miuraFramework {
 Plugins are defined declaratively and automatically installed with full lifecycle events.
 
 ```typescript
-class MyApp extends miuraFramework {
+class MyApp extends MiuraFramework {
   static plugins = [
     {
       name: 'analytics',
@@ -369,7 +369,7 @@ class MyApp extends miuraFramework {
 Router configuration is declarative and now powered by the built-in MiuraRouter. Define paths, zones, guards, and loaders directly on the static `router` property and the framework will lazy-load components, invoke guards, hydrate data, and mount elements into DOM zones for you.
 
 ```typescript
-class MyApp extends miuraFramework {
+class MyApp extends MiuraFramework {
   static router = [
     {
       path: '/',
@@ -414,7 +414,7 @@ class MyApp extends miuraFramework {
 Built-in performance tracking with declarative configuration.
 
 ```typescript
-class MyApp extends miuraFramework {
+class MyApp extends MiuraFramework {
   static config = {
     // ... other config
     performance: true // Enable performance monitoring
@@ -440,7 +440,7 @@ class MyApp extends miuraFramework {
 Lifecycle management is automatic with event-driven hooks.
 
 ```typescript
-class MyApp extends miuraFramework {
+class MyApp extends MiuraFramework {
   async connectedCallback() {
     await super.connectedCallback();
     
@@ -466,7 +466,7 @@ class MyApp extends miuraFramework {
 Advanced event management with priority queues.
 
 ```typescript
-class MyApp extends miuraFramework {
+class MyApp extends MiuraFramework {
   async connectedCallback() {
     await super.connectedCallback();
     
@@ -558,4 +558,4 @@ console.log(stats);
 | `ui` | UIConfig | - | UI configuration |
 | `telemetry` | TelemetryConfig | - | Telemetry configuration |
 
-miuraFramework makes application development **declarative, clean, and powerful**! 🌱
+MiuraFramework makes application development **declarative, clean, and powerful**! 🌱

@@ -1,4 +1,4 @@
-// miuraFramework - The Declarative Framework Base Class
+// MiuraFramework - The Declarative Framework Base Class
 export { MiuraFramework } from './miura-framework.js';
 export type { FrameworkConfig, AppConfig, RouteConfig } from './types.js';
 export { ComponentRegistry } from './component-registry.js';

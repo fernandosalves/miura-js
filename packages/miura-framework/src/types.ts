@@ -1,9 +1,9 @@
 import type { MiuraElement } from '@miurajs/miura-element';
 import type { Store } from '@miurajs/miura-data-flow';
-import type { RouteRecord, Router } from '@miurajs/miura-router';
+import type { RouteRecord, Router, RouterMode } from '@miurajs/miura-router';
 
-// Forward declaration for miuraFramework
-declare class miuraFramework { }
+// Forward declaration for framework plugin typing
+declare class MiuraFramework { }
 
 // Framework Configuration
 export interface FrameworkConfig {
@@ -30,7 +30,7 @@ export interface DataStoreConfig {
 
 export interface RouterConfig {
     enabled: boolean;
-    mode: 'hash' | 'history';
+    mode: RouterMode;
     base: string;
     fallback: string;
 }
@@ -100,8 +100,8 @@ export interface DataStore {
 export interface Plugin {
     name: string;
     version: string;
-    install(framework: miuraFramework): void | Promise<void>;
-    uninstall?(framework: miuraFramework): void | Promise<void>;
+    install(framework: MiuraFramework): void | Promise<void>;
+    uninstall?(framework: MiuraFramework): void | Promise<void>;
     dependencies?: string[];
 }
 

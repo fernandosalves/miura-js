@@ -26,19 +26,33 @@ export class PerformanceMonitor implements IPerformanceMonitor {
 
   measure<T>(name: string, fn: () => T): T {
     const startTime = performance.now();
-    const result = fn();
-    const endTime = performance.now();
-    const duration = endTime - startTime;
-    
-    this.record({
-      name: `${name}-measurement`,
-      value: duration,
-      unit: 'ms',
-      timestamp: Date.now(),
-      metadata: { function: name }
-    });
-    
-    return result;
+
+    const recordDuration = () => {
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+
+      this.record({
+        name: `${name}-measurement`,
+        value: duration,
+        unit: 'ms',
+        timestamp: Date.now(),
+        metadata: { function: name }
+      });
+    };
+
+    try {
+      const result = fn();
+      if (result && typeof (result as any).then === 'function') {
+        return ((result as unknown) as Promise<unknown>).finally(() => {
+          recordDuration();
+        }) as T;
+      }
+      recordDuration();
+      return result;
+    } catch (error) {
+      recordDuration();
+      throw error;
+    }
   }
 
   record(metric: PerformanceMetric): void {

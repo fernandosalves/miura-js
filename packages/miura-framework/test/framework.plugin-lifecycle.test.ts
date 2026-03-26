@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { miuraFramework } from '../src/miura-framework.js';
+import { MiuraFramework } from '../src/miura-framework.js';
 import type { Plugin } from '../src/types.js';
 
 const uniqueTagName = () => `test-framework-${Math.random().toString(36).slice(2)}`;
 
 function createFrameworkInstance(plugins: Plugin[]) {
-    class TestFramework extends miuraFramework {
+    class TestFramework extends MiuraFramework {
         static tagName = uniqueTagName();
         static plugins = plugins;
         template() {
@@ -21,7 +21,7 @@ function createFrameworkInstance(plugins: Plugin[]) {
     return document.createElement(tagName) as InstanceType<typeof TestFramework>;
 }
 
-describe('miuraFramework plugin lifecycle integration', () => {
+describe('MiuraFramework plugin lifecycle integration', () => {
     it('emits install/uninstall lifecycle events', async () => {
         const install = vi.fn().mockResolvedValue(undefined);
         const uninstall = vi.fn().mockResolvedValue(undefined);

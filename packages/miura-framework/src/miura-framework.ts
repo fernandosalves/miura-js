@@ -462,22 +462,14 @@ export abstract class MiuraFramework extends MiuraElement {
     }
 
     private _injectRouteData(element: Element, context: RouteRenderContext): void {
-        const data = {
-            params: context.params,
-            query: Object.fromEntries(context.query.entries()),
-            hash: context.hash,
-            data: context.data,
-            route: context.route,
-        };
-
         if ('routeContext' in element) {
-            (element as any).routeContext = data;
+            (element as any).routeContext = context;
             return;
         }
 
         element.setAttribute('data-route', JSON.stringify({
             params: context.params,
-            query: data.query,
+            query: Object.fromEntries(context.query.entries()),
             hash: context.hash,
         }));
     }

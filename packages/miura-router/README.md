@@ -77,13 +77,13 @@ Access loader results inside the render callback (or components via `routeContex
 
 ## 🗂️ Nested Routes & Layout Outlets
 
-Define a `children` array on any route to create a parent/child hierarchy. The parent route acts as a layout shell; the matched child fills the `<router-outlet>` inside it.
+Define a `children` array on any route to create a parent/child hierarchy. The parent route acts as a layout shell; the matched child fills the `<miura-router-outlet>` inside it.
 
 ```ts
 const routes = [
   {
     path: '/app',
-    component: 'app-layout',      // renders the shell + <router-outlet>
+    component: 'app-layout',      // renders the shell + <miura-router-outlet>
     children: [
       { path: 'dashboard', component: 'app-dashboard' },
       { path: 'settings',  component: 'app-settings'  },
@@ -99,7 +99,7 @@ template() {
   return html`
     <nav>...</nav>
     <main>
-      <router-outlet></router-outlet>   <!-- child component mounts here -->
+      <miura-router-outlet></miura-router-outlet>   <!-- child component mounts here -->
     </main>
   `;
 }
@@ -107,13 +107,13 @@ template() {
 
 `context.matched` contains the full chain from root to leaf, so nested outlets at any depth receive the correct slice of the matched array.
 
-## 🔗 `<router-outlet>`
+## 🔗 `<miura-router-outlet>`
 
-The `<router-outlet>` custom element is a passive mount-point. The router's render callback uses `context.matched` to determine which components to mount at each level.
+The `<miura-router-outlet>` custom element is a passive mount-point. The router's render callback uses `context.matched` to determine which components to mount at each level.
 
 ```typescript
 import { RouterOutlet } from '@miurajs/miura-router';
-// RouterOutlet registers itself as <router-outlet> when imported
+// RouterOutlet registers itself as <miura-router-outlet> when imported
 ```
 
 ## � Redirects
@@ -234,4 +234,4 @@ The repository contains `test/router.guards-loaders.test.ts` covering redirects,
 
 ## 📚 Framework Integration
 
-`miuraFramework` wires this router automatically. Define a static `router` config in your framework subclass, and the framework handles instantiation, DOM zones, and navigation helpers (`navigate`, `replaceRoute`, `goBack`, `goForward`).
+`MiuraFramework` wires this router automatically. Define a static `router` config in your framework subclass, and the framework handles instantiation, DOM zones, and navigation helpers (`navigate`, `replaceRoute`, `goBack`, `goForward`).
