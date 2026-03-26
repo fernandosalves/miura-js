@@ -1,4 +1,4 @@
-import { EventBus as IEventBus, EventBusEvent } from './types.js';
+import type { EventBus as IEventBus, EventBusEvent } from './types.js';
 
 export class EventBus implements IEventBus {
   private listeners = new Map<string, Array<{

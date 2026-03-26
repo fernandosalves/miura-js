@@ -10,7 +10,7 @@ import { AppLifecycle } from './lifecycle.js';
 import { ComponentRegistry } from './component-registry.js';
 import { DataManager } from './data-manager.js';
 import { EventBus } from './event-bus.js';
-import { FrameworkConfig, AppConfig, RouteConfig } from './types.js';
+import type { FrameworkConfig, AppConfig, RouteConfig } from './types.js';
 import { PerformanceMonitor } from './performance-monitor.js';
 import { PluginManager } from './plugin-manager.js';
 

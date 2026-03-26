@@ -2,8 +2,18 @@
   "name": "@miurajs/miura-security",
   "version": "1.0.2",
   "description": "Comprehensive security module for miura Framework with enterprise-grade security features",
-  "main": "index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest",
@@ -29,4 +39,4 @@
     "vitest": "^1.0.0",
     "@types/node": "^20.0.0"
   }
-} 
+}

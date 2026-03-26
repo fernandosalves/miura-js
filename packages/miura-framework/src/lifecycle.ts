@@ -1,4 +1,4 @@
-import { AppLifecycle as IAppLifecycle, LifecyclePhase, LifecycleEvent } from './types.js';
+import type { AppLifecycle as IAppLifecycle, LifecyclePhase, LifecycleEvent } from './types.js';
 
 export class AppLifecycle implements IAppLifecycle {
   phase: LifecyclePhase = 'initializing';

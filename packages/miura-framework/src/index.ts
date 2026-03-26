@@ -1,6 +1,6 @@
 // miuraFramework - The Declarative Framework Base Class
 export { MiuraFramework } from './miura-framework.js';
-export { FrameworkConfig, AppConfig, RouteConfig } from './types.js';
+export type { FrameworkConfig, AppConfig, RouteConfig } from './types.js';
 export { ComponentRegistry } from './component-registry.js';
 export { DataManager } from './data-manager.js';
 export { PluginManager } from './plugin-manager.js';

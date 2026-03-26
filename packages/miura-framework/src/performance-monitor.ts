@@ -1,4 +1,4 @@
-import { PerformanceMonitor as IPerformanceMonitor, PerformanceMetric } from './types.js';
+import type { PerformanceMonitor as IPerformanceMonitor, PerformanceMetric } from './types.js';
 
 export class PerformanceMonitor implements IPerformanceMonitor {
   private metrics: PerformanceMetric[] = [];

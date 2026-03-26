@@ -1,5 +1,5 @@
 import { MiuraElement } from '@miurajs/miura-element';
-import { ComponentDefinition, ComponentRegistry as IComponentRegistry } from './types.js';
+import type { ComponentDefinition, ComponentRegistry as IComponentRegistry } from './types.js';
 
 /**
  * Component Registry - Manages all registered components

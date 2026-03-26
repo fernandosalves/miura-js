@@ -1,24 +1,25 @@
 {
     "name": "@miurajs/miura",
-    "version": "2.1.5",
+    "version": "2.1.6",
     "description": "The main package for the miura framework, bundling all core modules.",
     "type": "module",
-    "main": "./src/index.ts",
+    "main": "./dist/index.js",
     "types": "./src/index.ts",
     "files": [
-        "src"
+        "dist",
+        "src/index.ts"
     ],
     "exports": {
         ".": {
             "types": "./src/index.ts",
-            "import": "./src/index.ts"
+            "import": "./dist/index.js"
         }
     },
     "scripts": {
-        "build": "echo 'No build needed - using source files'",
-        "build:tsc": "echo 'No build needed - using source files'",
-        "dev": "echo 'No dev needed - using source files'",
-        "prepublishOnly": "echo 'Publishing source files'"
+        "build": "tsc -b",
+        "build:tsc": "tsc -p tsconfig.json",
+        "dev": "tsc -w -p tsconfig.json",
+        "prepublishOnly": "npm run build"
     },
     "keywords": [
         "web-components",
@@ -39,12 +40,12 @@
     "dependencies": {
         "@miurajs/miura-data-flow": "^0.1.4",
         "@miurajs/miura-element": "^0.1.4",
-        "@miurajs/miura-framework": "^0.1.12",
+        "@miurajs/miura-framework": "^0.1.13",
         "@miurajs/miura-render": "^0.2.4",
         "@miurajs/miura-router": "^0.1.4",
         "@miurajs/miura-debugger": "^0.2.2",
-        "@miurajs/miura-security": "^1.0.1",
-        "@miurajs/miura-ui": "^0.1.7"
+        "@miurajs/miura-security": "^1.0.2",
+        "@miurajs/miura-ui": "^0.1.8"
     },
     "devDependencies": {
         "typescript": "^5.4.5"

@@ -1,5 +1,5 @@
 import type { MiuraFramework } from './miura-framework.js';
-import { Plugin, PluginManager as IPluginManager } from './types.js';
+import type { Plugin, PluginManager as IPluginManager } from './types.js';
 
 export class PluginManager implements IPluginManager {
     private readonly plugins = new Map<string, Plugin>();
