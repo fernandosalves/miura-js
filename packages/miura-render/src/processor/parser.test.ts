@@ -23,7 +23,7 @@ describe('TemplateParser', () => {
       expect(result.bindings).toHaveLength(1);
       expect(result.bindings[0]).toEqual({
         type: BindingType.Event,
-        name: '@click',
+        name: 'click',
         index: 0,
         modifiers: undefined
       });
@@ -37,7 +37,7 @@ describe('TemplateParser', () => {
       expect(result.bindings).toHaveLength(1);
       expect(result.bindings[0]).toEqual({
         type: BindingType.Event,
-        name: '@click',
+        name: 'click',
         index: 0,
         modifiers: undefined
       });
@@ -107,7 +107,7 @@ describe('TemplateParser', () => {
       expect(result.bindings).toHaveLength(1);
       expect(result.bindings[0]).toEqual({
         type: BindingType.Event,
-        name: '@click',
+        name: 'click',
         index: 0,
         modifiers: ['prevent']
       });
@@ -121,7 +121,7 @@ describe('TemplateParser', () => {
       expect(result.bindings).toHaveLength(1);
       expect(result.bindings[0]).toEqual({
         type: BindingType.Event,
-        name: '@click',
+        name: 'click',
         index: 0,
         modifiers: ['prevent']
       });
@@ -184,7 +184,7 @@ describe('TemplateParser', () => {
       expect(result.bindings[1]).toEqual({ type: BindingType.Node, index: 1 });
       expect(result.bindings[2]).toEqual({ 
         type: BindingType.Event, 
-        name: '@click', 
+        name: 'click', 
         index: 2,
         modifiers: undefined
       });
@@ -208,7 +208,7 @@ describe('TemplateParser', () => {
       expect(result.bindings).toHaveLength(6);
       expect(result.bindings[1]).toEqual({ 
         type: BindingType.Event, 
-        name: '@click', 
+        name: 'click', 
         index: 1,
         modifiers: undefined
       });
@@ -226,4 +226,28 @@ describe('TemplateParser', () => {
       });
     });
   });
-}); 
+
+  describe('Event Modifier Parsing', () => {
+    it('should parse repeated pipe modifiers', () => {
+      const result = parser.parse(createTemplateStrings(['<button @mousedown|prevent|stop=', '>Drag</button>']));
+
+      expect(result.bindings[0]).toEqual({
+        type: BindingType.Event,
+        name: 'mousedown',
+        index: 0,
+        modifiers: ['prevent', 'stop']
+      });
+    });
+
+    it('should parse comma and pipe modifiers together', () => {
+      const result = parser.parse(createTemplateStrings(['<input @keydown|key:Enter,prevent|stop=', '>']));
+
+      expect(result.bindings[0]).toEqual({
+        type: BindingType.Event,
+        name: 'keydown',
+        index: 0,
+        modifiers: ['key:Enter', 'prevent', 'stop']
+      });
+    });
+  });
+});

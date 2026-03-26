@@ -179,12 +179,50 @@ function _renderEventCode(b: TemplateBinding, ri: number): string {
     const r = `refs[${ri}]`;
     const v = `values[${b.index}]`;
     const evt = JSON.stringify(b.name);
-    const once  = (b.modifiers ?? []).includes('once')  ? ', { once: true }'  : '';
-    const pass  = (b.modifiers ?? []).includes('passive') ? ' | passive' : '';
+    const modifiers = b.modifiers ?? [];
+    const hasOnce = modifiers.includes('once');
+    const hasPassive = modifiers.includes('passive');
+    const hasCapture = modifiers.includes('capture');
+    const hasPrevent = modifiers.includes('prevent');
+    const hasStop = modifiers.includes('stop');
+    const keyModifier = modifiers.find((modifier) => modifier.startsWith('key:'));
+    const options = `{${[
+        hasOnce ? 'once: true' : '',
+        hasPassive ? 'passive: true' : '',
+        hasCapture ? 'capture: true' : '',
+    ].filter(Boolean).join(', ')}}`;
+    const removeOptions = `{${[
+        hasPassive ? 'passive: true' : '',
+        hasCapture ? 'capture: true' : '',
+    ].filter(Boolean).join(', ')}}`;
+    const needsWrappedHandler = hasPrevent || hasStop || !!keyModifier;
+    const keyGuard = keyModifier
+        ? (() => {
+            const key = keyModifier.split(':')[1] ?? '';
+            const mapped = key.toLowerCase() === 'enter'
+                ? 'Enter'
+                : key.toLowerCase() === 'escape'
+                    ? 'Escape'
+                    : key.toLowerCase() === 'space'
+                        ? ' '
+                        : key;
+            return `if (!(event instanceof KeyboardEvent) || event.key !== ${JSON.stringify(mapped)}) return;`;
+        })()
+        : '';
+    const wrappedHandler = needsWrappedHandler
+        ? `
+        function(event) {
+            ${keyGuard}
+            ${hasPrevent ? 'event.preventDefault();' : ''}
+            ${hasStop ? 'event.stopPropagation();' : ''}
+            return ${v}.call(this, event);
+        }
+    `
+        : v;
     return `
-        if (${r}.listener) ${r}.el.removeEventListener(${evt}, ${r}.listener${pass ? ', {passive:true}' : ''});
-        ${r}.listener = ${v};
-        if (${v}) ${r}.el.addEventListener(${evt}, ${v}${once});
+        if (${r}.listener) ${r}.el.removeEventListener(${evt}, ${r}.listener, ${removeOptions});
+        ${r}.listener = ${v} ? ${wrappedHandler} : null;
+        if (${r}.listener) ${r}.el.addEventListener(${evt}, ${r}.listener, ${options});
     `;
 }
 

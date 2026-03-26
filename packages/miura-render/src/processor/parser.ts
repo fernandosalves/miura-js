@@ -267,18 +267,13 @@ export class TemplateParser {
                         let modifiers: string[] = [];
 
                         if (prefix === '@') {
-                            const parts = cleanName.split('|');
-                            const modParts = parts[1] ? parts[1].split(',').map(mod => {
-                                const [n, v] = mod.split(':');
-                                return v ? `${n}:${v}` : n;
-                            }) : [];
-                            modifiers = modParts;
+                            modifiers = this.parseEventModifiers(cleanName);
                         }
 
                         attrCtx = {
                             name: lastAttrName,
                             prefix,
-                            cleanName: prefix === '@' ? cleanName.split('|')[0] : cleanName,
+                            cleanName: prefix === '@' ? this.getEventBindingName(cleanName) : cleanName,
                             openQuotePos,
                             startBindingIndex: i,
                             strings: [staticPart],
@@ -325,12 +320,8 @@ export class TemplateParser {
                     let bindingName = cleanName;
 
                     if (prefix === '@') {
-                        const parts = cleanName.split('|');
-                        bindingName = parts[0];
-                        modifiers = parts[1] ? parts[1].split(',').map(mod => {
-                            const [n, v] = mod.split(':');
-                            return v ? `${n}:${v}` : n;
-                        }) : [];
+                        bindingName = this.getEventBindingName(cleanName);
+                        modifiers = this.parseEventModifiers(cleanName);
                     }
 
                     const type = this.getSpecializedType(prefix, bindingName);
@@ -371,6 +362,23 @@ export class TemplateParser {
         this.metrics.parseTime = performance.now() - startTime;
         debugLog('parser', 'Final parsed template', { html, bindings });
         return { html, bindings };
+    }
+
+    private getEventBindingName(name: string): string {
+        return name.split('|')[0];
+    }
+
+    private parseEventModifiers(name: string): string[] {
+        return name
+            .split('|')
+            .slice(1)
+            .flatMap((segment) => segment.split(','))
+            .map((modifier) => modifier.trim())
+            .filter(Boolean)
+            .map((modifier) => {
+                const [modifierName, modifierValue] = modifier.split(':');
+                return modifierValue ? `${modifierName}:${modifierValue}` : modifierName;
+            });
     }
 
     /**

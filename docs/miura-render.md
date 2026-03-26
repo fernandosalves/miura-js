@@ -27,6 +27,7 @@
 @submit|prevent=${handler}         // preventDefault
 @click|stop=${handler}             // stopPropagation
 @click|prevent,stop=${handler}     // both
+@click|prevent|stop=${handler}     // also supported
 @click|once=${handler}             // { once: true }
 ```
 
