@@ -202,6 +202,8 @@ export class MiuraElement extends HTMLElement {
         updateCount: 0,
         lastRenderTime: 0
     };
+    /** Tracks whether firstUpdated has been invoked. */
+    private _hasCalledFirstUpdated = false;
 
     /**
      * Gets the computed value for a property, using cache if available.
@@ -542,6 +544,11 @@ export class MiuraElement extends HTMLElement {
 
             this.updated(changedProperties);
 
+            if (isFirstRender && !this._hasCalledFirstUpdated) {
+                this._hasCalledFirstUpdated = true;
+                this.firstUpdated(changedProperties);
+            }
+
             // Call onMount once after first render
             if (isFirstRender) {
                 this.onMount();
@@ -660,6 +667,16 @@ export class MiuraElement extends HTMLElement {
      * @returns {void}
      */
     protected updated(changedProperties?: PropertyValues): void { }
+
+    /**
+     * Called once after the first successful render completes.
+     * Use for one-time DOM setup that should happen as soon as the initial
+     * template is present in the shadow root.
+     *
+     * @param {PropertyValues} [changedProperties] - Map of changed properties with their previous values
+     * @protected
+     */
+    protected firstUpdated(changedProperties?: PropertyValues): void { }
 
     /**
      * Called once after the component's first render completes.

@@ -200,6 +200,16 @@ describe.skip('MiuraElement', () => {
                 this.events.push('updated');
             }
 
+            override firstUpdated() {
+                super.firstUpdated();
+                this.events.push('firstUpdated');
+            }
+
+            override onMount() {
+                super.onMount();
+                this.events.push('onMount');
+            }
+
             static override template = html`<div>Lifecycle Test</div>`;
         }
         customElements.define('lifecycle-element', LifecycleElement);
@@ -213,6 +223,8 @@ describe.skip('MiuraElement', () => {
 
             expect(element.events).toContain('connected');
             expect(element.events).toContain('updated');
+            expect(element.events).toContain('firstUpdated');
+            expect(element.events).toContain('onMount');
 
             // Test disconnection
             document.body.removeChild(element);
@@ -221,6 +233,10 @@ describe.skip('MiuraElement', () => {
             // Verify order
             expect(element.events.indexOf('connected'))
                 .toBeLessThan(element.events.indexOf('updated'));
+            expect(element.events.indexOf('updated'))
+                .toBeLessThan(element.events.indexOf('firstUpdated'));
+            expect(element.events.indexOf('firstUpdated'))
+                .toBeLessThan(element.events.indexOf('onMount'));
         });
     });
 });

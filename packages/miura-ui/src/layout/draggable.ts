@@ -21,6 +21,7 @@ export class MuiDraggable extends MuiBase {
     private startPosition = { x: 0, y: 0 };
     private elementOffset = { x: 0, y: 0 };
     private dragging = false;
+    private dragTarget: HTMLElement | null = null;
 
     static styles = css`
         :host {
@@ -59,14 +60,16 @@ export class MuiDraggable extends MuiBase {
         const target = this.handle
             ? (this.querySelector(this.handle) as HTMLElement | null)
             : (this.shadowRoot?.querySelector('.draggable') as HTMLElement | null);
+        this.dragTarget = target;
         target?.addEventListener('pointerdown', this.onPointerDown);
     }
 
     disconnectedCallback(): void {
         super.disconnectedCallback?.();
-        this.removeEventListener('pointerdown', this.onPointerDown);
+        this.dragTarget?.removeEventListener('pointerdown', this.onPointerDown);
         window.removeEventListener('pointermove', this.onPointerMove);
         window.removeEventListener('pointerup', this.onPointerUp);
+        this.dragTarget = null;
     }
 
     private onPointerDown = (event: PointerEvent) => {
