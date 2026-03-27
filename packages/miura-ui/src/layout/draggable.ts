@@ -19,7 +19,8 @@ export class MuiDraggable extends MuiBase {
     boundary: string | null = null;
 
     private startPosition = { x: 0, y: 0 };
-    private elementOffset = { x: 0, y: 0 };
+    private startTransform = { x: 0, y: 0 };
+    private startRect = { left: 0, top: 0, right: 0, bottom: 0 };
     private dragging = false;
     private dragTarget: HTMLElement | null = null;
 
@@ -77,8 +78,10 @@ export class MuiDraggable extends MuiBase {
         this.dragging = true;
         const host = this;
         const rect = host.getBoundingClientRect();
+        const matrix = new DOMMatrixReadOnly(window.getComputedStyle(this).transform);
         this.startPosition = { x: event.clientX, y: event.clientY };
-        this.elementOffset = { x: rect.left, y: rect.top };
+        this.startTransform = { x: matrix.m41, y: matrix.m42 };
+        this.startRect = { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
         host.setPointerCapture(event.pointerId);
         window.addEventListener('pointermove', this.onPointerMove);
         window.addEventListener('pointerup', this.onPointerUp);
@@ -90,7 +93,7 @@ export class MuiDraggable extends MuiBase {
         if (!this.dragging) return;
         const deltaX = event.clientX - this.startPosition.x;
         const deltaY = event.clientY - this.startPosition.y;
-        const next = { x: this.elementOffset.x + deltaX, y: this.elementOffset.y + deltaY };
+        const next = { x: this.startTransform.x + deltaX, y: this.startTransform.y + deltaY };
         const constrained = this.applyBoundary(next);
         if (this.axis === 'x') {
             this.style.transform = `translate(${constrained.x}px, 0)`;
@@ -118,10 +121,15 @@ export class MuiDraggable extends MuiBase {
         const boundaryElement = document.querySelector(this.boundary) as HTMLElement | null;
         if (!boundaryElement) return position;
         const boundaryRect = boundaryElement.getBoundingClientRect();
-        const rect = this.getBoundingClientRect();
         return {
-            x: Math.min(Math.max(position.x, boundaryRect.left - rect.left), boundaryRect.right - rect.right),
-            y: Math.min(Math.max(position.y, boundaryRect.top - rect.top), boundaryRect.bottom - rect.bottom),
+            x: Math.min(
+                Math.max(position.x, boundaryRect.left - this.startRect.left),
+                boundaryRect.right - this.startRect.right
+            ),
+            y: Math.min(
+                Math.max(position.y, boundaryRect.top - this.startRect.top),
+                boundaryRect.bottom - this.startRect.bottom
+            ),
         };
     }
 

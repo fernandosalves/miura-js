@@ -1,4 +1,4 @@
-import './miura-example-dashboard/src/miura-example-dashboard';
+import './maori-example-dashboard/src/maori-example-dashboard';
 import type { Meta, StoryObj } from '@storybook/web-components';
 
 export default {
