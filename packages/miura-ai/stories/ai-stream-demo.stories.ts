@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { MiuraElement, html, css, component } from '@miurajsjs/miura-element';
-import '@miurajsjs/miura-ai'; // auto-registers StreamDirective as '#stream'
+import { MiuraElement, html, css, component } from '@miurajs/miura-element';
+import '@miurajs/miura-ai'; // auto-registers StreamDirective as '#stream'
 
 /**
  * miura-ai — `#stream` directive

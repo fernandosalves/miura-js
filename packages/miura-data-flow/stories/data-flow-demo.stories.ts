@@ -7,9 +7,9 @@ import {
   createCacheMiddleware,
   createDevToolsMiddleware,
   StoreState
-} from '@miurajsjs/miura-data-flow';
-import { html } from '@miurajsjs/miura-element';
-import { MiuraElement } from '@miurajsjs/miura-element';
+} from '@miurajs/miura-data-flow';
+import { html } from '@miurajs/miura-element';
+import { MiuraElement } from '@miurajs/miura-element';
 
 // Define the store state interface
 interface DemoStoreState extends StoreState {

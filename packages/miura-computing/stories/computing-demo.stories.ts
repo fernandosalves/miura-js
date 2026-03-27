@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { WorkerBridge } from '@miurajsjs/miura-computing';
+import { WorkerBridge } from '@miurajs/miura-computing';
 
 // ── Inline worker via Blob URL ─────────────────────────────────────────────────
 // This avoids needing a separate worker file in Storybook.

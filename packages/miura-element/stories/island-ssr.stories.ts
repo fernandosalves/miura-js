@@ -3,8 +3,8 @@ import {
     createIslandHTML,
     renderIslands,
     IslandRegistry,
-} from '@miurajsjs/miura-element/server';
-import { islandsPlugin } from '@miurajsjs/miura-vite';
+} from '@miurajs/miura-element/server';
+import { islandsPlugin } from '@miurajs/miura-vite';
 
 // ── Styles ─────────────────────────────────────────────────────────────────────
 
