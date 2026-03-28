@@ -67,6 +67,35 @@ export class MuiButton extends MuiBase {
             box-shadow: var(--mui-button-shadow);
         }
 
+        .content {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: inherit;
+            width: 100%;
+        }
+
+        .icon-slot {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+        }
+
+        ::slotted([slot='icon-start']),
+        ::slotted([slot='icon-end']) {
+            width: 1.1rem;
+            height: 1.1rem;
+            flex-shrink: 0;
+        }
+
         button:focus-visible {
             outline: none;
             box-shadow: 0 0 0 3px color-mix(in srgb, var(--mui-color-primary) 25%, transparent);
@@ -163,7 +192,11 @@ export class MuiButton extends MuiBase {
                 aria-busy=${this.loading}
             >
                 ${this.loading ? html`<span class="loader" aria-hidden="true"></span>` : null}
-                <slot></slot>
+                <span class="content" part="content">
+                    <span class="icon-slot icon-start" part="icon-start"><slot name="icon-start"></slot></span>
+                    <span class="label" part="label"><slot></slot></span>
+                    <span class="icon-slot icon-end" part="icon-end"><slot name="icon-end"></slot></span>
+                </span>
             </button>
         `;
     }

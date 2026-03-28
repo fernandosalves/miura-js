@@ -28,6 +28,7 @@ A modern, unstyled, accessible UI component library for [miura](https://github.c
 
 ### Primitives & Inputs
 - **Button** (`<mui-button>`)
+- **Icon** (`<mui-icon>`)
 - **IconButton** (`<mui-icon-button>`)
 - **Input** (`<mui-input>`)
 - **Textarea** (`<mui-textarea>`)
@@ -117,6 +118,36 @@ A modern, unstyled, accessible UI component library for [miura](https://github.c
 
 ```bash
 npm install @miurajs/ui
+```
+
+## Icons
+
+`miura-ui` now includes a lightweight SVG icon primitive with a bundled Lucide-style starter set.
+
+```html
+<mui-icon name="search"></mui-icon>
+<mui-icon name="save" size="18" label="Save"></mui-icon>
+
+<mui-icon-button label="Open menu" variant="soft">
+  <mui-icon name="menu"></mui-icon>
+</mui-icon-button>
+
+<mui-button>
+  <mui-icon slot="icon-start" name="save"></mui-icon>
+  Save draft
+</mui-button>
+```
+
+Both camelCase and kebab-case icon names work for built-ins, so `chevronLeft` and `chevron-left` resolve to the same icon.
+
+You can also register custom icons:
+
+```ts
+import { registerIcon } from '@miurajs/miura-ui';
+
+registerIcon('lab-flask', {
+  paths: ['M10 2v6l-5.5 9.5A2 2 0 0 0 6.2 20h11.6a2 2 0 0 0 1.7-2.5L14 8V2']
+});
 ```
 
 ---

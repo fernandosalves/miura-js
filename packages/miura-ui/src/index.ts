@@ -3,6 +3,8 @@ export * from './base/mui-base.js';
 
 // Primitives
 export * from './primitives/button.js';
+export * from './primitives/icon.js';
+export * from './primitives/icon-button.js';
 export * from './primitives/input.js';
 export * from './primitives/checkbox.js';
 export * from './primitives/radio.js';

@@ -89,3 +89,22 @@ export const Interactive: Story = {
         </mui-button>
     `,
 };
+
+export const WithIcons: Story = {
+    render: () => `
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <mui-button variant="solid">
+                <mui-icon slot="icon-start" name="save"></mui-icon>
+                Save
+            </mui-button>
+            <mui-button variant="outline">
+                Next
+                <mui-icon slot="icon-end" name="arrow-right"></mui-icon>
+            </mui-button>
+            <mui-button variant="ghost">
+                <mui-icon slot="icon-start" name="refresh-cw"></mui-icon>
+                Refresh
+            </mui-button>
+        </div>
+    `,
+};
