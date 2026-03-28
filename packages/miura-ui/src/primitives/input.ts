@@ -18,14 +18,14 @@ export class MuiInput extends MuiBase {
         required: { type: Boolean, reflect: true },
     };
 
-    value: string = '';
-    type = 'text';
-    placeholder = '';
-    size: InputSize = 'md';
-    status: InputStatus = 'default';
-    disabled = false;
-    readonly = false;
-    required = false;
+    declare value: string;
+    declare type: string;
+    declare placeholder: string;
+    declare size: InputSize;
+    declare status: InputStatus;
+    declare disabled: boolean;
+    declare readonly: boolean;
+    declare required: boolean;
 
     private handleInput = (event: Event) => {
         if (this.readonly || this.disabled) return;

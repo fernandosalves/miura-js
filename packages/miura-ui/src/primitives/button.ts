@@ -17,12 +17,12 @@ export class MuiButton extends MuiBase {
         block: { type: Boolean, reflect: true },
     };
 
-    variant: ButtonVariant = 'solid';
-    size: ButtonSize = 'md';
-    tone: ButtonTone = 'primary';
-    loading = false;
-    disabled = false;
-    block = false;
+    declare variant: ButtonVariant;
+    declare size: ButtonSize;
+    declare tone: ButtonTone;
+    declare loading: boolean;
+    declare disabled: boolean;
+    declare block: boolean;
 
     static styles = css`
         :host {

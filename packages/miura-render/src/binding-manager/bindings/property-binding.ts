@@ -13,13 +13,22 @@ export class PropertyBinding implements Binding {
         if (value === this.previousValue) return;
 
         if (this.isBoolean) {
-            // Handle boolean attributes
-            if (value) {
-                (this.element as HTMLElement).setAttribute(this.propertyName, '');
+            // Handle boolean attributes: Prefer property for custom elements to avoid sync loops
+            const isCustomElement = this.element.tagName.includes('-');
+            const hasProperty = this.propertyName in this.element;
+
+            if (isCustomElement && hasProperty) {
+                (this.element as any)[this.propertyName] = !!value;
             } else {
-                (this.element as HTMLElement).removeAttribute(this.propertyName);
+                if (value) {
+                    (this.element as HTMLElement).setAttribute(this.propertyName, '');
+                } else {
+                    (this.element as HTMLElement).removeAttribute(this.propertyName);
+                }
+                if (hasProperty) {
+                    (this.element as any)[this.propertyName] = !!value;
+                }
             }
-            (this.element as any)[this.propertyName] = !!value;
         } else {
             // Handle regular properties
             (this.element as any)[this.propertyName] = value;

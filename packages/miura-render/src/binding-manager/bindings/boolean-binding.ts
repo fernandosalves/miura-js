@@ -36,18 +36,21 @@ export class BooleanBinding implements Binding {
             previousValue: this.previousValue
         });
 
-        if (newValue) {
-            // Set both attribute and property
-            this.element.setAttribute(this.attributeName, '');
-            // Only set property if it exists on element
-            if (this.attributeName in this.element) {
-                (this.element as any)[this.attributeName] = true;
-            }
+        const isCustomElement = this.element.tagName.includes('-');
+        const hasProperty = this.attributeName in this.element;
+
+        if (isCustomElement && hasProperty) {
+            // Let the component handle its own reflection
+            (this.element as any)[this.attributeName] = newValue;
         } else {
-            // Remove both attribute and property
-            this.element.removeAttribute(this.attributeName);
-            if (this.attributeName in this.element) {
-                (this.element as any)[this.attributeName] = false;
+            // Standard double-sync for native/legacy elements
+            if (newValue) {
+                this.element.setAttribute(this.attributeName, '');
+            } else {
+                this.element.removeAttribute(this.attributeName);
+            }
+            if (hasProperty) {
+                (this.element as any)[this.attributeName] = newValue;
             }
         }
 

@@ -924,7 +924,10 @@ export class MiuraElement extends HTMLElement {
         for (const name of [...propKeys, ...stateKeys]) {
             const sig = (this as any)[`${SIGNAL_KEY_PREFIX}${name}`];
             if (sig && typeof sig.subscribe === 'function') {
-                const unsub = sig.subscribe(() => this.requestUpdate(name));
+                const unsub = sig.subscribe(() => {
+                    this._invalidateComputedCache(name);
+                    this.requestUpdate(name);
+                });
                 this._propSignalUnsubs.push(unsub);
             }
         }

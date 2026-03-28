@@ -17,14 +17,14 @@ export class MuiCheckbox extends MuiBase {
         size: { type: String, reflect: true },
     };
 
-    checked = false;
-    disabled = false;
-    readonly = false;
-    indeterminate = false;
-    value = 'on';
-    name = '';
-    required = false;
-    size: CheckboxSize = 'md';
+    declare checked: boolean;
+    declare disabled: boolean;
+    declare readonly: boolean;
+    declare indeterminate: boolean;
+    declare value: string;
+    declare name: string;
+    declare required: boolean;
+    declare size: CheckboxSize;
 
     private handleChange = (event: Event) => {
         if (this.readonly) {
