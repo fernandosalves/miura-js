@@ -132,12 +132,26 @@ function resolveUtilityAttribute(name: string, value: unknown): UtilityInstructi
 }
 
 export function ensureUtilityStyles(doc: Document = document): void {
-    if (!doc.head || doc.getElementById(UTILITY_STYLE_ELEMENT_ID)) return;
+    ensureUtilityStylesInRoot(doc);
+}
+
+export function ensureUtilityStylesInRoot(root: Document | ShadowRoot): void {
+    if (root.getElementById?.(UTILITY_STYLE_ELEMENT_ID)) return;
+
+    const doc = root instanceof Document ? root : root.ownerDocument;
+    if (!doc) return;
 
     const style = doc.createElement('style');
     style.id = UTILITY_STYLE_ELEMENT_ID;
     style.textContent = UTILITY_STYLE_TEXT;
-    doc.head.appendChild(style);
+
+    if (root instanceof Document) {
+        if (!root.head) return;
+        root.head.appendChild(style);
+        return;
+    }
+
+    root.appendChild(style);
 }
 
 export function clearAppliedUtilities(
@@ -161,7 +175,12 @@ export function applyUtilityValue(
     value: unknown,
     previousState?: UtilityApplicationState | null
 ): UtilityApplicationState {
-    ensureUtilityStyles(element.ownerDocument ?? document);
+    const root = element.getRootNode();
+    if (root instanceof ShadowRoot || root instanceof Document) {
+        ensureUtilityStylesInRoot(root);
+    } else {
+        ensureUtilityStyles(element.ownerDocument ?? document);
+    }
 
     const nextState = clearAppliedUtilities(element, previousState);
     const resolved = resolveUtilityAttribute(name, value);

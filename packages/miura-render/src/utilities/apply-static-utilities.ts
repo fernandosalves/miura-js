@@ -1,7 +1,8 @@
-import { applyUtilityValue } from './utility-resolver';
+import { applyUtilityValue, ensureUtilityStyles } from './utility-resolver';
 
 export function applyStaticUtilities(fragment: DocumentFragment): void {
     const doc = fragment.ownerDocument ?? document;
+    ensureUtilityStyles(doc);
     const walker = doc.createTreeWalker(fragment, NodeFilter.SHOW_ELEMENT);
     let node = walker.nextNode();
 

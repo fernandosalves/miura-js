@@ -3,7 +3,7 @@ import { PropertyDeclarations, createProperties, createStateProperties, SIGNAL_K
 import { signal, computed, Signal, ReadonlySignal } from './signals.js';
 
 import { TemplateResult, CSSResult, debugLog } from '@miurajs/miura-render';
-import { TemplateProcessor, TemplateCompiler, NodeBinding, DirectiveBinding } from '@miurajs/miura-render';
+import { TemplateProcessor, TemplateCompiler, NodeBinding, DirectiveBinding, ensureUtilityStylesInRoot } from '@miurajs/miura-render';
 import type { CompiledTemplate } from '@miurajs/miura-render';
 
 /** Shared AOT compiler singleton — one instance for the whole application */
@@ -575,6 +575,7 @@ export class MiuraElement extends HTMLElement {
      */
     private async renderTemplateInstance(template: TemplateResult): Promise<void> {
         const ctor = this.constructor as typeof MiuraElement;
+        ensureUtilityStylesInRoot(this._shadowRoot);
 
         if (ctor.compiler === 'AOT') {
             // ── AOT path ────────────────────────────────────────────────────────

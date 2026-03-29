@@ -12,3 +12,4 @@ export { TemplateCompiler } from './src/compiler/compiler';
 export type { CompiledTemplate } from './src/compiler/compiler';
 export { NodeBinding } from './src/binding-manager/bindings/node-binding';
 export { DirectiveBinding } from './src/binding-manager/bindings/directive-binding';
+export { ensureUtilityStyles, ensureUtilityStylesInRoot } from './src/utilities/utility-resolver';
