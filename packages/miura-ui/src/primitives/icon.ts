@@ -3,7 +3,7 @@ import { html, css } from '@miurajs/miura-element';
 import { getIcon, listIcons, registerIcon, registerIcons } from './icon-registry.js';
 
 export { getIcon, listIcons, registerIcon, registerIcons } from './icon-registry.js';
-export type { IconDefinition } from './icon-registry.js';
+export type { IconDefinition, IconNode, ResolvedIconDefinition } from './icon-registry.js';
 
 export class MuiIcon extends MuiBase {
     static tagName = 'mui-icon';
@@ -62,6 +62,27 @@ export class MuiIcon extends MuiBase {
         }
     }
 
+    private _escapeAttribute(value: string): string {
+        return value
+            .replaceAll('&', '&amp;')
+            .replaceAll('"', '&quot;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;');
+    }
+
+    private _serializeAttributes(attributes: Record<string, string | number | boolean | undefined>): string {
+        return Object.entries(attributes)
+            .filter(([, value]) => value !== undefined && value !== false)
+            .map(([name, value]) => {
+                if (value === true) {
+                    return ` ${name}`;
+                }
+
+                return ` ${name}="${this._escapeAttribute(String(value))}"`;
+            })
+            .join('');
+    }
+
     private _renderSvg(iconName: string) {
         const icon = getIcon(iconName);
         if (!icon) return null;
@@ -80,8 +101,13 @@ export class MuiIcon extends MuiBase {
             if (this.label) this.setAttribute('aria-label', this.label);
         }
 
-        const paths = icon.paths.map((path) => `<path d="${path}"></path>`).join('');
-        return `<svg viewBox="0 0 24 24" aria-hidden="${ariaHidden}">${paths}</svg>`;
+        const nodes = icon.iconNode
+            .map(([tagName, attrs]: [string, Record<string, string | number | boolean | undefined>]) =>
+                `<${tagName}${this._serializeAttributes(attrs)}></${tagName}>`
+            )
+            .join('');
+
+        return `<svg viewBox="${icon.viewBox}" aria-hidden="${ariaHidden}">${nodes}</svg>`;
     }
 
     template() {
