@@ -31,4 +31,27 @@ describe('TemplateCompiler events', () => {
 
     document.body.innerHTML = '';
   });
+
+  it('applies static and dynamic % utilities in compiled templates', () => {
+    const compiler = new TemplateCompiler();
+    const template = html`
+      <div id="compiled" %="flex p-2" %grow=${'1'}>
+        Content
+      </div>
+    `;
+
+    const compiled = compiler.compile(template);
+    const { fragment, refs } = compiled.render(template.values);
+    document.body.appendChild(fragment);
+
+    const element = document.getElementById('compiled') as HTMLDivElement;
+    expect(element.classList.contains('miura-u-flex')).toBe(true);
+    expect(element.classList.contains('miura-u-p-2')).toBe(true);
+    expect(element.style.flexGrow).toBe('1');
+
+    compiled.update(refs, ['0']);
+    expect(element.style.flexGrow).toBe('0');
+
+    document.body.innerHTML = '';
+  });
 });

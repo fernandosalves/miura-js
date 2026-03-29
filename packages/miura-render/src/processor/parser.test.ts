@@ -156,6 +156,37 @@ describe('TemplateParser', () => {
       
       expect(result.html).toBe('<div class="binding:0">Content</div>');
     });
+
+    it('should parse unquoted utility bindings', () => {
+      const result = parser.parse(createTemplateStrings(['<div %=', '></div>']));
+
+      expect(result.bindings[0]).toEqual({
+        type: BindingType.Utility,
+        name: '%',
+        index: 0,
+        modifiers: undefined,
+        strings: ['', ''],
+        partIndex: 0,
+        groupStart: 0,
+      });
+
+      expect(result.html).toBe('<div %="binding:0"></div>');
+    });
+
+    it('should parse named utility bindings', () => {
+      const result = parser.parse(createTemplateStrings(['<div %grow="', '"></div>']));
+
+      expect(result.bindings[0]).toEqual({
+        type: BindingType.Utility,
+        name: '%grow',
+        index: 0,
+        partIndex: 0,
+        groupStart: 0,
+        strings: ['', ''],
+      });
+
+      expect(result.html).toBe('<div %grow="binding:0"></div>');
+    });
   });
 
   describe('Node Bindings', () => {

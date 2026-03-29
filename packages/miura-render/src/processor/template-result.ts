@@ -49,7 +49,9 @@ export enum BindingType {
     /** Spread binding: ...=${propsObj} — sets each key as a property */
     Spread = 'spread',
     /** Async auto-unwrap: ~prop=${promise} — resolves and sets when promise settles */
-    Async = 'async'
+    Async = 'async',
+    /** Utility styling: %=${'flex gap-2'} or %padding=${'1rem'} */
+    Utility = 'utility'
 }
 
 /**

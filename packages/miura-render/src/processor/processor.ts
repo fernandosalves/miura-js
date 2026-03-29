@@ -4,6 +4,7 @@ import { registerDefaultProcessor } from './types';
 import { debugLog } from '../utils/debug';
 import { BindingManager } from '../binding-manager/binding-manager';
 import { Binding } from '../binding-manager/bindings/binding';
+import { applyStaticUtilities } from '../utilities/apply-static-utilities';
 
 /**
  * Performance metrics for template processing
@@ -123,7 +124,9 @@ export class TemplateProcessor {
     private createDOMFragment(html: string): DocumentFragment {
         const template = document.createElement('template');
         template.innerHTML = html;
-        return document.importNode(template.content, true);
+        const fragment = document.importNode(template.content, true);
+        applyStaticUtilities(fragment);
+        return fragment;
     }
 }
 

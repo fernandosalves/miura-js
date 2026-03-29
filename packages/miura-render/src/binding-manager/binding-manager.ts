@@ -18,8 +18,10 @@ import { ObjectClassBinding } from './bindings/object-class-binding';
 import { ObjectStyleBinding } from './bindings/object-style-binding';
 import { SpreadBinding } from './bindings/spread-binding';
 import { AsyncBinding } from './bindings/async-binding';
+import { UtilityBinding, UtilityPartBinding } from './bindings/utility-binding';
 
 type SignalLike = { peek(): unknown; subscribe(fn: (v: unknown) => void): () => void };
+type MultipartBinding = AttributeBinding | UtilityBinding;
 
 function _isSignal(v: unknown): v is SignalLike {
     return typeof v === 'function' && (v as any).__isSignal === true;
@@ -78,11 +80,11 @@ export class BindingManager {
 
         // Caches for multi-part attribute groups
         const elementCache = new Map<number, Element>();
-        const attrBindingCache = new Map<number, AttributeBinding>();
+        const attrBindingCache = new Map<number, MultipartBinding>();
 
         bindings.forEach(binding => {
             // Handle multi-part Attribute bindings
-            if (binding.type === BindingType.Attribute) {
+            if (binding.type === BindingType.Attribute || binding.type === BindingType.Utility) {
                 const groupStart = binding.groupStart ?? binding.index;
                 let element: Element | null;
 
@@ -98,16 +100,24 @@ export class BindingManager {
                 if (!element) return;
 
                 if (groupStart === binding.index) {
-                    // Create the shared AttributeBinding
                     const strings = binding.strings || ['', ''];
-                    const attrBinding = new AttributeBinding(element, binding.name || '', strings);
-                    attrBindingCache.set(groupStart, attrBinding);
-                    bindingInstances[binding.index] = attrBinding;
+                    if (binding.type === BindingType.Utility) {
+                        const utilityBinding = new UtilityBinding(element, binding.name || '', strings);
+                        attrBindingCache.set(groupStart, utilityBinding);
+                        bindingInstances[binding.index] = utilityBinding;
+                    } else {
+                        const attrBinding = new AttributeBinding(element, binding.name || '', strings);
+                        attrBindingCache.set(groupStart, attrBinding);
+                        bindingInstances[binding.index] = attrBinding;
+                    }
                 } else {
-                    // Create a part binding that delegates to the shared parent
                     const parent = attrBindingCache.get(groupStart);
                     if (parent) {
-                        bindingInstances[binding.index] = new AttributePartBinding(parent, binding.partIndex ?? 0);
+                        if (binding.type === BindingType.Utility) {
+                            bindingInstances[binding.index] = new UtilityPartBinding(parent as UtilityBinding, binding.partIndex ?? 0);
+                        } else {
+                            bindingInstances[binding.index] = new AttributePartBinding(parent as AttributeBinding, binding.partIndex ?? 0);
+                        }
                     }
                 }
                 return;
@@ -188,6 +198,9 @@ export class BindingManager {
                 const asyncProp = name.startsWith('~') ? name.slice(1) : name;
                 return new AsyncBinding(element, asyncProp);
             }
+
+            case BindingType.Utility:
+                return new UtilityBinding(element, name, ['', '']);
 
             default:
                 throw new Error(`Unsupported binding type: ${binding.type}`);

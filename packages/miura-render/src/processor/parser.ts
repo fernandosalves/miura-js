@@ -68,7 +68,7 @@ interface AttrContext {
  */
 export class TemplateParser {
     private static BINDING_MARKER = 'binding:';
-    private static ATTRIBUTE_PREFIX_REGEX = /^([.@?#&:~]|\.\.\.)/;
+    private static ATTRIBUTE_PREFIX_REGEX = /^([.@?#&:~%]|\.\.\.)/;
 
     /**
      * Performance tracking
@@ -292,7 +292,7 @@ export class TemplateParser {
                         html += `${TemplateParser.BINDING_MARKER}${i}"`;
 
                         bindings.push({
-                            type: BindingType.Attribute, // provisional — finalized when attr closes
+                            type: prefix === '%' ? BindingType.Utility : BindingType.Attribute,
                             name: lastAttrName,
                             index: i,
                             partIndex: 0,
@@ -304,7 +304,7 @@ export class TemplateParser {
                         attrCtx.partCount++;
 
                         bindings.push({
-                            type: BindingType.Attribute,
+                            type: attrCtx.prefix === '%' ? BindingType.Utility : BindingType.Attribute,
                             name: attrCtx.name,
                             index: i,
                             partIndex: attrCtx.partCount - 1,
@@ -396,7 +396,10 @@ export class TemplateParser {
         const firstBinding = bindings.find(b => b.index === ctx.startBindingIndex);
         if (!firstBinding) return;
 
-        if (isSingleExpr) {
+        if (ctx.prefix === '%') {
+            firstBinding.type = BindingType.Utility;
+            firstBinding.name = ctx.name;
+        } else if (isSingleExpr) {
             // Entire attribute value is a single expression — use specialized binding type
             const type = this.getSpecializedType(ctx.prefix, ctx.cleanName);
             firstBinding.type = type;
@@ -427,6 +430,8 @@ export class TemplateParser {
                 return BindingType.Property;
             case '~':
                 return BindingType.Async;
+            case '%':
+                return BindingType.Utility;
             case '...':
                 return BindingType.Spread;
             case '#': {

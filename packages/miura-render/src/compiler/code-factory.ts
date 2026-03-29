@@ -13,6 +13,8 @@ interface RefSlot {
     prev?: unknown;
     /** Bound event listener (for cleanup) */
     listener?: EventListener;
+    /** Utility classes/styles applied by % bindings */
+    utilityState?: unknown;
 }
 
 // ── Shared runtime helper code injected into every generated function ─────────
@@ -164,6 +166,11 @@ function _updateCode(b: TemplateBinding, ri: number): string {
             return `if (${r}.prev !== ${v}) { ${r}.prev = ${v}; ${r}.el[${propName}] = ${v}; }`;
         }
 
+        case BindingType.Utility: {
+            const utilityName = JSON.stringify(b.name);
+            return `if (${r}.prev !== ${v}) { ${r}.prev = ${v}; ${r}.utilityState = applyUtilityValue(${r}.el, ${utilityName}, ${v}, ${r}.utilityState); }`;
+        }
+
         case BindingType.Reference:
             return `if (${v} && typeof ${v} === 'object') { ${v}.value = ${r}.el; }`;
 
@@ -265,7 +272,7 @@ export class CodeFactory {
         `;
 
         // eslint-disable-next-line no-new-func
-        return new Function('html', 'values', src) as CompiledRenderFn;
+        return new Function('html', 'values', 'applyUtilityValue', 'clearAppliedUtilities', src) as CompiledRenderFn;
     }
 
     /**
@@ -284,7 +291,7 @@ export class CodeFactory {
         `;
 
         // eslint-disable-next-line no-new-func
-        return new Function('refs', 'values', src) as CompiledUpdateFn;
+        return new Function('refs', 'values', 'applyUtilityValue', 'clearAppliedUtilities', src) as CompiledUpdateFn;
     }
 
     get html(): string { return this._html; }
@@ -295,9 +302,13 @@ export class CodeFactory {
 export type CompiledRenderFn = (
     html: string,
     values: unknown[],
+    applyUtilityValue: (...args: any[]) => any,
+    clearAppliedUtilities: (...args: any[]) => any,
 ) => { fragment: DocumentFragment; refs: RefSlot[] };
 
 export type CompiledUpdateFn = (
     refs: RefSlot[],
     values: unknown[],
+    applyUtilityValue: (...args: any[]) => any,
+    clearAppliedUtilities: (...args: any[]) => any,
 ) => void;
