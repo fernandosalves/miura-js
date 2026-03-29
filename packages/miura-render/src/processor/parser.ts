@@ -256,7 +256,12 @@ export class TemplateParser {
 
             // ── End of string part: if not last, there's an expression ${} here ──
             if (!isLast) {
-                if (state === ParserState.ATTR_VALUE_DQ || state === ParserState.ATTR_VALUE_SQ) {
+                if (state === ParserState.COMMENT) {
+                    // Expressions inside HTML comments are ignored entirely.
+                    // We preserve the surrounding comment markup/text, but do not
+                    // create bindings or emit marker placeholders.
+                    html += str.substring(htmlStart);
+                } else if (state === ParserState.ATTR_VALUE_DQ || state === ParserState.ATTR_VALUE_SQ) {
                     // Expression is inside an attribute value
                     const staticPart = str.substring(attrValueContentStart, str.length);
 

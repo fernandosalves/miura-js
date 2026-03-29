@@ -190,6 +190,30 @@ describe('TemplateParser', () => {
       });
       expect(result.bindings[3]).toEqual({ type: BindingType.Node, index: 3 });
     });
+
+    it('ignores expressions inside html comments', () => {
+      const result = parser.parse(createTemplateStrings([
+        '<div><!-- <button @click=',
+        '>Click</button> --></div>'
+      ]));
+
+      expect(result.bindings).toHaveLength(0);
+      expect(result.html).toBe('<div><!-- <button @click=>Click</button> --></div>');
+    });
+
+    it('ignores quoted attribute expressions inside html comments', () => {
+      const result = parser.parse(createTemplateStrings([
+        '<!--\n  <mui-icon-button\n    label="',
+        '"\n    ?disabled=',
+        '\n  ></mui-icon-button>\n-->'
+      ]));
+
+      expect(result.bindings).toHaveLength(0);
+      expect(result.html).toContain('<mui-icon-button');
+      expect(result.html).toContain('label=""');
+      expect(result.html).toContain('?disabled=');
+      expect(result.html.trim()).toEndWith('-->');
+    });
   });
 
   describe('Mixed Syntax Support', () => {

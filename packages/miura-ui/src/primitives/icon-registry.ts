@@ -1,45 +1,4 @@
-import {
-    AlertTriangle,
-    ArrowDown,
-    ArrowLeft,
-    ArrowRight,
-    ArrowUp,
-    Bell,
-    Calendar,
-    Check,
-    ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    ChevronUp,
-    CloudCheck,
-    Columns2,
-    Copy,
-    Download,
-    ExternalLink,
-    Eye,
-    Home,
-    Image,
-    Info,
-    Link,
-    LoaderCircle,
-    Mail,
-    Maximize2,
-    Menu,
-    Minus,
-    MoreHorizontal,
-    Pencil,
-    Plus,
-    RefreshCw,
-    Save,
-    Search,
-    Settings,
-    Trash,
-    Upload,
-    User,
-    Users,
-    X,
-    type IconNode as LucideIconNode,
-} from 'lucide';
+import { icons, type IconNode as LucideIconNode } from 'lucide';
 
 export type IconNode = LucideIconNode;
 
@@ -57,48 +16,6 @@ export type ResolvedIconDefinition = {
 type IconRegistration = IconDefinition | IconNode;
 
 const DEFAULT_VIEWBOX = '0 0 24 24';
-
-const builtInIcons = {
-    plus: Plus,
-    minus: Minus,
-    x: X,
-    check: Check,
-    search: Search,
-    menu: Menu,
-    maximize2: Maximize2,
-    home: Home,
-    user: User,
-    users: Users,
-    bell: Bell,
-    settings: Settings,
-    eye: Eye,
-    image: Image,
-    upload: Upload,
-    download: Download,
-    mail: Mail,
-    calendar: Calendar,
-    chevronLeft: ChevronLeft,
-    chevronRight: ChevronRight,
-    chevronUp: ChevronUp,
-    chevronDown: ChevronDown,
-    columns2: Columns2,
-    arrowLeft: ArrowLeft,
-    arrowRight: ArrowRight,
-    arrowUp: ArrowUp,
-    arrowDown: ArrowDown,
-    pencil: Pencil,
-    copy: Copy,
-    info: Info,
-    alertTriangle: AlertTriangle,
-    externalLink: ExternalLink,
-    link: Link,
-    cloudCheck: CloudCheck,
-    refreshCw: RefreshCw,
-    moreHorizontal: MoreHorizontal,
-    trash: Trash,
-    save: Save,
-    loaderCircle: LoaderCircle,
-} satisfies Record<string, IconNode>;
 
 const registry = new Map<string, ResolvedIconDefinition>();
 const aliases = new Map<string, string>();
@@ -141,15 +58,21 @@ function normalizeIconName(name: string): string {
     return toKebabCase(name.trim());
 }
 
+function toLowerCamelCase(value: string): string {
+    return value.length > 0 ? `${value.charAt(0).toLowerCase()}${value.slice(1)}` : value;
+}
+
 function addAliases(name: string): void {
     const normalized = normalizeIconName(name);
     aliases.set(normalized, name);
     aliases.set(name, name);
 }
 
-for (const [name, iconNode] of Object.entries(builtInIcons)) {
-    registry.set(name, normalizeIconDefinition(iconNode));
-    addAliases(name);
+for (const [exportName, iconNode] of Object.entries(icons)) {
+    const canonicalName = toLowerCamelCase(exportName);
+    registry.set(canonicalName, normalizeIconDefinition(iconNode));
+    addAliases(canonicalName);
+    aliases.set(exportName, canonicalName);
 }
 
 export function registerIcon(name: string, icon: IconRegistration): void {

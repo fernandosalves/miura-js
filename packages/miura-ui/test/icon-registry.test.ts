@@ -12,6 +12,7 @@ describe('icon registry', () => {
         expect(numericAlias).toEqual(getIcon('columns2'));
         expect(canonical?.iconNode.length).toBeGreaterThan(0);
         expect(listIcons()).toContain('save');
+        expect(listIcons().length).toBeGreaterThan(1600);
     });
 
     it('keeps legacy path-based custom registrations working', () => {
