@@ -36,22 +36,20 @@ export class BooleanBinding implements Binding {
             previousValue: this.previousValue
         });
 
-        const isCustomElement = this.element.tagName.includes('-');
         const hasProperty = this.attributeName in this.element;
 
-        if (isCustomElement && hasProperty) {
-            // Let the component handle its own reflection
-            (this.element as any)[this.attributeName] = newValue;
+        // `?attr=${...}` is explicitly a boolean attribute binding.
+        // Always reflect through the DOM attribute so custom elements that style
+        // off `:host([attr])` and elements that upgrade later both behave
+        // correctly. Native controls still get the property updated as well.
+        if (newValue) {
+            this.element.setAttribute(this.attributeName, '');
         } else {
-            // Standard double-sync for native/legacy elements
-            if (newValue) {
-                this.element.setAttribute(this.attributeName, '');
-            } else {
-                this.element.removeAttribute(this.attributeName);
-            }
-            if (hasProperty) {
-                (this.element as any)[this.attributeName] = newValue;
-            }
+            this.element.removeAttribute(this.attributeName);
+        }
+
+        if (hasProperty) {
+            (this.element as any)[this.attributeName] = newValue;
         }
 
         this.previousValue = newValue;
