@@ -1,48 +1,48 @@
 {
-  "name": "@miurajs/miura-element",
-  "version": "0.1.10",
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+    "name": "@miurajs/miura-element",
+    "version": "0.1.13",
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./server": {
+            "types": "./dist/server.d.ts",
+            "import": "./dist/server.js"
+        }
     },
-    "./server": {
-      "types": "./dist/server.d.ts",
-      "import": "./dist/server.js"
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "test": "vitest run",
+        "dev": "vitest"
+    },
+    "keywords": [
+        "web-components",
+        "framework",
+        "javascript",
+        "typescript"
+    ],
+    "author": "Fernando Alves",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/fernandosalves/miura-js.git"
+    },
+    "bugs": {
+        "url": "https://github.com/fernandosalves/miura-js/issues"
+    },
+    "homepage": "https://github.com/fernandosalves/miura-js#readme",
+    "dependencies": {
+        "@miurajs/miura-render": "^0.2.5"
+    },
+    "devDependencies": {
+        "typescript": "^5.0.0",
+        "vitest": "^1.0.0"
     }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "test": "vitest run",
-    "dev": "vitest"
-  },
-  "keywords": [
-    "web-components",
-    "framework",
-    "javascript",
-    "typescript"
-  ],
-  "author": "Fernando Alves",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/fernandosalves/miura-js.git"
-  },
-  "bugs": {
-    "url": "https://github.com/fernandosalves/miura-js/issues"
-  },
-  "homepage": "https://github.com/fernandosalves/miura-js#readme",
-  "dependencies": {
-    "@miurajs/miura-render": "^0.2.5"
-  },
-  "devDependencies": {
-    "typescript": "^5.0.0",
-    "vitest": "^1.0.0"
-  }
 }
