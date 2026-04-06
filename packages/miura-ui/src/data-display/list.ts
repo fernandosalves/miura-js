@@ -321,36 +321,52 @@ export class MuiListItem extends MiuraElement {
       this.disabled ? 'disabled' : '',
     ].filter(Boolean).join(' ');
 
-    const Tag = this.href ? 'a' : 'div';
-    
-    return html`
-      <${Tag} 
-        class="${classes}"
-        href="${this.href || undefined}"
-        role="listitem"
-        tabindex="${this.clickable && !this.disabled ? 0 : -1}"
-        @click="${this._handleClick}"
-        @keydown="${(e: KeyboardEvent) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            this._handleClick(e);
-          }
-        }}"
-      >
-        <span class="start">
-          ${this.icon ? html`<mui-icon name="${this.icon}" size="sm"></mui-icon>` : ''}
-          <slot name="start"></slot>
-        </span>
-        <div class="content">
-          <slot name="primary"></slot>
-          <slot name="secondary"></slot>
-          <slot></slot>
-        </div>
-        <span class="end">
-          <slot name="end"></slot>
-        </span>
-      </${Tag}>
+    const keydownHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this._handleClick(e);
+      }
+    };
+
+    const content = html`
+      <span class="start">
+        ${this.icon ? html`<mui-icon name="${this.icon}" size="sm"></mui-icon>` : ''}
+        <slot name="start"></slot>
+      </span>
+      <div class="content">
+        <slot name="primary"></slot>
+        <slot name="secondary"></slot>
+        <slot></slot>
+      </div>
+      <span class="end">
+        <slot name="end"></slot>
+      </span>
     `;
+    
+    return this.href 
+      ? html`
+          <a 
+            class="${classes}"
+            href="${this.href}"
+            role="listitem"
+            tabindex="${this.clickable && !this.disabled ? 0 : -1}"
+            @click="${this._handleClick}"
+            @keydown="${keydownHandler}"
+          >
+            ${content}
+          </a>
+        `
+      : html`
+          <div 
+            class="${classes}"
+            role="listitem"
+            tabindex="${this.clickable && !this.disabled ? 0 : -1}"
+            @click="${this._handleClick}"
+            @keydown="${keydownHandler}"
+          >
+            ${content}
+          </div>
+        `;
   }
 }
 

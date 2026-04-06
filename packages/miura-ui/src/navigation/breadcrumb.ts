@@ -177,18 +177,31 @@ export class MuiBreadcrumbItem extends MiuraElement {
   `;
 
   template() {
-    const Tag = this.href && !this.active ? 'a' : 'span';
     const classes = ['item', this.active ? 'active' : ''].filter(Boolean).join(' ');
+    const content = html`
+      ${this.icon ? html`<mui-icon name="${this.icon}" size="xs"></mui-icon>` : ''}
+      <slot></slot>
+    `;
 
     return html`
-      <${Tag} 
-        class="${classes}" 
-        href="${this.href || undefined}"
-        aria-current="${this.active ? 'page' : undefined}"
-      >
-        ${this.icon ? html`<mui-icon name="${this.icon}" size="xs"></mui-icon>` : ''}
-        <slot></slot>
-      </${Tag}>
+      ${this.href && !this.active
+        ? html`
+            <a 
+              class="${classes}" 
+              href="${this.href}"
+            >
+              ${content}
+            </a>
+          `
+        : html`
+            <span 
+              class="${classes}"
+              aria-current="${this.active ? 'page' : 'false'}"
+            >
+              ${content}
+            </span>
+          `
+      }
       ${!this.active ? html`
         <span class="separator">
           <mui-icon name="chevron-right" size="xs"></mui-icon>

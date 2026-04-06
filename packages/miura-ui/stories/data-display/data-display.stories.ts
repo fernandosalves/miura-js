@@ -3,7 +3,7 @@
  */
 
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { html } from 'lit';
+import { html } from '@miurajs/miura-render';
 import '../../src/data-display/avatar.js';
 import '../../src/data-display/badge.js';
 import '../../src/data-display/card.js';
