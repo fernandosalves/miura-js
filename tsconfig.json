@@ -12,7 +12,8 @@
     "sourceMap": true,
     "composite": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false
   },
   "references": [
     { "path": "./packages/miura-debugger" },

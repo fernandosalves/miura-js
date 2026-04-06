@@ -192,7 +192,7 @@ export class MuiLayoutPanel extends MiuraElement {
   /**
    * Panel is collapsed
    */
-  @property({ type: Boolean })
+  @property({ type: Boolean, reflect: true })
   collapsed = false;
 
   /**
@@ -439,7 +439,6 @@ export class MuiLayoutPanel extends MiuraElement {
           @mousedown="${this._startResize}"
         ></div>
       ` : ''}
-    </div>
   `;
  }
 }

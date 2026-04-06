@@ -218,12 +218,17 @@ export class MuiIcon extends MiuraElement {
     this._loading = false;
     
     if (svg) {
-      // Extract the inner content of the SVG (removes the outer <svg> tag)
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(svg, 'image/svg+xml');
-      const svgEl = doc.querySelector('svg');
-      if (svgEl) {
-        this._svgContent = svgEl.innerHTML;
+      if (svg.trim().startsWith('<svg')) {
+        // Legacy support: extract the inner content of the SVG (removes the outer <svg> tag)
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(svg, 'image/svg+xml');
+        const svgEl = doc.querySelector('svg');
+        if (svgEl) {
+          this._svgContent = svgEl.innerHTML;
+        }
+      } else {
+        // Already pre-processed into innerHTML (e.g. from our mapped Lucide AST loader)
+        this._svgContent = svg;
       }
     }
   }

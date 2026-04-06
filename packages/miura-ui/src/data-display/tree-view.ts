@@ -43,27 +43,55 @@ export class MuiTreeView extends MiuraElement {
   connectedCallback() {
     super.connectedCallback();
     this.addEventListener('tree-item-select', this._handleItemSelect.bind(this) as EventListener);
+    // Add slotchange listener to sync selection with initially rendered items
+    this.addEventListener('slotchange', this._syncSelection.bind(this));
+  }
+
+  private _syncSelection() {
+    if (this.selection === 'none') {
+      const items = this.querySelectorAll('mui-tree-item');
+      items.forEach((item: any) => item.selected = false);
+      return;
+    }
+
+    const items = this.querySelectorAll('mui-tree-item');
+    items.forEach((item: any) => {
+      // Also pick up initially selected items into our Set
+      if (item.selected) {
+        if (this.selection === 'single') {
+          this._selectedIds.clear();
+        }
+        this._selectedIds.add(item.id || item.label); // Default to label if id is missing in stories
+      }
+      
+      const itemId = item.id || item.label;
+      item.selected = this._selectedIds.has(itemId);
+    });
   }
 
   private _handleItemSelect(e: CustomEvent) {
-    const { id, multiSelect } = e.detail;
+    const { id, multiSelect, element } = e.detail;
+    
+    // Fallback to reading label from element if id is missing
+    const itemId = id || element?.label || '';
     
     if (this.selection === 'none') return;
 
     if (this.selection === 'single') {
       this._selectedIds.clear();
-      this._selectedIds.add(id);
+      this._selectedIds.add(itemId);
     } else if (multiSelect) {
-      if (this._selectedIds.has(id)) {
-        this._selectedIds.delete(id);
+      if (this._selectedIds.has(itemId)) {
+        this._selectedIds.delete(itemId);
       } else {
-        this._selectedIds.add(id);
+        this._selectedIds.add(itemId);
       }
     } else {
       this._selectedIds.clear();
-      this._selectedIds.add(id);
+      this._selectedIds.add(itemId);
     }
 
+    this._syncSelection();
     this.emit('selection-change', { selectedIds: Array.from(this._selectedIds) });
     this.requestUpdate();
   }
@@ -71,7 +99,7 @@ export class MuiTreeView extends MiuraElement {
   template() {
     return html`
       <ul class="tree" role="tree">
-        <slot></slot>
+        <slot @slotchange=${this._syncSelection.bind(this)}></slot>
       </ul>
     `;
   }
@@ -91,13 +119,13 @@ export class MuiTreeItem extends MiuraElement {
   @property({ type: String, default: '' })
   icon!: string;
 
-  @property({ type: Boolean, default: false })
+  @property({ type: Boolean, default: false, reflect: true })
   expanded!: boolean;
 
-  @property({ type: Boolean, default: false })
+  @property({ type: Boolean, default: false, reflect: true })
   selected!: boolean;
 
-  @property({ type: Boolean, default: false })
+  @property({ type: Boolean, default: false, reflect: true })
   disabled!: boolean;
 
   @property({ type: Boolean, default: true })
@@ -291,7 +319,7 @@ export class MuiTreeItem extends MiuraElement {
     if (this.disabled) return;
     
     const multiSelect = (e as MouseEvent).ctrlKey || (e as MouseEvent).metaKey;
-    this.emit('tree-item-select', { id: this.id, multiSelect }, { bubbles: true, composed: true });
+    this.emit('tree-item-select', { id: this.id, multiSelect, element: this }, { bubbles: true, composed: true });
   }
 
   private _handleDragStart(e: DragEvent) {
