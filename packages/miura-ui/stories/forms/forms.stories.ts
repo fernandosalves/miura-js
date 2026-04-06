@@ -6,14 +6,21 @@ import '../../src/forms/select.js';
 import '../../src/forms/checkbox.js';
 import '../../src/forms/switch.js';
 import '../../src/forms/radio.js';
+import '../../src/forms/slider.js';
+import '../../src/forms/date-picker.js';
+import '../../src/forms/color-picker.js';
+import '../../src/forms/file-upload.js';
 import '../../src/data-display/display.js';
+import '../../src/data-display/kpi-card.js';
+import '../../src/data-display/persona.js';
 import '../../src/primitives/icon.js';
+import '../../src/primitives/icon-button.js';
 import '../../src/primitives/button.js';
 import '../../src/layout/stack.js';
 
 // ── Forms Demo ────────────────────────────────────────────────────────────────
 class FormsDemo extends MiuraElement {
-  static styles: any = css`
+    static styles: any = css`
     :host { display: block; padding: 24px; font-family: system-ui; max-width: 600px; }
     h3 { font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 28px 0 14px; }
     h3:first-child { margin-top: 0; }
@@ -21,26 +28,26 @@ class FormsDemo extends MiuraElement {
     .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; }
   `;
 
-  @state({ default: true })
-  declare checkbox1: boolean;
+    @state({ default: true })
+    declare checkbox1: boolean;
 
-  @state({ default: false })
-  declare checkbox2: boolean;
+    @state({ default: false })
+    declare checkbox2: boolean;
 
-  @state({ default: false })
-  declare checkbox3: boolean;
+    @state({ default: false })
+    declare checkbox3: boolean;
 
-  @state({ default: true })
-  declare switchOn: boolean;
+    @state({ default: true })
+    declare switchOn: boolean;
 
-  @state({ default: 'pro' })
-  declare radioVal: string;
+    @state({ default: 'pro' })
+    declare radioVal: string;
 
-  @state({ default: '' })
-  declare selectVal: string;
+    @state({ default: '' })
+    declare selectVal: string;
 
-  template() {
-    return html`
+    template() {
+        return html`
       <h3>Field Wrapper</h3>
       <div class="card" style="display:flex; flex-direction:column; gap:16px;">
         <mui-field label="Email address" required helper="We'll never share your email">
@@ -113,21 +120,21 @@ class FormsDemo extends MiuraElement {
         <mui-radio value="lg">Large</mui-radio>
       </mui-radio-group>
     `;
-  }
+    }
 }
 customElements.define('forms-demo', FormsDemo);
 
 // ── Typography Demo ────────────────────────────────────────────────────────
 class TypographyDemo extends MiuraElement {
-  static styles: any = css`
+    static styles: any = css`
     :host { display: block; padding: 24px; font-family: system-ui; }
     h3 { font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 28px 0 14px; }
     h3:first-child { margin-top: 0; }
     .palette { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
   `;
 
-  template() {
-    return html`
+    template() {
+        return html`
       <h3>Variants</h3>
       <div style="display:flex; flex-direction:column; gap:8px;">
         <mui-text variant="h1">Heading 1 — The quick brown fox</mui-text>
@@ -161,21 +168,21 @@ class TypographyDemo extends MiuraElement {
         </mui-text>
       </div>
     `;
-  }
+    }
 }
 customElements.define('typography-demo', TypographyDemo);
 
 // ── Data Display Demo ───────────────────────────────────────────────────────
 class DataDisplayDemo extends MiuraElement {
-  static styles: any = css`
+    static styles: any = css`
     :host { display: block; padding: 24px; font-family: system-ui; }
     h3 { font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 28px 0 14px; }
     h3:first-child { margin-top: 0; }
     .row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
   `;
 
-  template() {
-    return html`
+    template() {
+        return html`
       <h3>Progress Bar</h3>
       <div style="display:flex; flex-direction:column; gap:16px; max-width:480px;">
         <mui-progress value="25" label="Uploading..." show-value></mui-progress>
@@ -272,27 +279,89 @@ class DataDisplayDemo extends MiuraElement {
         </div>
       </div>
     `;
-  }
+    }
 }
 customElements.define('data-display-demo', DataDisplayDemo);
+
+// ── Advanced Forms Demo ─────────────────────────────────────────────────────
+class AdvancedFormsDemo extends MiuraElement {
+    static styles: any = css`
+    :host { display: block; padding: 24px; font-family: system-ui; max-width: 640px; }
+    h3 { font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 28px 0 14px; }
+    h3:first-child { margin-top: 0; }
+    .row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+  `;
+
+    @state({ default: 40 })
+    declare sliderVal: number;
+
+    @state({ default: '#3b82f6' })
+    declare colorVal: string;
+
+    template() {
+        return html`
+      <h3>Slider</h3>
+      <div style="display:flex; flex-direction:column; gap:16px; max-width:420px;">
+        <mui-slider label="Volume" .value=${this.sliderVal} min="0" max="100" @change=${(e: any) => { this.sliderVal = e.detail.value; }}></mui-slider>
+        <mui-slider label="Opacity" value="75" min="0" max="100" step="5"></mui-slider>
+        <mui-slider value="50" disabled></mui-slider>
+      </div>
+
+      <h3>Date Picker</h3>
+      <div class="row">
+        <div style="flex:1; min-width:200px;">
+          <mui-date-picker label="Publish Date"></mui-date-picker>
+        </div>
+        <div style="flex:1; min-width:200px;">
+          <mui-date-picker label="Deadline" disabled></mui-date-picker>
+        </div>
+      </div>
+
+      <h3>Color Picker</h3>
+      <div class="row">
+        <mui-color-picker label="Accent Color" .value=${this.colorVal} @change=${(e: any) => { this.colorVal = e.detail.value; }}></mui-color-picker>
+        <mui-color-picker label="Background" value="#f3f4f6"></mui-color-picker>
+        <mui-color-picker label="Border" value="#e5e7eb"></mui-color-picker>
+      </div>
+
+      <h3>File Upload</h3>
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <mui-file-upload accept="image/*" @upload=${(e: any) => console.log('files:', e.detail.files)}>
+          <span slot="title">Drop images here</span>
+          <span slot="subtitle">PNG, JPG or GIF up to 5 MB</span>
+        </mui-file-upload>
+        <mui-file-upload multiple accept=".pdf,.doc,.docx">
+          <span slot="title">Upload documents</span>
+          <span slot="subtitle">PDF or Word, multiple allowed</span>
+        </mui-file-upload>
+      </div>
+    `;
+    }
+}
+customElements.define('advanced-forms-demo', AdvancedFormsDemo);
 
 // ─── Meta & exports ──────────────────────────────────────────────────────────
 
 const formsMeta: Meta = {
-  title: 'MiuraUI/Forms/Form Controls',
-  component: 'forms-demo',
-  parameters: { layout: 'padded' },
+    title: 'MiuraUI/Forms/Form Controls',
+    component: 'forms-demo',
+    parameters: { layout: 'padded' },
 };
 export default formsMeta;
 
 export const FormControls: StoryObj = {};
 
 export const Typography: StoryObj = {
-  render: () => document.createElement('typography-demo'),
-  name: 'Typography',
+    render: () => document.createElement('typography-demo'),
+    name: 'Typography',
 };
 
 export const DataDisplay: StoryObj = {
-  render: () => document.createElement('data-display-demo'),
-  name: 'Data Display (Progress, Skeleton, Timeline, Persona)',
+    render: () => document.createElement('data-display-demo'),
+    name: 'Data Display (Progress, Skeleton, Timeline, Persona)',
+};
+
+export const AdvancedForms: StoryObj = {
+    render: () => document.createElement('advanced-forms-demo'),
+    name: 'Advanced Forms (Slider, Date, Color, File)',
 };

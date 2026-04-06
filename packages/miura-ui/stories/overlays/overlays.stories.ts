@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { MiuraElement, html, css, state } from '@miurajs/miura-element';
 import '../../src/overlays/popover.js';
 import '../../src/overlays/dialog.js';
+import '../../src/overlays/command.js';
 import '../../src/primitives/button.js';
 import '../../src/primitives/icon.js';
 import '../../src/primitives/icon-button.js';
@@ -231,7 +232,41 @@ class DialogDemo extends MiuraElement {
 }
 customElements.define('dialog-demo', DialogDemo);
 
-// ─── Meta ────────────────────────────────────────────────────────────────────
+// ── Command Palette Demo ─────────────────────────────────────────────────────
+class CommandPaletteDemo extends MiuraElement {
+    @state({ default: false })
+    declare open: boolean;
+
+    static styles: any = css`
+        :host { display: block; padding: 24px; font-family: system-ui; }
+        .hint { font-size: 13px; color: #6b7280; margin-top: 12px; }
+        kbd { display: inline-block; padding: 2px 6px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; font-family: inherit; }
+    `;
+
+    template() {
+        return html`
+            <mui-button @click=${() => { this.open = true; }}>Open Command Palette</mui-button>
+            <p class="hint">Or press <kbd>⌘</kbd> + <kbd>K</kbd> anywhere on the page.</p>
+
+            <mui-command-palette ?open=${this.open} @close=${() => { this.open = false; }}>
+                <mui-command-group label="Navigation">
+                    <mui-command-item icon="home" shortcut="G H">Go to Dashboard</mui-command-item>
+                    <mui-command-item icon="folder" shortcut="G C">Go to Content</mui-command-item>
+                    <mui-command-item icon="users" shortcut="G T">Go to Team</mui-command-item>
+                    <mui-command-item icon="settings" shortcut="G S">Go to Settings</mui-command-item>
+                </mui-command-group>
+                <mui-command-group label="Actions">
+                    <mui-command-item icon="plus" shortcut="N">New Story</mui-command-item>
+                    <mui-command-item icon="search" shortcut="/">Search</mui-command-item>
+                    <mui-command-item icon="moon">Toggle Dark Mode</mui-command-item>
+                </mui-command-group>
+            </mui-command-palette>
+        `;
+    }
+}
+customElements.define('command-palette-demo', CommandPaletteDemo);
+
+// ─── Meta ───────────────────────────────────────────────────────────────────────────────
 
 const dropdownMeta: Meta = {
     title: 'MiuraUI/Overlays/Dropdown Menu',
@@ -252,4 +287,10 @@ export const Dialog: StoryObj = {
     render: () => document.createElement('dialog-demo'),
     parameters: { component: 'dialog-demo' },
     name: 'Dialog',
+};
+
+export const CommandPalette: StoryObj = {
+    render: () => document.createElement('command-palette-demo'),
+    parameters: { component: 'command-palette-demo' },
+    name: 'Command Palette',
 };

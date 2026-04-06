@@ -3,25 +3,30 @@
  */
 
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { MiuraElement, html } from '@miurajs/miura-element';
 import '../../src/data-display/avatar.js';
 import '../../src/data-display/badge.js';
 import '../../src/data-display/card.js';
 import '../../src/data-display/list.js';
+import '../../src/data-display/tree-view.js';
+import '../../src/data-display/table.js';
+import '../../src/data-display/display.js';
+import '../../src/forms/checkbox.js';
+import '../../src/primitives/button.js';
 import '../../src/primitives/icon.js';
 import '../../src/primitives/icon-button.js';
+import { MiuraElement, html, css, state } from '@miurajs/miura-element';
 
 // ============================================================================
 // AVATAR
 // ============================================================================
 
 export default {
-  title: 'MiuraUI/Data Display',
+    title: 'MiuraUI/Data Display',
 } as Meta;
 
 class AvatarDemo extends MiuraElement {
-  template() {
-    return html`
+    template() {
+        return html`
       <div style="display: flex; flex-direction: column; gap: 32px;">
         <div>
           <h4 style="margin: 0 0 12px; font-size: 14px; color: #666;">Image Avatars</h4>
@@ -83,13 +88,13 @@ class AvatarDemo extends MiuraElement {
         </div>
       </div>
     `;
-  }
+    }
 }
 customElements.define('avatar-demo', AvatarDemo);
 
 export const Avatars: StoryObj = {
-  name: 'Avatar',
-  render: () => document.createElement('avatar-demo'),
+    name: 'Avatar',
+    render: () => document.createElement('avatar-demo'),
 };
 
 // ============================================================================
@@ -97,8 +102,8 @@ export const Avatars: StoryObj = {
 // ============================================================================
 
 class BadgeDemo extends MiuraElement {
-  template() {
-    return html`
+    template() {
+        return html`
       <div style="display: flex; flex-direction: column; gap: 32px;">
         <div>
           <h4 style="margin: 0 0 12px; font-size: 14px; color: #666;">Variants</h4>
@@ -182,13 +187,13 @@ class BadgeDemo extends MiuraElement {
         </div>
       </div>
     `;
-  }
+    }
 }
 customElements.define('badge-demo', BadgeDemo);
 
 export const Badges: StoryObj = {
-  name: 'Badge',
-  render: () => document.createElement('badge-demo'),
+    name: 'Badge',
+    render: () => document.createElement('badge-demo'),
 };
 
 // ============================================================================
@@ -196,8 +201,8 @@ export const Badges: StoryObj = {
 // ============================================================================
 
 class CardDemo extends MiuraElement {
-  template() {
-    return html`
+    template() {
+        return html`
       <div style="display: flex; flex-direction: column; gap: 32px; max-width: 800px;">
         <div>
           <h4 style="margin: 0 0 12px; font-size: 14px; color: #666;">Basic Card</h4>
@@ -324,13 +329,13 @@ class CardDemo extends MiuraElement {
         </div>
       </div>
     `;
-  }
+    }
 }
 customElements.define('card-demo', CardDemo);
 
 export const Cards: StoryObj = {
-  name: 'Card',
-  render: () => document.createElement('card-demo'),
+    name: 'Card',
+    render: () => document.createElement('card-demo'),
 };
 
 // ============================================================================
@@ -338,8 +343,8 @@ export const Cards: StoryObj = {
 // ============================================================================
 
 class ListDemo extends MiuraElement {
-  template() {
-    return html`
+    template() {
+        return html`
       <div style="display: flex; flex-direction: column; gap: 32px; max-width: 500px;">
         <div>
           <h4 style="margin: 0 0 12px; font-size: 14px; color: #666;">Basic List</h4>
@@ -442,11 +447,126 @@ class ListDemo extends MiuraElement {
         </div>
       </div>
     `;
-  }
+    }
 }
 customElements.define('list-demo', ListDemo);
 
 export const Lists: StoryObj = {
-  name: 'List',
-  render: () => document.createElement('list-demo'),
+    name: 'List',
+    render: () => document.createElement('list-demo'),
+};
+
+// ============================================================================
+// TREE VIEW
+// ============================================================================
+
+class TreeViewDemo extends MiuraElement {
+    static styles: any = css`
+    :host { display: block; padding: 24px; font-family: system-ui; }
+    h4 { margin: 0 0 12px; font-size: 14px; color: #666; }
+    .row { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+  `;
+
+    template() {
+        return html`
+      <div class="row">
+        <div style="width:280px;">
+          <h4>File Tree</h4>
+          <mui-card>
+            <mui-tree-view selectable expandable>
+              <mui-tree-item id="src" label="src" icon="folder" expanded>
+                <mui-tree-item id="components" label="components" icon="folder">
+                  <mui-tree-item id="btn" label="button.ts" icon="file-code"></mui-tree-item>
+                  <mui-tree-item id="inp" label="input.ts" icon="file-code"></mui-tree-item>
+                </mui-tree-item>
+                <mui-tree-item id="styles" label="styles" icon="folder">
+                  <mui-tree-item id="tokens" label="tokens.css" icon="file"></mui-tree-item>
+                </mui-tree-item>
+                <mui-tree-item id="idx" label="index.ts" icon="file-code"></mui-tree-item>
+              </mui-tree-item>
+              <mui-tree-item id="pkg" label="package.json" icon="file-json"></mui-tree-item>
+              <mui-tree-item id="readme" label="README.md" icon="file-text"></mui-tree-item>
+            </mui-tree-view>
+          </mui-card>
+        </div>
+
+        <div style="width:280px;">
+          <h4>Content Tree (with meta)</h4>
+          <mui-card>
+            <mui-tree-view selectable expandable>
+              <mui-tree-item id="blog" label="Blog" icon="folder" expanded>
+                <mui-tree-item id="p1" label="Getting Started" icon="file-text" meta="Published"></mui-tree-item>
+                <mui-tree-item id="p2" label="Advanced Usage" icon="file-text" meta="Draft"></mui-tree-item>
+                <mui-tree-item id="p3" label="API Reference" icon="file-text" meta="Review"></mui-tree-item>
+              </mui-tree-item>
+              <mui-tree-item id="docs" label="Docs" icon="folder">
+                <mui-tree-item id="d1" label="Installation" icon="file-text" meta="Published"></mui-tree-item>
+              </mui-tree-item>
+            </mui-tree-view>
+          </mui-card>
+        </div>
+      </div>
+    `;
+    }
+}
+customElements.define('tree-view-demo', TreeViewDemo);
+
+export const TreeView: StoryObj = {
+    name: 'Tree View',
+    render: () => document.createElement('tree-view-demo'),
+};
+
+// ============================================================================
+// DATA TABLE
+// ============================================================================
+
+class DataTableDemo extends MiuraElement {
+    static styles: any = css`
+    :host { display: block; padding: 24px; font-family: system-ui; }
+    h4 { margin: 0 0 12px; font-size: 14px; color: #666; }
+  `;
+
+    private _columns = [
+        { key: 'title', label: 'Title', sortable: true },
+        {
+            key: 'status', label: 'Status', render: (v: string) => {
+                const colors: Record<string, string> = { Published: '#22c55e', Draft: '#f59e0b', Review: '#3b82f6', Archived: '#9ca3af' };
+                return html`<mui-badge color="${v === 'Published' ? 'success' : v === 'Draft' ? 'warning' : v === 'Review' ? 'primary' : 'default'}">${v}</mui-badge>`;
+            }
+        },
+        { key: 'author', label: 'Author', sortable: true },
+        { key: 'date', label: 'Date', sortable: true },
+    ];
+
+    private _data = [
+        { title: 'Getting Started with MiuraUI', status: 'Published', author: 'Jane Smith', date: '2026-04-01' },
+        { title: 'Advanced Component Patterns', status: 'Draft', author: 'John Doe', date: '2026-04-03' },
+        { title: 'Theme Customisation Guide', status: 'Review', author: 'Alice Brown', date: '2026-04-05' },
+        { title: 'Accessibility Best Practices', status: 'Published', author: 'Bob Wilson', date: '2026-03-28' },
+        { title: 'Performance Optimisation', status: 'Draft', author: 'Jane Smith', date: '2026-04-07' },
+        { title: 'Migration from v1', status: 'Archived', author: 'John Doe', date: '2026-02-15' },
+        { title: 'Component Composition', status: 'Review', author: 'Alice Brown', date: '2026-04-06' },
+        { title: 'State Management Patterns', status: 'Published', author: 'Bob Wilson', date: '2026-04-02' },
+    ];
+
+    template() {
+        return html`
+      <h4>Sortable + Selectable Table</h4>
+      <mui-data-table
+        .columns=${this._columns}
+        .data=${this._data}
+        selectable
+        paginated
+        page-size="5"
+        @row-click=${(e: any) => console.log('row click', e.detail)}
+        @selection-change=${(e: any) => console.log('selection', e.detail.selected)}
+      ></mui-data-table>
+    `;
+    }
+}
+customElements.define('data-table-demo', DataTableDemo);
+
+export const DataTable: StoryObj = {
+    name: 'Data Table',
+    render: () => document.createElement('data-table-demo'),
 };

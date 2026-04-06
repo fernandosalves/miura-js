@@ -43,6 +43,7 @@ export * from './data-display/badge.js';
 export * from './data-display/card.js';
 export * from './data-display/kpi-card.js';
 export * from './data-display/list.js';
+export * from './data-display/persona.js';
 export * from './data-display/display.js';
 export * from './data-display/table.js';
 
