@@ -8,6 +8,7 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { MiuraElement, html } from '@miurajs/miura-element';
 import '../../src/layout/layout.js';
+import '../../src/layout/panel.js';
 import '../../src/primitives/icon.js';
 import '../../src/primitives/icon-button.js';
 import '../../src/data-display/tree-view.js';
@@ -51,14 +52,14 @@ class AdminLayoutDemo extends MiuraElement {
       </mui-layout-rail>
       
       <!-- Navigation Panel -->
-      <mui-layout-panel 
-        slot="nav" 
+      <mui-panel 
+        slot="nav"
+        placement="left"
         title="Content" 
         collapsible 
         resizable 
-        default-width="280"
-        min-width="220"
-        max-width="400"
+        size="custom"
+        style="--custom-size: 280px;"
       >
         <mui-icon-button slot="actions" icon="plus" size="sm" label="Add"></mui-icon-button>
         
@@ -77,7 +78,7 @@ class AdminLayoutDemo extends MiuraElement {
             <mui-tree-item label="Database Design" icon="file-text"></mui-tree-item>
           </mui-tree-item>
         </mui-tree-view>
-      </mui-layout-panel>
+      </mui-panel>
       
       <!-- Main Content -->
       <mui-layout-main bg="subtle">
@@ -172,13 +173,13 @@ class AdminLayoutDemo extends MiuraElement {
       </mui-layout-main>
       
       <!-- Properties Panel (Optional) -->
-      <mui-layout-panel 
-        slot="end" 
+      <mui-panel 
+        slot="end"
+        placement="right"
         title="Properties" 
         collapsible
-        position="end"
-        border="start"
-        default-width="300"
+        size="custom"
+        style="--custom-size: 300px;"
       >
         <div style="padding: 16px;">
           <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--mui-text-secondary);">Selected Item</h3>
@@ -214,7 +215,7 @@ class AdminLayoutDemo extends MiuraElement {
             </mui-list-item>
           </mui-list>
         </div>
-      </mui-layout-panel>
+      </mui-panel>
     </mui-layout>
     `;
   }
@@ -267,7 +268,7 @@ class ThreeColumnLayoutDemo extends MiuraElement {
         <mui-rail-item icon="trash-2" label="Trash"></mui-rail-item>
       </mui-layout-rail>
       
-      <mui-layout-panel slot="nav" title="Inbox" resizable default-width="260">
+      <mui-panel slot="nav" placement="left" title="Inbox" resizable collapsible size="custom" style="--custom-size: 260px;">
         <mui-list>
           <mui-list-item active>
             <span slot="primary">Meeting Notes</span>
@@ -282,7 +283,7 @@ class ThreeColumnLayoutDemo extends MiuraElement {
             <span slot="secondary">Bob Wilson · Yesterday</span>
           </mui-list-item>
         </mui-list>
-      </mui-layout-panel>
+      </mui-panel>
       
       <mui-layout-main padding="lg">
         <h2 style="margin: 0 0 8px;">Meeting Notes</h2>
@@ -291,13 +292,13 @@ class ThreeColumnLayoutDemo extends MiuraElement {
         <p>Here are the notes from today's meeting...</p>
       </mui-layout-main>
       
-      <mui-layout-panel slot="end" title="Details" position="end" border="start" default-width="240">
+      <mui-panel slot="end" placement="right" title="Details" collapsible size="custom" style="--custom-size: 240px;">
         <div style="padding: 16px;">
           <mui-avatar name="John Doe" size="xl" style="margin-bottom: 16px;"></mui-avatar>
           <h3 style="margin: 0 0 4px; font-size: 16px;">John Doe</h3>
           <p style="margin: 0; font-size: 14px; color: var(--mui-text-secondary);">john@example.com</p>
         </div>
-      </mui-layout-panel>
+      </mui-panel>
     </mui-layout>
     `;
   }
