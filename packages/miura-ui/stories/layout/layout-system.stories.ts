@@ -91,7 +91,7 @@ class AdminLayoutDemo extends MiuraElement {
             <h1 style="margin: 8px 0 0; font-size: 24px; font-weight: 700;">Dashboard</h1>
           </div>
           <div slot="end" style="display: flex; gap: 8px;">
-            <mui-icon-button icon="refresh" label="Refresh"></mui-icon-button>
+            <mui-icon-button icon="refresh-cw" label="Refresh"></mui-icon-button>
             <mui-button variant="primary">New Story</mui-button>
           </div>
         </mui-toolbar>

@@ -407,7 +407,7 @@ export class MuiTreeItem extends MiuraElement {
           </button>
 
           <div class="item-icon" #if=${this.icon}>
-            <slot name="icon">${this.icon}</slot>
+            <slot name="icon"><mui-icon name="${this.icon}"></mui-icon></slot>
           </div>
 
           <span class="item-label">${this.label}</span>

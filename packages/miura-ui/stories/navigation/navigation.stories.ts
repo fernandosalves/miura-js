@@ -77,7 +77,7 @@ class ToolbarDemo extends MiuraElement {
             <mui-icon slot="icon" name="folder" size="lg"></mui-icon>
             <span slot="title">Content Library</span>
             <span slot="description">Manage your stories, series, and labs in one place.</span>
-            <mui-icon-button slot="actions" icon="refresh"></mui-icon-button>
+            <mui-icon-button slot="actions" icon="refresh-cw"></mui-icon-button>
             <mui-button slot="actions" variant="primary">
               <mui-icon name="plus" size="sm"></mui-icon>
               New Story
