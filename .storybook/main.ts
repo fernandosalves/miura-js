@@ -16,7 +16,13 @@ const config: StorybookConfig = {
     const fs = await import('fs');
     const path = await import('path');
     
-    const aliases: Record<string, string> = {};
+    const aliasArray: Array<{ find: string; replacement: string }> = [];
+    
+    // Add sub-path exports FIRST (more specific paths must come before less specific)
+    const serverPath = path.resolve(process.cwd(), 'packages/miura-element/server.ts');
+    if (fs.existsSync(serverPath)) {
+      aliasArray.push({ find: '@miurajs/miura-element/server', replacement: serverPath });
+    }
     
     const packages = [
       'miura-element',
@@ -26,22 +32,38 @@ const config: StorybookConfig = {
       'miura-router',
       'miura-data-flow',
       'miura-security',
-      'miura-ui'
+      'miura-ui',
+      'miura-ai',
+      'miura-i18n',
+      'miura-computing',
+      'miura-vite',
     ];
     
     for (const pkg of packages) {
       const pkgPath = path.resolve(process.cwd(), `packages/${pkg}/index.ts`);
       if (fs.existsSync(pkgPath)) {
-        aliases[`@miurajsjs/${pkg}`] = pkgPath;
+        aliasArray.push({ find: `@miurajs/${pkg}`, replacement: pkgPath });
       }
     }
     
+    // Convert existing alias config to array format if needed
+    const existingAliases = config.resolve?.alias;
+    let mergedAliases: Array<{ find: string | RegExp; replacement: string }> = [];
+    
+    if (Array.isArray(existingAliases)) {
+      mergedAliases = [...existingAliases];
+    } else if (existingAliases && typeof existingAliases === 'object') {
+      for (const [key, value] of Object.entries(existingAliases)) {
+        mergedAliases.push({ find: key, replacement: value as string });
+      }
+    }
+    
+    // Add our aliases at the beginning for priority
+    mergedAliases = [...aliasArray, ...mergedAliases];
+    
     config.resolve = {
       ...(config.resolve ?? {}),
-      alias: {
-        ...config.resolve?.alias,
-        ...aliases,
-      },
+      alias: mergedAliases,
     };
 
     return config;

@@ -1,96 +1,66 @@
-import { html, css } from '@miurajs/miura-element';
-import { MuiBase } from '../base/mui-base.js';
+// miura-ui: layout/grid.ts
+// Mobile-first CSS grid primitive for MiuraJS
+import { MiuraElement, html, css } from '@miurajs/miura-element';
 
-type GridGap = 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+export class MuiGrid extends MiuraElement {
+  static tagName = 'mui-grid';
 
-export class MuiGrid extends MuiBase {
-    static tagName = 'mui-grid';
+  static properties = {
+    columns: { type: Number, default: 2 },
+    minWidth: { type: String, default: '240px' },
+    gap: { type: String, reflect: true, default: 'md' },
+    columnGap: { type: String, default: null },
+    rowGap: { type: String, default: null },
+    autoFit: { type: Boolean, reflect: true, default: false },
+  };
 
-    static properties = {
-        columns: { type: Number },
-        minWidth: { type: String },
-        gap: { type: String, reflect: true },
-        columnGap: { type: String },
-        rowGap: { type: String },
-        autoFit: { type: Boolean, reflect: true },
-    };
-
-    columns = 2;
-    minWidth = '240px';
-    gap: GridGap = 'md';
-    columnGap: GridGap | null = null;
-    rowGap: GridGap | null = null;
-    autoFit = false;
-
-    static styles = css`
-        :host {
-            display: block;
-            width: 100%;
-            box-sizing: border-box;
-            --mui-grid-gap: var(--mui-spacing-md);
-        }
-
-        :host([gap='none']) {
-            --mui-grid-gap: 0;
-        }
-
-        :host([gap='xs']) {
-            --mui-grid-gap: var(--mui-spacing-xs);
-        }
-
-        :host([gap='sm']) {
-            --mui-grid-gap: var(--mui-spacing-sm);
-        }
-
-        :host([gap='md']) {
-            --mui-grid-gap: var(--mui-spacing-md);
-        }
-
-        :host([gap='lg']) {
-            --mui-grid-gap: var(--mui-spacing-lg);
-        }
-
-        :host([gap='xl']) {
-            --mui-grid-gap: var(--mui-spacing-xl);
-        }
-
-        .grid {
-            display: grid;
-            width: 100%;
-            gap: var(--mui-grid-gap);
-        }
+  static get styles() {
+    return css`
+      :host { 
+        display: block; 
+        width: 100%; 
+        box-sizing: border-box; 
+        --mui-grid-gap: var(--mui-spacing-md); 
+      }
+      :host([gap='none']) { --mui-grid-gap: 0; }
+      :host([gap='xs']) { --mui-grid-gap: var(--mui-spacing-xs); }
+      :host([gap='sm']) { --mui-grid-gap: var(--mui-spacing-sm); }
+      :host([gap='md']) { --mui-grid-gap: var(--mui-spacing-md); }
+      :host([gap='lg']) { --mui-grid-gap: var(--mui-spacing-lg); }
+      :host([gap='xl']) { --mui-grid-gap: var(--mui-spacing-xl); }
+      .grid { 
+        display: grid; 
+        width: 100%; 
+        gap: var(--mui-grid-gap); 
+      }
     `;
+  }
 
-    updated(): void {
-        const grid = this.shadowRoot?.querySelector('.grid') as HTMLDivElement | null;
-        if (!grid) return;
-        const template = this.autoFit
-            ? `repeat(auto-fit, minmax(${this.minWidth}, 1fr))`
-            : `repeat(${this.columns}, minmax(${this.minWidth}, 1fr))`;
-        grid.style.gridTemplateColumns = template;
+  getGridTemplate() {
+    return this.autoFit
+      ? `repeat(auto-fit, minmax(${this.minWidth}, 1fr))`
+      : `repeat(${this.columns}, minmax(0, 1fr))`;
+  }
 
-        if (this.columnGap) {
-            grid.style.columnGap = `var(--mui-spacing-${this.columnGap})`;
-        } else {
-            grid.style.columnGap = '';
-        }
+  template() {
+    const styleMap = {
+      'grid-template-columns': this.getGridTemplate(),
+      ...(this.columnGap && { 'column-gap': `var(--mui-spacing-${this.columnGap})` }),
+      ...(this.rowGap && { 'row-gap': `var(--mui-spacing-${this.rowGap})` })
+    };
+    
+    const styleString = Object.entries(styleMap)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join('; ');
 
-        if (this.rowGap) {
-            grid.style.rowGap = `var(--mui-spacing-${this.rowGap})`;
-        } else {
-            grid.style.rowGap = '';
-        }
-    }
-
-    template() {
-        return html`<div class="grid" part="grid"><slot></slot></div>`;
-    }
+    return html`
+      <div class="grid" part="grid" style="${styleString}">
+        <slot></slot>
+      </div>
+    `;
+  }
 }
 
-export function registerMuiGrid() {
-    if (!customElements.get(MuiGrid.tagName)) {
-        customElements.define(MuiGrid.tagName, MuiGrid);
-    }
+if (!customElements.get(MuiGrid.tagName)) {
+  customElements.define(MuiGrid.tagName, MuiGrid);
 }
-
-registerMuiGrid();

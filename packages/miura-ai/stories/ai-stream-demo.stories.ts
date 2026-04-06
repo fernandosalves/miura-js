@@ -448,14 +448,14 @@ const meta: Meta = {
         docs: {
             description: {
                 component: `
-**\`@miurajsjs/miura-ai\`** — Progressive token streaming for the miura framework.
+**\`@miurajs/miura-ai\`** — Progressive token streaming for the miura framework.
 
 The \`#stream\` structural directive consumes a \`ReadableStream\`, SSE \`EventSource\`,
 or \`WebSocket\` and progressively appends tokens to the bound element — no manual reader
 loops, no scroll listeners, no re-renders.
 
 \`\`\`typescript
-import '@miurajsjs/miura-ai'; // registers #stream directive
+import '@miurajs/miura-ai'; // registers #stream directive
 
 template() {
   return html\`<div #stream=\${this.responseStream}></div>\`;

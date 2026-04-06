@@ -202,7 +202,7 @@ class I18nDemo extends I18nMixin(MiuraElement) {
 }
 
 if (!customElements.get('i18n-demo')) {
-    miuraI18n.configure({ locale: 'en', fallbackLocale: 'en', catalog });
+    MiuraI18n.configure({ locale: 'en', fallbackLocale: 'en', catalog });
     customElements.define('i18n-demo', I18nDemo);
 }
 

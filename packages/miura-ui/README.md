@@ -111,9 +111,6 @@ A modern, unstyled, accessible UI component library for [miura](https://github.c
 
 ---
 
-
----
-
 ## 📦 Installation
 
 ```bash

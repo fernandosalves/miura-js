@@ -400,7 +400,7 @@ const meta: Meta = {
                 component: `
 **SSR prerender utilities for \`<miura-island>\`.**
 
-### Server utilities (\`@miurajsjs/miura-element/server\`)
+### Server utilities (\`@miurajs/miura-element/server\`)
 
 | Export | Description |
 |---|---|
@@ -409,10 +409,10 @@ const meta: Meta = {
 | \`buildManifest(islands)\` | Build \`IslandManifest\` from rendered islands |
 | \`IslandRegistry\` | Centralised registry — \`register()\`, \`render()\`, \`renderAll()\` |
 
-### Vite plugin (\`@miurajsjs/miura-vite\`)
+### Vite plugin (\`@miurajs/miura-vite\`)
 
 \`\`\`ts
-import { islandsPlugin } from '@miurajsjs/miura-vite';
+import { islandsPlugin } from '@miurajs/miura-vite';
 
 export default defineConfig({
   plugins: [

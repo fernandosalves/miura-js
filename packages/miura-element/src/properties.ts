@@ -5,7 +5,7 @@ import { signal, Signal } from './signals.js';
  */
 export interface PropertyOptions {
     type: NumberConstructor | StringConstructor | BooleanConstructor | ArrayConstructor | ObjectConstructor;
-    attribute?: string;
+    attribute?: string | false;
     reflect?: boolean;
     default?: any;
 }
