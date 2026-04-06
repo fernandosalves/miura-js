@@ -182,179 +182,6 @@ export class MuiLayoutRail extends MiuraElement {
   }
 }
 
-/**
- * Rail Navigation Item
- */
-@component({ tag: 'mui-rail-item' })
-export class MuiRailItem extends MiuraElement {
-  /**
-   * Icon name
-   */
-  @property({ type: String })
-  icon = '';
-
-  /**
-   * Tooltip label
-   */
-  @property({ type: String })
-  label = '';
-
-  /**
-   * Navigation href
-   */
-  @property({ type: String })
-  href = '';
-
-  /**
-   * Active state
-   */
-  @property({ type: Boolean })
-  active = false;
-
-  /**
-   * Disabled state
-   */
-  @property({ type: Boolean })
-  disabled = false;
-
-  /**
-   * Badge count
-   */
-  @property({ type: Number })
-  badge: number | null = null;
-
-  static styles = css`
-    :host {
-      display: block;
-    }
-
-    .item {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-      border-radius: var(--mui-radius-md, 8px);
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      color: var(--mui-text-secondary, #6b7280);
-      position: relative;
-      text-decoration: none;
-      transition: all var(--mui-duration-fast, 100ms) ease;
-    }
-
-    .item:hover:not(.disabled) {
-      background: var(--mui-surface-hover, rgba(0, 0, 0, 0.04));
-      color: var(--mui-text, #1f2937);
-    }
-
-    .item:focus-visible {
-      outline: 2px solid var(--mui-primary, #3b82f6);
-      outline-offset: 2px;
-    }
-
-    .item.active {
-      background: rgba(59, 130, 246, 0.1);
-      color: var(--mui-primary, #3b82f6);
-    }
-
-    .item.active::before {
-      content: '';
-      position: absolute;
-      left: -8px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 3px;
-      height: 20px;
-      background: var(--mui-primary, #3b82f6);
-      border-radius: 0 2px 2px 0;
-    }
-
-    .item.disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .badge {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      min-width: 16px;
-      height: 16px;
-      padding: 0 4px;
-      font-size: 10px;
-      font-weight: 600;
-      background: var(--mui-error, #ef4444);
-      color: white;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Tooltip on hover */
-    .item::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      left: 100%;
-      top: 50%;
-      transform: translateY(-50%);
-      margin-left: 12px;
-      padding: 6px 12px;
-      background: var(--mui-text, #1f2937);
-      color: white;
-      font-size: 12px;
-      font-weight: 500;
-      white-space: nowrap;
-      border-radius: var(--mui-radius-md, 6px);
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity var(--mui-duration-fast, 100ms) ease;
-      z-index: 1000;
-    }
-
-    .item:hover::after {
-      opacity: 1;
-      visibility: visible;
-    }
-  `;
-
-  private _handleClick = (e: Event) => {
-    if (this.disabled) {
-      e.preventDefault();
-      return;
-    }
-    this.emit('click', {});
-  };
-
-  template() {
-    const Tag = this.href ? 'a' : 'button';
-    const classes = [
-      'item',
-      this.active ? 'active' : '',
-      this.disabled ? 'disabled' : '',
-    ].filter(Boolean).join(' ');
-
-    return html`
-      <${Tag}
-        class="${classes}"
-        href="${this.href || undefined}"
-        data-tooltip="${this.label}"
-        aria-label="${this.label}"
-        aria-current="${this.active ? 'page' : undefined}"
-        ?disabled="${this.disabled}"
-        @click="${this._handleClick}"
-      >
-        <mui-icon name="${this.icon}" size="md"></mui-icon>
-        ${this.badge !== null && this.badge > 0 ? html`
-          <span class="badge">${this.badge > 99 ? '99+' : this.badge}</span>
-        ` : ''}
-      </${Tag}>
-    `;
-  }
-}
 
 /**
  * Layout Panel
@@ -612,26 +439,22 @@ export class MuiLayoutPanel extends MiuraElement {
           @mousedown="${this._startResize}"
         ></div>
       ` : ''}
-    `;
-  }
+    </div>
+  `;
+ }
 }
 
-/**
- * Layout Main Content Area
- */
+// Main Content Area (fix misplaced code)
 @component({ tag: 'mui-layout-main' })
 export class MuiLayoutMain extends MiuraElement {
-  /**
-   * Background style
-   */
-  @property({ type: String })
-  bg: 'transparent' | 'surface' | 'subtle' = 'subtle';
-
   /**
    * Padding
    */
   @property({ type: String })
   padding: 'none' | 'sm' | 'md' | 'lg' = 'none';
+
+  @property({ type: String })
+  bg: 'transparent' | 'surface' | 'subtle' = 'surface';
 
   static styles = css`
     :host {
