@@ -61,6 +61,5 @@ export * from './forms/file-upload.js';
 // Special Components
 export * from './special/kanban.js';
 export * from './special/calendar.js';
-export * from './special/calendar-event.js';
 
 
