@@ -7,13 +7,13 @@ import { MiuraElement, html, css, component, property } from '@miurajs/miura-ele
  */
 @component({ tag: 'mui-kanban' })
 export class MuiKanban extends MiuraElement {
-  @property({ type: Array, default: [] })
-  columns: any[] = [];
+    @property({ type: Array, default: [] })
+    columns: any[] = [];
 
-  @property({ type: Array, default: [] })
-  items: any[] = [];
+    @property({ type: Array, default: [] })
+    items: any[] = [];
 
-  static styles: any = css`
+    static styles: any = css`
     :host { display: block; height: 100%; overflow-x: auto; background: var(--mui-surface-subtle, #f9fafb); border-radius: 12px; }
     .board { display: flex; gap: 16px; padding: 16px; height: 100%; min-height: 400px; align-items: flex-start; }
     .column { 
@@ -51,44 +51,47 @@ export class MuiKanban extends MiuraElement {
     .column-add:hover { border-color: #9ca3af; color: #6b7280; background: #f3f4f6; }
   `;
 
-  private _handleDragStart(e: DragEvent, item: any) {
-    if (e.dataTransfer) {
-      e.dataTransfer.setData('application/json', JSON.stringify(item));
-      e.dataTransfer.effectAllowed = 'move';
+    private _handleDragStart(e: DragEvent, item: any) {
+        if (e.dataTransfer) {
+            e.dataTransfer.setData('application/json', JSON.stringify(item));
+            e.dataTransfer.effectAllowed = 'move';
+        }
     }
-  }
 
-  private _handleDragOver(e: DragEvent) {
-    e.preventDefault();
-    const col = e.currentTarget as HTMLElement;
-    col.classList.add('drag-over');
-  }
+    private _handleDragOver(e: DragEvent) {
+        e.preventDefault();
+        const col = e.currentTarget as HTMLElement;
+        col.classList.add('drag-over');
+    }
 
-  private _handleDragLeave(e: DragEvent) {
-    const col = e.currentTarget as HTMLElement;
-    col.classList.remove('drag-over');
-  }
+    private _handleDragLeave(e: DragEvent) {
+        const col = e.currentTarget as HTMLElement;
+        col.classList.remove('drag-over');
+    }
 
-  private _handleDrop(e: DragEvent, columnId: string) {
-    e.preventDefault();
-    const col = e.currentTarget as HTMLElement;
-    col.classList.remove('drag-over');
-    
-    try {
-      const item = JSON.parse(e.dataTransfer?.getData('application/json') || '{}');
-      if (item.title) {
-        // Emit event so parent can update data (source of truth)
-        this.emit('item-moved', { item, from: item.status, to: columnId });
-      }
-    } catch (err) {}
-  }
+    private _handleDrop(e: DragEvent, columnId: string) {
+        e.preventDefault();
+        const col = e.currentTarget as HTMLElement;
+        col.classList.remove('drag-over');
 
-  template() {
-    return html`
+        try {
+            const item = JSON.parse(e.dataTransfer?.getData('application/json') || '{}');
+            if (item.title) {
+                // Emit event so parent can update data (source of truth)
+                this.emit('item-moved', { item, from: item.status, to: columnId });
+            }
+        } catch (err) { }
+    }
+
+    template() {
+        const columns = this.columns ?? [];
+        const items = this.items ?? [];
+
+        return html`
       <div class="board">
-        ${this.columns.map(col => {
-          const colItems = this.items.filter(item => item.status === col.id);
-          return html`
+        ${columns.map(col => {
+            const colItems = items.filter(item => item.status === col.id);
+            return html`
             <div 
               class="column" 
               @dragover=${(e: DragEvent) => this._handleDragOver(e)}
@@ -125,5 +128,5 @@ export class MuiKanban extends MiuraElement {
         </button>
       </div>
     `;
-  }
+    }
 }

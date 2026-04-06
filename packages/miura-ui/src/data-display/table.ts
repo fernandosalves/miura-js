@@ -1,12 +1,12 @@
 import { MiuraElement, html, css, component, property, state } from '@miurajs/miura-element';
 
 export interface Column {
-  key: string;
-  label: string;
-  sortable?: boolean;
-  width?: string | number;
-  align?: 'left' | 'center' | 'right';
-  render?: (val: any, row: any) => any;
+    key: string;
+    label: string;
+    sortable?: boolean;
+    width?: string | number;
+    align?: 'left' | 'center' | 'right';
+    render?: (val: any, row: any) => any;
 }
 
 /**
@@ -22,34 +22,34 @@ export interface Column {
  */
 @component({ tag: 'mui-data-table' })
 export class MuiDataTable extends MiuraElement {
-  @property({ type: Array, default: [] })
-  columns: Column[] = [];
+    @property({ type: Array, default: [] })
+    columns: Column[] = [];
 
-  @property({ type: Array, default: [] })
-  data: any[] = [];
+    @property({ type: Array, default: [] })
+    data: any[] = [];
 
-  @property({ type: Boolean, default: false, reflect: true })
-  selectable = false;
+    @property({ type: Boolean, default: false, reflect: true })
+    selectable = false;
 
-  @property({ type: Boolean, default: false, reflect: true })
-  paginated = false;
+    @property({ type: Boolean, default: false, reflect: true })
+    paginated = false;
 
-  @property({ type: Number, default: 10 })
-  pageSize = 10;
+    @property({ type: Number, default: 10 })
+    pageSize = 10;
 
-  @property({ type: String, default: '' })
-  sortKey = '';
+    @property({ type: String, default: '' })
+    sortKey = '';
 
-  @property({ type: String, default: 'asc' })
-  sortOrder: 'asc' | 'desc' = 'asc';
+    @property({ type: String, default: 'asc' })
+    sortOrder: 'asc' | 'desc' = 'asc';
 
-  @state({ default: 0 })
-  private _currentPage = 0;
+    @state({ default: 0 })
+    private _currentPage = 0;
 
-  @state()
-  private _selectedIds: Set<any> = new Set();
+    @state()
+    private _selectedIds: Set<any> = new Set();
 
-  static styles: any = css`
+    static styles: any = css`
     :host { display: block; width: 100%; overflow-x: auto; background: var(--mui-surface, #fff); border: 1px solid var(--mui-border, #e5e7eb); border-radius: var(--mui-radius-lg, 8px); }
 
     .table-container { width: 100%; }
@@ -101,70 +101,73 @@ export class MuiDataTable extends MiuraElement {
     .empty { padding: 48px; text-align: center; color: var(--mui-text-muted, #9ca3af); }
   `;
 
-  private _toggleSelectAll(e: any) {
-    const checked = e.detail.checked;
-    if (checked) {
-      this._selectedIds = new Set(this.data.map((_, i) => i)); // Simplified: use index as ID for now
-    } else {
-      this._selectedIds = new Set();
-    }
-    this._emitSelection();
-  }
-
-  private _toggleSelect(index: number) {
-    if (this._selectedIds.has(index)) {
-      this._selectedIds.delete(index);
-    } else {
-      this._selectedIds.add(index);
-    }
-    this._selectedIds = new Set(this._selectedIds); // Trigger update
-    this._emitSelection();
-  }
-
-  private _emitSelection() {
-    const selectedData = Array.from(this._selectedIds).map(idx => this.data[idx]);
-    this.emit('selection-change', { selected: selectedData });
-  }
-
-  private _handleSort(key: string) {
-    if (this.sortKey === key) {
-      this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortKey = key;
-      this.sortOrder = 'asc';
-    }
-    this.requestUpdate();
-  }
-
-  private _getProcessedData() {
-    let result = [...this.data];
-
-    // Sorting
-    if (this.sortKey) {
-      result.sort((a, b) => {
-        const valA = a[this.sortKey];
-        const valB = b[this.sortKey];
-        if (valA < valB) return this.sortOrder === 'asc' ? -1 : 1;
-        if (valA > valB) return this.sortOrder === 'asc' ? 1 : -1;
-        return 0;
-      });
+    private _toggleSelectAll(e: any) {
+        const checked = e.detail.checked;
+        if (checked) {
+            this._selectedIds = new Set(this.data.map((_, i) => i)); // Simplified: use index as ID for now
+        } else {
+            this._selectedIds = new Set();
+        }
+        this._emitSelection();
     }
 
-    // Pagination
-    if (this.paginated) {
-      const start = this._currentPage * this.pageSize;
-      result = result.slice(start, start + this.pageSize);
+    private _toggleSelect(index: number) {
+        if (this._selectedIds.has(index)) {
+            this._selectedIds.delete(index);
+        } else {
+            this._selectedIds.add(index);
+        }
+        this._selectedIds = new Set(this._selectedIds); // Trigger update
+        this._emitSelection();
     }
 
-    return result;
-  }
+    private _emitSelection() {
+        const selectedData = Array.from(this._selectedIds).map(idx => this.data[idx]);
+        this.emit('selection-change', { selected: selectedData });
+    }
 
-  template() {
-    const processed = this._getProcessedData();
-    const totalPages = Math.ceil(this.data.length / this.pageSize);
-    const allSelected = this.data.length > 0 && this._selectedIds.size === this.data.length;
+    private _handleSort(key: string) {
+        if (this.sortKey === key) {
+            this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortKey = key;
+            this.sortOrder = 'asc';
+        }
+        this.requestUpdate();
+    }
 
-    return html`
+    private _getProcessedData() {
+        const data = this.data ?? [];
+        let result = [...data];
+
+        // Sorting
+        if (this.sortKey) {
+            result.sort((a, b) => {
+                const valA = a[this.sortKey];
+                const valB = b[this.sortKey];
+                if (valA < valB) return this.sortOrder === 'asc' ? -1 : 1;
+                if (valA > valB) return this.sortOrder === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        // Pagination
+        if (this.paginated) {
+            const start = this._currentPage * this.pageSize;
+            result = result.slice(start, start + this.pageSize);
+        }
+
+        return result;
+    }
+
+    template() {
+        const processed = this._getProcessedData();
+        const dataLength = this.data?.length ?? 0;
+        const columns = this.columns ?? [];
+        const totalPages = Math.ceil(dataLength / this.pageSize);
+        const allSelected = dataLength > 0 && this._selectedIds.size === dataLength;
+
+        return html`
       <div class="table-container">
         <table>
           <thead>
@@ -174,7 +177,7 @@ export class MuiDataTable extends MiuraElement {
                   <mui-checkbox .checked=${allSelected} @change=${(e: any) => this._toggleSelectAll(e)}></mui-checkbox>
                 </th>
               ` : ''}
-              ${this.columns.map(col => html`
+              ${columns.map(col => html`
                 <th 
                   class="${col.sortable ? 'sortable' : ''} ${this.sortKey === col.key ? 'active' : ''}"
                   style="width: ${col.width || 'auto'}; text-align: ${col.align || 'left'};"
@@ -193,35 +196,35 @@ export class MuiDataTable extends MiuraElement {
           <tbody>
             ${processed.length === 0 ? html`
               <tr>
-                <td colspan="${this.columns.length + (this.selectable ? 1 : 0)}">
+                <td colspan="${columns.length + (this.selectable ? 1 : 0)}">
                   <div class="empty">No data found</div>
                 </td>
               </tr>
             ` : processed.map((row, i) => {
-              const globalIndex = this.paginated ? (this._currentPage * this.pageSize) + i : i;
-              const isSelected = this._selectedIds.has(globalIndex);
-              
-              return html`
+            const globalIndex = this.paginated ? (this._currentPage * this.pageSize) + i : i;
+            const isSelected = this._selectedIds.has(globalIndex);
+
+            return html`
                 <tr class="${isSelected ? 'selected' : ''}">
                   ${this.selectable ? html`
                     <td class="checkbox-col">
                       <mui-checkbox .checked=${isSelected} @change=${() => this._toggleSelect(globalIndex)}></mui-checkbox>
                     </td>
                   ` : ''}
-                  ${this.columns.map(col => html`
+                  ${columns.map(col => html`
                     <td style="text-align: ${col.align || 'left'};">
                       ${col.render ? col.render(row[col.key], row) : row[col.key]}
                     </td>
                   `)}
                 </tr>
               `;
-            })}
+        })}
           </tbody>
         </table>
 
         ${this.paginated ? html`
           <div class="pagination">
-            <span>Showing ${this._currentPage * this.pageSize + 1} to ${Math.min((this._currentPage + 1) * this.pageSize, this.data.length)} of ${this.data.length}</span>
+            <span>Showing ${this._currentPage * this.pageSize + 1} to ${Math.min((this._currentPage + 1) * this.pageSize, dataLength)} of ${dataLength}</span>
             <div class="page-controls">
               <mui-button 
                 variant="ghost" 
@@ -241,5 +244,5 @@ export class MuiDataTable extends MiuraElement {
         ` : ''}
       </div>
     `;
-  }
+    }
 }
