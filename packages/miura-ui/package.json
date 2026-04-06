@@ -38,7 +38,7 @@
     },
     "homepage": "https://github.com/fernandosalves/miura-js#readme",
     "dependencies": {
-        "@miurajs/miura-element": "^0.2.0",
+        "@miurajs/miura-element": "^0.2.1",
         "lucide": "^1.7.0"
     },
     "devDependencies": {
