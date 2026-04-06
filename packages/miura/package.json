@@ -1,6 +1,6 @@
 {
     "name": "@miurajs/miura",
-    "version": "2.2.1",
+    "version": "2.2.2",
     "description": "The main package for the miura framework, bundling all core modules.",
     "type": "module",
     "main": "./dist/index.js",
