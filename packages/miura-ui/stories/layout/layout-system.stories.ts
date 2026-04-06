@@ -18,6 +18,8 @@ import '../../src/navigation/breadcrumb.js';
 import '../../src/data-display/card.js';
 import '../../src/data-display/avatar.js';
 import '../../src/data-display/badge.js';
+import '../../src/overlays/popover.js';
+import '../../src/forms/forms.js';
 
 /**
  * Complete Admin Layout Component
@@ -140,7 +142,14 @@ class AdminLayoutDemo extends MiuraElement {
                 <mui-icon slot="icon" name="file-text" size="md"></mui-icon>
                 <span slot="title">React Fundamentals</span>
                 <span slot="subtitle">Updated 2 hours ago</span>
-                <mui-icon-button slot="action" icon="more-vertical" size="sm"></mui-icon-button>
+                            <mui-dropdown-menu slot="action">
+              <mui-icon-button slot="trigger" icon="more-vertical" size="sm" label="Actions" variant="ghost"></mui-icon-button>
+              <mui-dropdown-item icon="edit">Edit</mui-dropdown-item>
+              <mui-dropdown-item icon="eye">Preview</mui-dropdown-item>
+              <mui-dropdown-item icon="copy">Duplicate</mui-dropdown-item>
+              <mui-dropdown-divider></mui-dropdown-divider>
+              <mui-dropdown-item icon="trash-2" variant="danger">Delete</mui-dropdown-item>
+            </mui-dropdown-menu>
               </mui-card-header>
               <mui-card-content>
                 A comprehensive guide to React fundamentals including hooks, state management, and component patterns.
@@ -159,7 +168,14 @@ class AdminLayoutDemo extends MiuraElement {
                 <mui-icon slot="icon" name="file-text" size="md"></mui-icon>
                 <span slot="title">TypeScript Deep Dive</span>
                 <span slot="subtitle">Updated yesterday</span>
-                <mui-icon-button slot="action" icon="more-vertical" size="sm"></mui-icon-button>
+                            <mui-dropdown-menu slot="action">
+              <mui-icon-button slot="trigger" icon="more-vertical" size="sm" label="Actions" variant="ghost"></mui-icon-button>
+              <mui-dropdown-item icon="edit">Edit</mui-dropdown-item>
+              <mui-dropdown-item icon="eye">Preview</mui-dropdown-item>
+              <mui-dropdown-item icon="copy">Duplicate</mui-dropdown-item>
+              <mui-dropdown-divider></mui-dropdown-divider>
+              <mui-dropdown-item icon="trash-2" variant="danger">Delete</mui-dropdown-item>
+            </mui-dropdown-menu>
               </mui-card-header>
               <mui-card-content>
                 Advanced TypeScript patterns including generics, conditional types, and utility types.

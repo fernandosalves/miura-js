@@ -23,6 +23,8 @@ export * from './theme/theme-provider.js';
 export * from './overlays/toast.js';
 export * from './overlays/alert.js';
 export * from './overlays/drawer.js';
+export * from './overlays/dialog.js';
+export * from './overlays/popover.js';
 
 // Navigation Components
 export * from './navigation/icon-rail.js';
@@ -39,4 +41,9 @@ export * from './data-display/avatar.js';
 export * from './data-display/badge.js';
 export * from './data-display/card.js';
 export * from './data-display/list.js';
+export * from './data-display/display.js';
+
+// Form Components
+export * from './forms/forms.js';
+
 
