@@ -10,7 +10,7 @@ import '../../src/layout/stack.js';
 
 // ── Dropdown Menu Demo ─────────────────────────────────────────────────────
 class DropdownMenuDemo extends MiuraElement {
-  static styles: any = css`
+    static styles: any = css`
     :host { display: block; padding: 24px; font-family: system-ui; }
     h3 { font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 24px 0 12px; }
     h3:first-child { margin-top: 0; }
@@ -18,8 +18,8 @@ class DropdownMenuDemo extends MiuraElement {
     .box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; display: flex; align-items: center; justify-content: center; gap: 12px; }
   `;
 
-  template() {
-    return html`
+    template() {
+        return html`
       <h3>Basic Dropdown (3-dots pattern)</h3>
       <div class="box">
         <mui-dropdown-menu>
@@ -74,13 +74,13 @@ class DropdownMenuDemo extends MiuraElement {
         </mui-dropdown-menu>
       </div>
     `;
-  }
+    }
 }
 customElements.define('dropdown-menu-demo', DropdownMenuDemo);
 
 // ── Tooltip Demo ─────────────────────────────────────────────────────────
 class TooltipDemo extends MiuraElement {
-  static styles: any = css`
+    static styles: any = css`
     :host { display: block; padding: 24px; font-family: system-ui; }
     h3 { font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 24px 0 12px; }
     h3:first-child { margin-top: 0; }
@@ -88,8 +88,8 @@ class TooltipDemo extends MiuraElement {
     .box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 48px 32px; display: flex; align-items: center; justify-content: center; gap: 32px; }
   `;
 
-  template() {
-    return html`
+    template() {
+        return html`
       <h3>Placements</h3>
       <div class="box" style="gap: 48px;">
         <mui-tooltip content="Tooltip on top" placement="top">
@@ -135,33 +135,33 @@ class TooltipDemo extends MiuraElement {
         </mui-tooltip>
       </div>
     `;
-  }
+    }
 }
 customElements.define('tooltip-demo', TooltipDemo);
 
 // ── Dialog Demo ─────────────────────────────────────────────────────────
 class DialogDemo extends MiuraElement {
-  static styles: any = css`
+    static styles: any = css`
     :host { display: block; padding: 24px; font-family: system-ui; }
     h3 { font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 24px 0 12px; }
     h3:first-child { margin-top: 0; }
     .row { display: flex; gap: 12px; flex-wrap: wrap; }
   `;
 
-  @state({ default: false })
-  declare dialog1: boolean;
+    @state({ default: false })
+    declare dialog1: boolean;
 
-  @state({ default: false })
-  declare dialog2: boolean;
+    @state({ default: false })
+    declare dialog2: boolean;
 
-  @state({ default: false })
-  declare dialog3: boolean;
+    @state({ default: false })
+    declare dialog3: boolean;
 
-  @state({ default: false })
-  declare dialog4: boolean;
+    @state({ default: false })
+    declare dialog4: boolean;
 
-  template() {
-    return html`
+    template() {
+        return html`
       <h3>Basic Dialogs</h3>
       <div class="row">
         <mui-button variant="outline" @click=${() => { this.dialog1 = true; }}>Open Dialog</mui-button>
@@ -219,7 +219,7 @@ class DialogDemo extends MiuraElement {
       </mui-dialog>
 
       <!-- No close button -->
-      <mui-dialog ?open=${this.dialog4} @close=${() => { this.dialog4 = false; }} size="sm" close-on-backdrop="false">
+      <mui-dialog ?open=${this.dialog4} @close=${() => { this.dialog4 = false; }} size="sm" .closeOnBackdrop=${false}>
         <span slot="title">Required Action</span>
         <p>You must complete this action before continuing. No escape!</p>
         <div slot="actions">
@@ -227,29 +227,29 @@ class DialogDemo extends MiuraElement {
         </div>
       </mui-dialog>
     `;
-  }
+    }
 }
 customElements.define('dialog-demo', DialogDemo);
 
 // ─── Meta ────────────────────────────────────────────────────────────────────
 
 const dropdownMeta: Meta = {
-  title: 'MiuraUI/Overlays/Dropdown Menu',
-  component: 'dropdown-menu-demo',
-  parameters: { layout: 'padded' },
+    title: 'MiuraUI/Overlays/Dropdown Menu',
+    component: 'dropdown-menu-demo',
+    parameters: { layout: 'padded' },
 };
 export default dropdownMeta;
 
 export const DropdownMenu: StoryObj = {};
 
 export const Tooltip: StoryObj = {
-  render: () => document.createElement('tooltip-demo'),
-  parameters: { component: 'tooltip-demo' },
-  name: 'Tooltip',
+    render: () => document.createElement('tooltip-demo'),
+    parameters: { component: 'tooltip-demo' },
+    name: 'Tooltip',
 };
 
 export const Dialog: StoryObj = {
-  render: () => document.createElement('dialog-demo'),
-  parameters: { component: 'dialog-demo' },
-  name: 'Dialog',
+    render: () => document.createElement('dialog-demo'),
+    parameters: { component: 'dialog-demo' },
+    name: 'Dialog',
 };

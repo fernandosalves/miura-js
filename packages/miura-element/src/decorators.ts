@@ -52,12 +52,20 @@ export function property(options: PropertyOptions = {}) {
 
         // Add this property to the static properties
         constructor.properties![propertyKey] = {
-            type: options.type ?? String,
+            type: options.type ?? _inferType(options.default),
             default: options.default,
             attribute: options.attribute !== undefined ? options.attribute : propertyKey.toLowerCase(),
             reflect: options.reflect,
         };
     };
+}
+
+function _inferType(defaultValue: unknown): typeof String | typeof Number | typeof Boolean | typeof Array | typeof Object {
+    if (typeof defaultValue === 'boolean') return Boolean;
+    if (typeof defaultValue === 'number') return Number;
+    if (typeof defaultValue === 'string') return String;
+    if (Array.isArray(defaultValue)) return Array;
+    return Object;
 }
 
 /**
@@ -80,11 +88,14 @@ export function state(options: StateOptions = {}) {
             ? constructor.state()
             : {};
 
+        // Infer type from default value when not explicitly provided
+        const inferredType = options.type ?? _inferType(options.default);
+
         // Merge new state property with existing ones
         const newState = {
             ...existingState,
             [propertyKey]: {
-                type: options.type ?? Object,
+                type: inferredType,
                 default: options.default,
             }
         };

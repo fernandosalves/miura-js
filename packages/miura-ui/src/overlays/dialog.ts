@@ -14,46 +14,46 @@ import { MiuraElement, html, css, component, property } from '@miurajs/miura-ele
  */
 @component({ tag: 'mui-dialog' })
 export class MuiDialog extends MiuraElement {
-  @property({ type: Boolean, default: false, reflect: true })
-  open!: boolean;
+    @property({ type: Boolean, default: false, reflect: true })
+    open!: boolean;
 
-  @property({ type: String, default: 'md' })
-  size!: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+    @property({ type: String, default: 'md' })
+    size!: 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
-  @property({ type: Boolean, default: true })
-  closeable!: boolean;
+    @property({ type: Boolean, default: true })
+    closeable!: boolean;
 
-  @property({ type: Boolean, default: true })
-  closeOnBackdrop!: boolean;
+    @property({ type: Boolean, default: true })
+    closeOnBackdrop!: boolean;
 
-  @property({ type: Boolean, default: true })
-  closeOnEscape!: boolean;
+    @property({ type: Boolean, default: true })
+    closeOnEscape!: boolean;
 
-  private _handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && this.closeOnEscape) this._close();
-  };
+    private _handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' && this.closeOnEscape) this._close();
+    };
 
-  updated() {
-    if (this.open) {
-      document.body.style.overflow = 'hidden';
-      document.addEventListener('keydown', this._handleKeyDown);
-    } else {
-      document.body.style.overflow = '';
-      document.removeEventListener('keydown', this._handleKeyDown);
+    updated() {
+        if (this.open) {
+            document.body.style.overflow = 'hidden';
+            document.addEventListener('keydown', this._handleKeyDown);
+        } else {
+            document.body.style.overflow = '';
+            document.removeEventListener('keydown', this._handleKeyDown);
+        }
     }
-  }
 
-  disconnectedCallback() {
-    super.disconnectedCallback?.();
-    document.body.style.overflow = '';
-    document.removeEventListener('keydown', this._handleKeyDown);
-  }
+    disconnectedCallback() {
+        super.disconnectedCallback?.();
+        document.body.style.overflow = '';
+        document.removeEventListener('keydown', this._handleKeyDown);
+    }
 
-  private _close() {
-    this.emit('close');
-  }
+    private _close() {
+        this.emit('close');
+    }
 
-  static styles: any = css`
+    static styles: any = css`
     :host { display: contents; }
 
     .backdrop {
@@ -68,6 +68,7 @@ export class MuiDialog extends MiuraElement {
       padding: var(--mui-space-4, 16px);
       opacity: 0;
       visibility: hidden;
+      pointer-events: none;
       transition: opacity var(--mui-duration-normal, 200ms) ease,
                   visibility var(--mui-duration-normal, 200ms) ease;
     }
@@ -75,6 +76,7 @@ export class MuiDialog extends MiuraElement {
     :host([open]) .backdrop {
       opacity: 1;
       visibility: visible;
+      pointer-events: auto;
     }
 
     .dialog {
@@ -161,10 +163,10 @@ export class MuiDialog extends MiuraElement {
     }
   `;
 
-  template() {
-    return html`
-      <div class="backdrop" @click=${() => this.closeOnBackdrop && this._close()}>
-        <div class="dialog" role="dialog" aria-modal="true" @click=${(e: Event) => e.stopPropagation()}>
+    template() {
+        return html`
+      <div class="backdrop" @click=${(e: MouseEvent) => { if (e.target === e.currentTarget && this.closeOnBackdrop) this._close(); }}>
+        <div class="dialog" role="dialog" aria-modal="true">
           <header class="dialog-header">
             <h2 class="dialog-title"><slot name="title">Dialog</slot></h2>
             ${this.closeable ? html`
@@ -184,5 +186,5 @@ export class MuiDialog extends MiuraElement {
         </div>
       </div>
     `;
-  }
+    }
 }

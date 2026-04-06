@@ -13,98 +13,103 @@ import { MiuraElement, html, css, component, property, state } from '@miurajs/mi
  */
 @component({ tag: 'mui-dropdown-menu' })
 export class MuiDropdownMenu extends MiuraElement {
-  @property({ type: Boolean, default: false, reflect: true })
-  open!: boolean;
+    @property({ type: Boolean, default: false, reflect: true })
+    open!: boolean;
 
-  @property({ type: String, default: 'bottom-start' })
-  placement!: 'bottom-start' | 'bottom-end' | 'bottom' | 'top-start' | 'top-end' | 'top';
+    @property({ type: String, default: 'bottom-start' })
+    placement!: 'bottom-start' | 'bottom-end' | 'bottom' | 'top-start' | 'top-end' | 'top';
 
-  @property({ type: Boolean, default: false })
-  disabled!: boolean;
+    @property({ type: Boolean, default: false })
+    disabled!: boolean;
 
-  private _handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') this._close();
-  };
+    private _triggerSlot: HTMLSlotElement | null = null;
+    private _menuEl: HTMLElement | null = null;
 
-  private _handleOutsideClick = (e: MouseEvent) => {
-    if (!this.contains(e.target as Node)) this._close();
-  };
+    private _handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') this._close();
+    };
 
-  private _toggle() {
-    if (this.disabled) return;
-    this.open = !this.open;
-    this.emit('toggle', { open: this.open });
-  }
+    private _handleOutsideClick = (e: MouseEvent) => {
+        if (!this.contains(e.target as Node)) this._close();
+    };
 
-  private _close() {
-    if (!this.open) return;
-    this.open = false;
-    this.emit('close');
-  }
-
-  updated() {
-    if (this.open) {
-      document.addEventListener('keydown', this._handleKeyDown);
-      window.addEventListener('scroll', this._handleLayoutShift, true);
-      window.addEventListener('resize', this._handleLayoutShift);
-      // Slight delay so the click that opened doesn't immediately close
-      setTimeout(() => document.addEventListener('click', this._handleOutsideClick), 0);
-      this._positionMenu();
-    } else {
-      this._cleanup();
+    private _toggle() {
+        if (this.disabled) return;
+        this.open = !this.open;
+        this.emit('toggle', { open: this.open });
     }
-  }
 
-  disconnectedCallback() {
-    super.disconnectedCallback?.();
-    this._cleanup();
-  }
+    private _close() {
+        if (!this.open) return;
+        this.open = false;
+        this.emit('close');
+    }
 
-  private _handleLayoutShift = () => {
-    if (this.open) this._positionMenu();
-  };
+    updated() {
+        if (this.open) {
+            document.addEventListener('keydown', this._handleKeyDown);
+            window.addEventListener('scroll', this._handleLayoutShift, true);
+            window.addEventListener('resize', this._handleLayoutShift);
+            // Slight delay so the click that opened doesn't immediately close
+            setTimeout(() => document.addEventListener('click', this._handleOutsideClick), 0);
+            this._positionMenu();
+        } else {
+            this._cleanup();
+        }
+    }
 
-  private _cleanup() {
-    document.removeEventListener('keydown', this._handleKeyDown);
-    document.removeEventListener('click', this._handleOutsideClick);
-    window.removeEventListener('scroll', this._handleLayoutShift, true);
-    window.removeEventListener('resize', this._handleLayoutShift);
-  }
+    disconnectedCallback() {
+        super.disconnectedCallback?.();
+        this._cleanup();
+    }
 
-  private _positionMenu() {
-    requestAnimationFrame(() => {
-      const trigger = this.shadowRoot?.querySelector('.trigger') as HTMLElement;
-      const menu = this.shadowRoot?.querySelector('.menu') as HTMLElement;
-      if (!trigger || !menu) return;
+    private _handleLayoutShift = () => {
+        if (this.open) this._positionMenu();
+    };
 
-      const rect = trigger.getBoundingClientRect();
-      const menuHeight = menu.offsetHeight;
-      const menuWidth = menu.offsetWidth;
-      const vp = { w: window.innerWidth, h: window.innerHeight };
+    private _cleanup() {
+        document.removeEventListener('keydown', this._handleKeyDown);
+        document.removeEventListener('click', this._handleOutsideClick);
+        window.removeEventListener('scroll', this._handleLayoutShift, true);
+        window.removeEventListener('resize', this._handleLayoutShift);
+    }
 
-      // Default: bottom-start
-      let top = rect.bottom + 4;
-      let left = rect.left;
+    private _positionMenu() {
+        requestAnimationFrame(() => {
+            const triggerSlot = this._triggerSlot;
+            const menu = this._menuEl;
+            if (!triggerSlot || !menu) return;
 
-      if (this.placement === 'bottom-end') left = rect.right - menuWidth;
-      if (this.placement === 'bottom') left = rect.left + rect.width / 2 - menuWidth / 2;
-      if (this.placement.startsWith('top')) {
-        top = rect.top - menuHeight - 4;
-        if (this.placement === 'top-end') left = rect.right - menuWidth;
-        if (this.placement === 'top') left = rect.left + rect.width / 2 - menuWidth / 2;
-      }
+            const assigned = triggerSlot.assignedElements();
+            const triggerEl = (assigned[0] ?? triggerSlot) as HTMLElement;
+            const rect = triggerEl.getBoundingClientRect();
+            const menuHeight = menu.offsetHeight;
+            const menuWidth = menu.offsetWidth;
+            const vp = { w: window.innerWidth, h: window.innerHeight };
 
-      // Flip if off-screen
-      if (top + menuHeight > vp.h) top = rect.top - menuHeight - 4;
-      if (left + menuWidth > vp.w) left = vp.w - menuWidth - 8;
-      if (left < 8) left = 8;
+            // Default: bottom-start
+            let top = rect.bottom + 4;
+            let left = rect.left;
 
-      menu.style.top = `${top}px`;
-      menu.style.left = `${left}px`;
-    });
-  }
+            if (this.placement === 'bottom-end') left = rect.right - menuWidth;
+            if (this.placement === 'bottom') left = rect.left + rect.width / 2 - menuWidth / 2;
+            if (this.placement.startsWith('top')) {
+                top = rect.top - menuHeight - 4;
+                if (this.placement === 'top-end') left = rect.right - menuWidth;
+                if (this.placement === 'top') left = rect.left + rect.width / 2 - menuWidth / 2;
+            }
 
-  static styles: any = css`
+            // Flip if off-screen
+            if (top + menuHeight > vp.h) top = rect.top - menuHeight - 4;
+            if (left + menuWidth > vp.w) left = vp.w - menuWidth - 8;
+            if (left < 8) left = 8;
+
+            menu.style.top = `${top}px`;
+            menu.style.left = `${left}px`;
+        });
+    }
+
+    static styles: any = css`
     :host {
       display: inline-flex;
       position: relative;
@@ -140,16 +145,16 @@ export class MuiDropdownMenu extends MiuraElement {
     }
   `;
 
-  template() {
-    return html`
+    template() {
+        return html`
       <div class="trigger" @click=${() => this._toggle()}>
-        <slot name="trigger"></slot>
+        <slot name="trigger" #ref=${(el: Element | null) => { this._triggerSlot = el as HTMLSlotElement; }}></slot>
       </div>
-      <div class="menu" role="menu" aria-hidden="${!this.open}">
+      <div class="menu" role="menu" aria-hidden="${!this.open}" #ref=${(el: Element | null) => { this._menuEl = el as HTMLElement; }}>
         <slot></slot>
       </div>
     `;
-  }
+    }
 }
 
 /**
@@ -160,19 +165,19 @@ export class MuiDropdownMenu extends MiuraElement {
  */
 @component({ tag: 'mui-dropdown-item' })
 export class MuiDropdownItem extends MiuraElement {
-  @property({ type: String, default: '' })
-  icon!: string;
+    @property({ type: String, default: '' })
+    icon!: string;
 
-  @property({ type: String, default: 'default' })
-  variant!: 'default' | 'danger';
+    @property({ type: String, default: 'default' })
+    variant!: 'default' | 'danger';
 
-  @property({ type: Boolean, default: false, reflect: true })
-  disabled!: boolean;
+    @property({ type: Boolean, default: false, reflect: true })
+    disabled!: boolean;
 
-  @property({ type: String, default: '' })
-  shortcut!: string;
+    @property({ type: String, default: '' })
+    shortcut!: string;
 
-  static styles: any = css`
+    static styles: any = css`
     :host {
       display: block;
     }
@@ -232,16 +237,16 @@ export class MuiDropdownItem extends MiuraElement {
     }
   `;
 
-  private _handleClick() {
-    if (this.disabled) return;
-    this.emit('select', {}, { bubbles: true, composed: true });
-    // Close the parent dropdown
-    const dropdown = this.closest('mui-dropdown-menu') as any;
-    dropdown?.open !== undefined && (dropdown.open = false);
-  }
+    private _handleClick() {
+        if (this.disabled) return;
+        this.emit('select', {}, { bubbles: true, composed: true });
+        // Close the parent dropdown
+        const dropdown = this.closest('mui-dropdown-menu') as any;
+        dropdown?.open !== undefined && (dropdown.open = false);
+    }
 
-  template() {
-    return html`
+    template() {
+        return html`
       <button
         class="item ${this.variant === 'danger' ? 'danger' : ''}"
         role="menuitem"
@@ -253,7 +258,7 @@ export class MuiDropdownItem extends MiuraElement {
         ${this.shortcut ? html`<span class="shortcut">${this.shortcut}</span>` : ''}
       </button>
     `;
-  }
+    }
 }
 
 /**
@@ -261,7 +266,7 @@ export class MuiDropdownItem extends MiuraElement {
  */
 @component({ tag: 'mui-dropdown-divider' })
 export class MuiDropdownDivider extends MiuraElement {
-  static styles: any = css`
+    static styles: any = css`
     :host {
       display: block;
       height: 1px;
@@ -269,7 +274,7 @@ export class MuiDropdownDivider extends MiuraElement {
       margin: var(--mui-space-1, 4px) 0;
     }
   `;
-  template() { return html``; }
+    template() { return html``; }
 }
 
 /**
@@ -281,84 +286,88 @@ export class MuiDropdownDivider extends MiuraElement {
  */
 @component({ tag: 'mui-tooltip' })
 export class MuiTooltip extends MiuraElement {
-  @property({ type: String, default: '' })
-  content!: string;
+    @property({ type: String, default: '' })
+    content!: string;
 
-  @property({ type: String, default: 'top' })
-  placement!: 'top' | 'bottom' | 'left' | 'right';
+    @property({ type: String, default: 'top' })
+    placement!: 'top' | 'bottom' | 'left' | 'right';
 
-  @property({ type: Number, default: 600 })
-  delay!: number;
+    @property({ type: Number, default: 600 })
+    delay!: number;
 
-  private _showTimer: number | null = null;
+    private _showTimer: number | null = null;
+    private _triggerSlot: HTMLSlotElement | null = null;
+    private _tooltipEl: HTMLElement | null = null;
 
-  @state({ default: false })
-  private _visible = false;
+    @state({ default: false })
+    private _visible = false;
 
-  private _show() {
-    this._showTimer = window.setTimeout(() => {
-      this._visible = true;
-      this._positionTooltip();
-      window.addEventListener('scroll', this._handleLayoutShift, true);
-      window.addEventListener('resize', this._handleLayoutShift);
-    }, this.delay);
-  }
+    private _show() {
+        this._showTimer = window.setTimeout(() => {
+            this._visible = true;
+            this._positionTooltip();
+            window.addEventListener('scroll', this._handleLayoutShift, true);
+            window.addEventListener('resize', this._handleLayoutShift);
+        }, this.delay);
+    }
 
-  private _hide() {
-    if (this._showTimer) clearTimeout(this._showTimer);
-    this._visible = false;
-    window.removeEventListener('scroll', this._handleLayoutShift, true);
-    window.removeEventListener('resize', this._handleLayoutShift);
-  }
+    private _hide() {
+        if (this._showTimer) clearTimeout(this._showTimer);
+        this._visible = false;
+        window.removeEventListener('scroll', this._handleLayoutShift, true);
+        window.removeEventListener('resize', this._handleLayoutShift);
+    }
 
-  private _handleLayoutShift = () => {
-    if (this._visible) this._positionTooltip();
-  };
+    private _handleLayoutShift = () => {
+        if (this._visible) this._positionTooltip();
+    };
 
-  disconnectedCallback() {
-    super.disconnectedCallback?.();
-    window.removeEventListener('scroll', this._handleLayoutShift, true);
-    window.removeEventListener('resize', this._handleLayoutShift);
-  }
+    disconnectedCallback() {
+        super.disconnectedCallback?.();
+        window.removeEventListener('scroll', this._handleLayoutShift, true);
+        window.removeEventListener('resize', this._handleLayoutShift);
+    }
 
-  private _positionTooltip() {
-    requestAnimationFrame(() => {
-      const trigger = this.shadowRoot?.querySelector('.trigger') as HTMLElement;
-      const tooltip = this.shadowRoot?.querySelector('.tooltip') as HTMLElement;
-      if (!trigger || !tooltip) return;
+    private _positionTooltip() {
+        requestAnimationFrame(() => {
+            const triggerSlot = this._triggerSlot;
+            const tooltip = this._tooltipEl;
+            if (!triggerSlot || !tooltip) return;
 
-      const rect = trigger.getBoundingClientRect();
-      const tw = tooltip.offsetWidth;
-      const th = tooltip.offsetHeight;
+            const assigned = triggerSlot.assignedElements();
+            const triggerEl = (assigned[0] ?? triggerSlot) as HTMLElement;
+            const rect = triggerEl.getBoundingClientRect();
+            const tw = tooltip.offsetWidth;
+            const th = tooltip.offsetHeight;
 
-      let top = 0, left = 0;
-      const GAP = 6;
+            let top = 0, left = 0;
+            const GAP = 6;
 
-      switch (this.placement) {
-        case 'top':
-          top = rect.top - th - GAP;
-          left = rect.left + rect.width / 2 - tw / 2;
-          break;
-        case 'bottom':
-          top = rect.bottom + GAP;
-          left = rect.left + rect.width / 2 - tw / 2;
-          break;
-        case 'left':
-          top = rect.top + rect.height / 2 - th / 2;
-          left = rect.left - tw - GAP;
-          break;
-        case 'right':
-          top = rect.top + rect.height / 2 - th / 2;
-          left = rect.right + GAP;
-          break;
-      }
+            switch (this.placement) {
+                case 'top':
+                    top = rect.top - th - GAP;
+                    left = rect.left + rect.width / 2 - tw / 2;
+                    break;
+                case 'bottom':
+                    top = rect.bottom + GAP;
+                    left = rect.left + rect.width / 2 - tw / 2;
+                    break;
+                case 'left':
+                    top = rect.top + rect.height / 2 - th / 2;
+                    left = rect.left - tw - GAP;
+                    break;
+                case 'right':
+                    top = rect.top + rect.height / 2 - th / 2;
+                    left = rect.right + GAP;
+                    break;
+            }
 
-      tooltip.style.top = `${top}px`;
-      tooltip.style.left = `${left}px`;
-    });
-  }
+            tooltip.style.top = `${top}px`;
+            tooltip.style.left = `${left}px`;
+        });
+    }
 
-  static styles: any = css`
+    static styles: any = css`
     :host { display: inline-flex; position: relative; }
 
     .trigger { display: contents; }
@@ -385,8 +394,8 @@ export class MuiTooltip extends MiuraElement {
     }
   `;
 
-  template() {
-    return html`
+    template() {
+        return html`
       <div
         class="trigger"
         @mouseenter=${() => this._show()}
@@ -394,18 +403,19 @@ export class MuiTooltip extends MiuraElement {
         @focusin=${() => this._show()}
         @focusout=${() => this._hide()}
       >
-        <slot></slot>
+        <slot #ref=${(el: Element | null) => { this._triggerSlot = el as HTMLSlotElement; }}></slot>
       </div>
       <div
         class="tooltip ${this._visible ? 'visible' : ''}"
         role="tooltip"
         aria-hidden="${!this._visible}"
+        #ref=${(el: Element | null) => { this._tooltipEl = el as HTMLElement; }}
       >
         ${this.content}
         <slot name="content"></slot>
       </div>
     `;
-  }
+    }
 }
 
 /**
@@ -421,77 +431,82 @@ export class MuiTooltip extends MiuraElement {
  */
 @component({ tag: 'mui-popover' })
 export class MuiPopover extends MiuraElement {
-  @property({ type: Boolean, default: false, reflect: true })
-  open!: boolean;
+    @property({ type: Boolean, default: false, reflect: true })
+    open!: boolean;
 
-  @property({ type: String, default: 'bottom-start' })
-  placement!: 'bottom-start' | 'bottom-end' | 'bottom' | 'top-start' | 'top-end' | 'top';
+    @property({ type: String, default: 'bottom-start' })
+    placement!: 'bottom-start' | 'bottom-end' | 'bottom' | 'top-start' | 'top-end' | 'top';
 
-  private _handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') this.open = false;
-  };
+    private _triggerSlot: HTMLSlotElement | null = null;
+    private _contentEl: HTMLElement | null = null;
 
-  private _handleOutsideClick = (e: MouseEvent) => {
-    if (!this.contains(e.target as Node)) this.open = false;
-  };
+    private _handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') this.open = false;
+    };
 
-  private _toggle() {
-    this.open = !this.open;
-  }
+    private _handleOutsideClick = (e: MouseEvent) => {
+        if (!this.contains(e.target as Node)) this.open = false;
+    };
 
-  updated() {
-    if (this.open) {
-      document.addEventListener('keydown', this._handleKeyDown);
-      window.addEventListener('scroll', this._handleLayoutShift, true);
-      window.addEventListener('resize', this._handleLayoutShift);
-      setTimeout(() => document.addEventListener('click', this._handleOutsideClick), 0);
-      this._position();
-    } else {
-      document.removeEventListener('keydown', this._handleKeyDown);
-      document.removeEventListener('click', this._handleOutsideClick);
-      window.removeEventListener('scroll', this._handleLayoutShift, true);
-      window.removeEventListener('resize', this._handleLayoutShift);
+    private _toggle() {
+        this.open = !this.open;
     }
-  }
 
-  private _handleLayoutShift = () => {
-    if (this.open) this._position();
-  };
+    updated() {
+        if (this.open) {
+            document.addEventListener('keydown', this._handleKeyDown);
+            window.addEventListener('scroll', this._handleLayoutShift, true);
+            window.addEventListener('resize', this._handleLayoutShift);
+            setTimeout(() => document.addEventListener('click', this._handleOutsideClick), 0);
+            this._position();
+        } else {
+            document.removeEventListener('keydown', this._handleKeyDown);
+            document.removeEventListener('click', this._handleOutsideClick);
+            window.removeEventListener('scroll', this._handleLayoutShift, true);
+            window.removeEventListener('resize', this._handleLayoutShift);
+        }
+    }
 
-  private _position() {
-    requestAnimationFrame(() => {
-      const trigger = this.shadowRoot?.querySelector('.trigger') as HTMLElement;
-      const content = this.shadowRoot?.querySelector('.content') as HTMLElement;
-      if (!trigger || !content) return;
+    private _handleLayoutShift = () => {
+        if (this.open) this._position();
+    };
 
-      const rect = trigger.getBoundingClientRect();
-      const cw = content.offsetWidth;
-      const ch = content.offsetHeight;
-      const vp = { w: window.innerWidth, h: window.innerHeight };
+    private _position() {
+        requestAnimationFrame(() => {
+            const triggerSlot = this._triggerSlot;
+            const content = this._contentEl;
+            if (!triggerSlot || !content) return;
 
-      let top = rect.bottom + 4;
-      let left = rect.left;
+            const assigned = triggerSlot.assignedElements();
+            const triggerEl = (assigned[0] ?? triggerSlot) as HTMLElement;
+            const rect = triggerEl.getBoundingClientRect();
+            const cw = content.offsetWidth;
+            const ch = content.offsetHeight;
+            const vp = { w: window.innerWidth, h: window.innerHeight };
 
-      if (this.placement === 'bottom-end') left = rect.right - cw;
-      if (this.placement === 'bottom') left = rect.left + rect.width / 2 - cw / 2;
-      
-      if (this.placement.startsWith('top')) {
-        top = rect.top - ch - 4;
-        if (this.placement === 'top-end') left = rect.right - cw;
-        if (this.placement === 'top') left = rect.left + rect.width / 2 - cw / 2;
-      }
+            let top = rect.bottom + 4;
+            let left = rect.left;
 
-      // Viewport safety
-      if (top + ch > vp.h) top = rect.top - ch - 4;
-      if (left + cw > vp.w) left = vp.w - cw - 8;
-      if (left < 8) left = 8;
+            if (this.placement === 'bottom-end') left = rect.right - cw;
+            if (this.placement === 'bottom') left = rect.left + rect.width / 2 - cw / 2;
 
-      content.style.top = `${top}px`;
-      content.style.left = `${left}px`;
-    });
-  }
+            if (this.placement.startsWith('top')) {
+                top = rect.top - ch - 4;
+                if (this.placement === 'top-end') left = rect.right - cw;
+                if (this.placement === 'top') left = rect.left + rect.width / 2 - cw / 2;
+            }
 
-  static styles: any = css`
+            // Viewport safety
+            if (top + ch > vp.h) top = rect.top - ch - 4;
+            if (left + cw > vp.w) left = vp.w - cw - 8;
+            if (left < 8) left = 8;
+
+            content.style.top = `${top}px`;
+            content.style.left = `${left}px`;
+        });
+    }
+
+    static styles: any = css`
     :host { display: inline-flex; position: relative; }
     .trigger { display: contents; }
     .content {
@@ -513,16 +528,16 @@ export class MuiPopover extends MiuraElement {
     }
   `;
 
-  template() {
-    return html`
+    template() {
+        return html`
       <div class="trigger" @click=${() => this._toggle()}>
-        <slot name="trigger"></slot>
+        <slot name="trigger" #ref=${(el: Element | null) => { this._triggerSlot = el as HTMLSlotElement; }}></slot>
       </div>
-      <div class="content" aria-hidden="${!this.open}">
+      <div class="content" aria-hidden="${!this.open}" #ref=${(el: Element | null) => { this._contentEl = el as HTMLElement; }}>
         <slot name="content"></slot>
         <slot></slot>
       </div>
     `;
-  }
+    }
 }
 

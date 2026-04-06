@@ -11,6 +11,7 @@ import '../../src/layout/layout.js';
 import '../../src/layout/panel.js';
 import '../../src/primitives/icon.js';
 import '../../src/primitives/icon-button.js';
+import '../../src/primitives/button.js';
 import '../../src/data-display/tree-view.js';
 import '../../src/data-display/list.js';
 import '../../src/navigation/toolbar.js';
@@ -19,14 +20,13 @@ import '../../src/data-display/card.js';
 import '../../src/data-display/avatar.js';
 import '../../src/data-display/badge.js';
 import '../../src/overlays/popover.js';
-import '../../src/forms/forms.js';
 
 /**
  * Complete Admin Layout Component
  */
 class AdminLayoutDemo extends MiuraElement {
-  template() {
-    return html`
+    template() {
+        return html`
     <mui-layout full-height>
       <!-- Icon Rail -->
       <mui-layout-rail slot="rail" logo>
@@ -234,7 +234,7 @@ class AdminLayoutDemo extends MiuraElement {
       </mui-panel>
     </mui-layout>
     `;
-  }
+    }
 }
 
 customElements.define('admin-layout-demo', AdminLayoutDemo);
@@ -243,8 +243,8 @@ customElements.define('admin-layout-demo', AdminLayoutDemo);
  * Minimal Layout Component
  */
 class MinimalLayoutDemo extends MiuraElement {
-  template() {
-    return html`
+    template() {
+        return html`
     <mui-layout full-height style="height: 500px;">
       <mui-layout-rail slot="rail">
         <div slot="logo" style="
@@ -265,7 +265,7 @@ class MinimalLayoutDemo extends MiuraElement {
       </mui-layout-main>
     </mui-layout>
     `;
-  }
+    }
 }
 
 customElements.define('minimal-layout-demo', MinimalLayoutDemo);
@@ -274,8 +274,8 @@ customElements.define('minimal-layout-demo', MinimalLayoutDemo);
  * Three Column Layout Component
  */
 class ThreeColumnLayoutDemo extends MiuraElement {
-  template() {
-    return html`
+    template() {
+        return html`
     <mui-layout full-height style="height: 600px;">
       <mui-layout-rail slot="rail">
         <mui-rail-item icon="mail" label="Inbox" active badge="5"></mui-rail-item>
@@ -317,18 +317,18 @@ class ThreeColumnLayoutDemo extends MiuraElement {
       </mui-panel>
     </mui-layout>
     `;
-  }
+    }
 }
 
 customElements.define('three-column-layout-demo', ThreeColumnLayoutDemo);
 
 // Storybook Meta
 const meta: Meta<AdminLayoutDemo> = {
-  title: 'MiuraUI/Layout/Layout System',
-  component: 'admin-layout-demo',
-  parameters: {
-    layout: 'fullscreen',
-  },
+    title: 'MiuraUI/Layout/Layout System',
+    component: 'admin-layout-demo',
+    parameters: {
+        layout: 'fullscreen',
+    },
 };
 
 export default meta;
@@ -342,7 +342,7 @@ type Story = StoryObj<AdminLayoutDemo>;
  * and an optional properties panel.
  */
 export const AdminLayout: Story = {
-  args: {},
+    args: {},
 };
 
 /**
@@ -351,7 +351,7 @@ export const AdminLayout: Story = {
  * Simple layout with just the icon rail and main content.
  */
 export const MinimalLayout: Story = {
-  render: () => document.createElement('minimal-layout-demo'),
+    render: () => document.createElement('minimal-layout-demo'),
 };
 
 /**
@@ -360,5 +360,5 @@ export const MinimalLayout: Story = {
  * Classic three-column layout with left nav, content, and right sidebar.
  */
 export const ThreeColumnLayout: Story = {
-  render: () => document.createElement('three-column-layout-demo'),
+    render: () => document.createElement('three-column-layout-demo'),
 };

@@ -10,23 +10,23 @@ import { MiuraElement, html, css, component, property, state } from '@miurajs/mi
  */
 @component({ tag: 'mui-menu' })
 export class MuiMenu extends MiuraElement {
-  @property({ type: Boolean, default: false })
-  open!: boolean;
+    @property({ type: Boolean, default: false })
+    open!: boolean;
 
-  @property({ type: String, default: 'bottom-start' })
-  placement!: 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end' | 'left-start' | 'left-end' | 'right-start' | 'right-end';
+    @property({ type: String, default: 'bottom-start' })
+    placement!: 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end' | 'left-start' | 'left-end' | 'right-start' | 'right-end';
 
-  @property({ type: Boolean, default: true })
-  closeOnSelect!: boolean;
+    @property({ type: Boolean, default: true })
+    closeOnSelect!: boolean;
 
-  @property({ type: Boolean, default: true })
-  closeOnClickOutside!: boolean;
+    @property({ type: Boolean, default: true })
+    closeOnClickOutside!: boolean;
 
-  @state({ default: -1 })
-  private _focusedIndex!: number;
+    @state({ default: -1 })
+    private _focusedIndex!: number;
 
-  static get styles() {
-    return css`
+    static get styles() {
+        return css`
       :host {
         display: inline-block;
         position: relative;
@@ -56,12 +56,12 @@ export class MuiMenu extends MiuraElement {
       .menu {
         min-width: 200px;
         max-width: 320px;
-        background: var(--mui-surface);
-        border: 1px solid var(--mui-border);
-        border-radius: var(--mui-radius-md);
+        background: var(--mui-surface, #fff);
+        border: 1px solid var(--mui-border, #e5e7eb);
+        border-radius: var(--mui-radius-md, 6px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08),
                     0 0 0 1px rgba(0, 0, 0, 0.04);
-        padding: var(--mui-space-2) 0;
+        padding: var(--mui-space-2, 8px) 0;
         overflow: auto;
         max-height: 400px;
       }
@@ -124,82 +124,82 @@ export class MuiMenu extends MiuraElement {
         display: block;
       }
     `;
-  }
-
-  connectedCallback() {
-    super.connectedCallback();
-    if (this.closeOnClickOutside) {
-      document.addEventListener('click', this._handleClickOutside);
     }
-  }
 
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    document.removeEventListener('click', this._handleClickOutside);
-  }
-
-  private _handleClickOutside = (e: MouseEvent) => {
-    if (!this.open) return;
-    const path = e.composedPath();
-    if (!path.includes(this)) {
-      this.open = false;
-      this.emit('close');
+    connectedCallback() {
+        super.connectedCallback();
+        if (this.closeOnClickOutside) {
+            document.addEventListener('click', this._handleClickOutside);
+        }
     }
-  };
 
-  private _handleTriggerClick() {
-    this.open = !this.open;
-    this.emit(this.open ? 'open' : 'close');
-  }
-
-  private _handleMenuItemSelect(e: CustomEvent) {
-    if (this.closeOnSelect) {
-      this.open = false;
-      this.emit('close');
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        document.removeEventListener('click', this._handleClickOutside);
     }
-    this.emit('select', e.detail);
-  }
 
-  private _handleKeyDown(e: KeyboardEvent) {
-    if (!this.open) return;
+    private _handleClickOutside = (e: MouseEvent) => {
+        if (!this.open) return;
+        const path = e.composedPath();
+        if (!path.includes(this)) {
+            this.open = false;
+            this.emit('close');
+        }
+    };
 
-    const items = Array.from(this.querySelectorAll('mui-menu-item:not([disabled])'));
-    
-    switch (e.key) {
-      case 'Escape':
-        e.preventDefault();
-        this.open = false;
-        this.emit('close');
-        break;
-      
-      case 'ArrowDown':
-        e.preventDefault();
-        this._focusedIndex = Math.min(this._focusedIndex + 1, items.length - 1);
-        (items[this._focusedIndex] as HTMLElement)?.focus();
-        break;
-      
-      case 'ArrowUp':
-        e.preventDefault();
-        this._focusedIndex = Math.max(this._focusedIndex - 1, 0);
-        (items[this._focusedIndex] as HTMLElement)?.focus();
-        break;
-      
-      case 'Home':
-        e.preventDefault();
-        this._focusedIndex = 0;
-        (items[0] as HTMLElement)?.focus();
-        break;
-      
-      case 'End':
-        e.preventDefault();
-        this._focusedIndex = items.length - 1;
-        (items[items.length - 1] as HTMLElement)?.focus();
-        break;
+    private _handleTriggerClick() {
+        this.open = !this.open;
+        this.emit(this.open ? 'open' : 'close');
     }
-  }
 
-  template() {
-    return html`
+    private _handleMenuItemSelect(e: CustomEvent) {
+        if (this.closeOnSelect) {
+            this.open = false;
+            this.emit('close');
+        }
+        this.emit('select', e.detail);
+    }
+
+    private _handleKeyDown(e: KeyboardEvent) {
+        if (!this.open) return;
+
+        const items = Array.from(this.querySelectorAll('mui-menu-item:not([disabled])'));
+
+        switch (e.key) {
+            case 'Escape':
+                e.preventDefault();
+                this.open = false;
+                this.emit('close');
+                break;
+
+            case 'ArrowDown':
+                e.preventDefault();
+                this._focusedIndex = Math.min(this._focusedIndex + 1, items.length - 1);
+                (items[this._focusedIndex] as HTMLElement)?.focus();
+                break;
+
+            case 'ArrowUp':
+                e.preventDefault();
+                this._focusedIndex = Math.max(this._focusedIndex - 1, 0);
+                (items[this._focusedIndex] as HTMLElement)?.focus();
+                break;
+
+            case 'Home':
+                e.preventDefault();
+                this._focusedIndex = 0;
+                (items[0] as HTMLElement)?.focus();
+                break;
+
+            case 'End':
+                e.preventDefault();
+                this._focusedIndex = items.length - 1;
+                (items[items.length - 1] as HTMLElement)?.focus();
+                break;
+        }
+    }
+
+    template() {
+        return html`
       <div class="trigger" @click=${this._handleTriggerClick.bind(this)}>
         <slot name="trigger"></slot>
       </div>
@@ -209,7 +209,7 @@ export class MuiMenu extends MiuraElement {
         </div>
       </div>
     `;
-  }
+    }
 }
 
 /**
@@ -220,29 +220,29 @@ export class MuiMenu extends MiuraElement {
  */
 @component({ tag: 'mui-menu-item' })
 export class MuiMenuItem extends MiuraElement {
-  @property({ type: String, default: '' })
-  label!: string;
+    @property({ type: String, default: '' })
+    label!: string;
 
-  @property({ type: String, default: '' })
-  icon!: string;
+    @property({ type: String, default: '' })
+    icon!: string;
 
-  @property({ type: String, default: '' })
-  href!: string;
+    @property({ type: String, default: '' })
+    href!: string;
 
-  @property({ type: Boolean, default: false })
-  disabled!: boolean;
+    @property({ type: Boolean, default: false })
+    disabled!: boolean;
 
-  @property({ type: Boolean, default: false })
-  danger!: boolean;
+    @property({ type: Boolean, default: false })
+    danger!: boolean;
 
-  @property({ type: Boolean, default: false })
-  divider!: boolean;
+    @property({ type: Boolean, default: false })
+    divider!: boolean;
 
-  @property({ type: String, default: '' })
-  shortcut!: string;
+    @property({ type: String, default: '' })
+    shortcut!: string;
 
-  static get styles() {
-    return css`
+    static get styles() {
+        return css`
       :host {
         display: block;
       }
@@ -257,24 +257,24 @@ export class MuiMenuItem extends MiuraElement {
       .item {
         display: flex;
         align-items: center;
-        gap: var(--mui-space-3);
-        padding: var(--mui-space-2) var(--mui-space-4);
+        gap: var(--mui-space-3, 12px);
+        padding: var(--mui-space-2, 8px) var(--mui-space-4, 16px);
         min-height: 36px;
-        color: var(--mui-text);
+        color: var(--mui-text, #1f2937);
         text-decoration: none;
         cursor: pointer;
-        transition: background var(--mui-duration-fast) var(--mui-easing-standard),
-                    color var(--mui-duration-fast) var(--mui-easing-standard);
+        transition: background var(--mui-duration-fast, 100ms) var(--mui-easing-standard, ease),
+                    color var(--mui-duration-fast, 100ms) var(--mui-easing-standard, ease);
         user-select: none;
       }
 
       .item:hover {
-        background: var(--mui-surface-hover);
+        background: var(--mui-surface-hover, #f3f4f6);
       }
 
       .item:focus {
         outline: none;
-        background: var(--mui-surface-hover);
+        background: var(--mui-surface-hover, #f3f4f6);
       }
 
       .item:focus-visible {
@@ -328,26 +328,26 @@ export class MuiMenuItem extends MiuraElement {
         margin-left: auto;
       }
     `;
-  }
-
-  private _handleClick(e: MouseEvent) {
-    if (this.disabled) return;
-    
-    if (this.href) {
-      // Let the browser handle navigation
-      return;
     }
 
-    e.preventDefault();
-    this.emit('menu-item-select', { label: this.label }, { bubbles: true, composed: true });
-  }
+    private _handleClick(e: MouseEvent) {
+        if (this.disabled) return;
 
-  template() {
-    if (this.divider) {
-      return html``;
+        if (this.href) {
+            // Let the browser handle navigation
+            return;
+        }
+
+        e.preventDefault();
+        this.emit('menu-item-select', { label: this.label }, { bubbles: true, composed: true });
     }
 
-    const content = html`
+    template() {
+        if (this.divider) {
+            return html``;
+        }
+
+        const content = html`
       ${this.icon ? html`<span class="icon">${this.icon}</span>` : ''}
       <span class="label">${this.label || html`<slot></slot>`}</span>
       ${this.shortcut ? html`<span class="shortcut">${this.shortcut}</span>` : ''}
@@ -358,8 +358,8 @@ export class MuiMenuItem extends MiuraElement {
       ` : ''}
     `;
 
-    if (this.href) {
-      return html`
+        if (this.href) {
+            return html`
         <a 
           class="item" 
           href=${this.href}
@@ -370,9 +370,9 @@ export class MuiMenuItem extends MiuraElement {
           ${content}
         </a>
       `;
-    }
+        }
 
-    return html`
+        return html`
       <div 
         class="item" 
         role="menuitem"
@@ -382,5 +382,5 @@ export class MuiMenuItem extends MiuraElement {
         ${content}
       </div>
     `;
-  }
+    }
 }
