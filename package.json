@@ -30,7 +30,7 @@
         "vitest": "^3.2.3"
     },
     "dependencies": {
-        "@miurajs/miura": "^2.2.4",
+        "@miurajs/miura": "^2.2.5",
         "@storybook/web-components": "8.6.18"
     }
 }
