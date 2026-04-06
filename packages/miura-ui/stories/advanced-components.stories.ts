@@ -114,9 +114,9 @@ class SpecializedDemo extends MiuraElement {
 
     @state({
         default: [
-            { title: 'Implement login', status: 'todo', description: 'Using Firebase Auth', assignee: 'John' },
-            { title: 'Design components', status: 'progress', description: 'Radix inspired', assignee: 'Jane' },
-            { title: 'Setup Storybook', status: 'done', description: 'Core config', assignee: 'Jane' }
+            { id: 'k1', title: 'Implement login', status: 'todo', description: 'Using Firebase Auth', assignee: 'John' },
+            { id: 'k2', title: 'Design components', status: 'progress', description: 'Radix inspired', assignee: 'Jane' },
+            { id: 'k3', title: 'Setup Storybook', status: 'done', description: 'Core config', assignee: 'Jane' }
         ]
     })
     declare kanbanItems: any[];
@@ -173,7 +173,7 @@ class SpecializedDemo extends MiuraElement {
 
     private _onItemMoved(e: any) {
         const { item, to } = e.detail;
-        this.kanbanItems = this.kanbanItems.map((it: any) => it.title === item.title ? { ...it, status: to } : it);
+        this.kanbanItems = this.kanbanItems.map((it: any) => it.id === item.id ? { ...it, status: to } : it);
     }
 
     private _onEventDrop(e: any) {

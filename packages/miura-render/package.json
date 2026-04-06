@@ -1,33 +1,33 @@
 {
-  "name": "@miurajs/miura-render",
-  "version": "0.2.13",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+    "name": "@miurajs/miura-render",
+    "version": "0.2.14",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "scripts": {
+        "build": "tsc",
+        "test": "vitest",
+        "test:watch": "vitest watch",
+        "test:coverage": "vitest run --coverage"
+    },
+    "type": "module",
+    "files": [
+        "dist"
+    ],
+    "dependencies": {
+        "@miurajs/miura-debugger": "^0.2.2"
+    },
+    "devDependencies": {
+        "@types/jsdom": "^21.1.6",
+        "@vitest/coverage-v8": "^1.6.0",
+        "jsdom": "^24.0.0",
+        "typescript": "^5.4.5",
+        "vitest": "^1.6.0"
     }
-  },
-  "scripts": {
-    "build": "tsc",
-    "test": "vitest",
-    "test:watch": "vitest watch",
-    "test:coverage": "vitest run --coverage"
-  },
-  "type": "module",
-  "files": [
-    "dist"
-  ],
-  "dependencies": {
-    "@miurajs/miura-debugger": "^0.2.2"
-  },
-  "devDependencies": {
-    "@types/jsdom": "^21.1.6",
-    "@vitest/coverage-v8": "^1.6.0",
-    "jsdom": "^24.0.0",
-    "typescript": "^5.4.5",
-    "vitest": "^1.6.0"
-  }
 }

@@ -66,6 +66,7 @@ export class MuiKanban extends MiuraElement {
 
     private _handleDragLeave(e: DragEvent) {
         const col = e.currentTarget as HTMLElement;
+        if (col.contains(e.relatedTarget as Node)) return;
         col.classList.remove('drag-over');
     }
 
@@ -76,8 +77,7 @@ export class MuiKanban extends MiuraElement {
 
         try {
             const item = JSON.parse(e.dataTransfer?.getData('application/json') || '{}');
-            if (item.title) {
-                // Emit event so parent can update data (source of truth)
+            if ((item.id || item.title) && item.status !== columnId) {
                 this.emit('item-moved', { item, from: item.status, to: columnId });
             }
         } catch (err) { }
