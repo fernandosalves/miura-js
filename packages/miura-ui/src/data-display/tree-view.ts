@@ -243,6 +243,7 @@ export class MuiTreeItem extends MiuraElement {
         height: 18px;
         flex-shrink: 0;
         color: var(--mui-text-secondary);
+        margin-right: var(--mui-space-1, 4px);
       }
 
       .item-label {
