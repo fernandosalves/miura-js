@@ -38,19 +38,19 @@ class InputDemo extends MiuraElement {
                     <mui-input
                         type="text"
                         placeholder="Enter your name"
-                        &value=${[this.name, (v) => this.name = v]}
+                        &value=${[this.name, (v: string) => this.name = v]}
                     ></mui-input>
 
                     <mui-input
                         type="email"
                         placeholder="email@example.com"
-                        &value=${[this.email, (v) => this.email = v]}
+                        &value=${[this.email, (v: string) => this.email = v]}
                     ></mui-input>
 
                     <mui-input
                         type="password"
                         placeholder="Password"
-                        &value=${[this.password, (v) => this.password = v]}
+                        &value=${[this.password, (v: string) => this.password = v]}
                     ></mui-input>
                 </mui-stack>
 

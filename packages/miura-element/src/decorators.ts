@@ -1,18 +1,19 @@
 import { MiuraElement } from "./miura-element";
 
 export interface ComponentOptions {
-  tag?: string;
+    tag?: string;
 }
 
 export interface PropertyOptions {
-  type?: typeof String | typeof Number | typeof Boolean | typeof Array | typeof Object;
-  default?: unknown;
-  attribute?: string | false;
-  reflect?: boolean;
+    type?: typeof String | typeof Number | typeof Boolean | typeof Array | typeof Object;
+    default?: unknown;
+    attribute?: string | false;
+    reflect?: boolean;
 }
 
 export interface StateOptions {
-  default?: unknown;
+    type?: typeof String | typeof Number | typeof Boolean | typeof Array | typeof Object;
+    default?: unknown;
 }
 
 /**
@@ -22,13 +23,13 @@ export interface StateOptions {
  * class MyElement extends MiuraElement { ... }
  */
 export function component<T extends typeof MiuraElement>(options: ComponentOptions) {
-  return function(target: T): T {
-    // Register the element
-    if (options.tag) {
-      customElements.define(options.tag, target);
-    }
-    return target;
-  };
+    return function (target: T): T {
+        // Register the element
+        if (options.tag) {
+            customElements.define(options.tag, target);
+        }
+        return target;
+    };
 }
 
 /**
@@ -41,22 +42,22 @@ export function component<T extends typeof MiuraElement>(options: ComponentOptio
  * }
  */
 export function property(options: PropertyOptions = {}) {
-  return function(target: MiuraElement, propertyKey: string) {
-    const constructor = target.constructor as typeof MiuraElement & { properties?: Record<string, PropertyOptions> };
-    
-    // Ensure properties object exists
-    if (!constructor.hasOwnProperty('properties')) {
-      constructor.properties = { ...constructor.properties };
-    }
-    
-    // Add this property to the static properties
-    constructor.properties![propertyKey] = {
-      type: options.type ?? String,
-      default: options.default,
-      attribute: options.attribute !== undefined ? options.attribute : propertyKey.toLowerCase(),
-      reflect: options.reflect,
+    return function (target: MiuraElement, propertyKey: string) {
+        const constructor = target.constructor as typeof MiuraElement & { properties?: Record<string, PropertyOptions> };
+
+        // Ensure properties object exists
+        if (!constructor.hasOwnProperty('properties')) {
+            constructor.properties = { ...constructor.properties };
+        }
+
+        // Add this property to the static properties
+        constructor.properties![propertyKey] = {
+            type: options.type ?? String,
+            default: options.default,
+            attribute: options.attribute !== undefined ? options.attribute : propertyKey.toLowerCase(),
+            reflect: options.reflect,
+        };
     };
-  };
 }
 
 /**
@@ -69,20 +70,26 @@ export function property(options: PropertyOptions = {}) {
  * }
  */
 export function state(options: StateOptions = {}) {
-  return function(target: MiuraElement, propertyKey: string) {
-    const constructor = target.constructor as typeof MiuraElement & { properties?: Record<string, PropertyOptions> };
-    
-    // Ensure properties object exists
-    if (!constructor.hasOwnProperty('properties')) {
-      constructor.properties = { ...constructor.properties };
-    }
-    
-    // Add as internal state (no attribute reflection)
-    constructor.properties![propertyKey] = {
-      type: String,  // Default type, will be inferred from TypeScript
-      default: options.default,
-      attribute: false,
-      reflect: false,
+    return function (target: MiuraElement, propertyKey: string) {
+        const constructor = target.constructor as typeof MiuraElement & {
+            state?: () => Record<string, PropertyOptions>
+        };
+
+        // Get existing state declarations from any previous @state decorators
+        const existingState = typeof constructor.state === 'function'
+            ? constructor.state()
+            : {};
+
+        // Merge new state property with existing ones
+        const newState = {
+            ...existingState,
+            [propertyKey]: {
+                type: options.type ?? Object,
+                default: options.default,
+            }
+        };
+
+        // Create/update the static state() function
+        constructor.state = () => newState;
     };
-  };
 } 

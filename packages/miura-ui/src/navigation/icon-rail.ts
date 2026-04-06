@@ -335,3 +335,23 @@ export class MuiRailItem extends MiuraElement {
     `;
   }
 }
+
+/**
+ * Rail Divider — visual separator in icon rails
+ */
+@component({ tag: 'mui-rail-divider' })
+export class MuiRailDivider extends MiuraElement {
+  static styles: any = css`
+    :host {
+      display: block;
+      height: 1px;
+      background: var(--mui-border, #e5e7eb);
+      margin: var(--mui-space-4, 16px) var(--mui-space-3, 12px);
+    }
+    :host-context(mui-icon-rail[collapsed]) {
+      margin: var(--mui-space-4, 16px) var(--mui-space-2, 8px);
+    }
+  `;
+  template() { return html``; }
+}
+

@@ -1,6 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { MiuraElement, html, css, state } from '@miurajs/miura-element';
-import '../../src/forms/forms.js';
+import '../../src/forms/field.js';
+import '../../src/forms/textarea.js';
+import '../../src/forms/select.js';
+import '../../src/forms/checkbox.js';
+import '../../src/forms/switch.js';
+import '../../src/forms/radio.js';
 import '../../src/data-display/display.js';
 import '../../src/primitives/icon.js';
 import '../../src/primitives/button.js';

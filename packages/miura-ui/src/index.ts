@@ -25,6 +25,7 @@ export * from './overlays/alert.js';
 export * from './overlays/drawer.js';
 export * from './overlays/dialog.js';
 export * from './overlays/popover.js';
+export * from './overlays/command.js';
 
 // Navigation Components
 export * from './navigation/icon-rail.js';
@@ -40,10 +41,26 @@ export * from './data-display/tree-view.js';
 export * from './data-display/avatar.js';
 export * from './data-display/badge.js';
 export * from './data-display/card.js';
+export * from './data-display/kpi-card.js';
 export * from './data-display/list.js';
 export * from './data-display/display.js';
+export * from './data-display/table.js';
 
 // Form Components
-export * from './forms/forms.js';
+export * from './forms/field.js';
+export * from './forms/textarea.js';
+export * from './forms/select.js';
+export * from './forms/checkbox.js';
+export * from './forms/switch.js';
+export * from './forms/radio.js';
+export * from './forms/slider.js';
+export * from './forms/date-picker.js';
+export * from './forms/color-picker.js';
+export * from './forms/file-upload.js';
+
+// Special Components
+export * from './special/kanban.js';
+export * from './special/calendar.js';
+export * from './special/calendar-event.js';
 
 

@@ -407,3 +407,122 @@ export class MuiTooltip extends MiuraElement {
     `;
   }
 }
+
+/**
+ * Popover — floating rich content anchored to a trigger.
+ *
+ * <mui-popover>
+ *   <mui-button slot="trigger">View Info</mui-button>
+ *   <div slot="content" style="padding: 12px">
+ *     <h4>Details</h4>
+ *     <p>Some rich content here...</p>
+ *   </div>
+ * </mui-popover>
+ */
+@component({ tag: 'mui-popover' })
+export class MuiPopover extends MiuraElement {
+  @property({ type: Boolean, default: false, reflect: true })
+  open!: boolean;
+
+  @property({ type: String, default: 'bottom-start' })
+  placement!: 'bottom-start' | 'bottom-end' | 'bottom' | 'top-start' | 'top-end' | 'top';
+
+  private _handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') this.open = false;
+  };
+
+  private _handleOutsideClick = (e: MouseEvent) => {
+    if (!this.contains(e.target as Node)) this.open = false;
+  };
+
+  private _toggle() {
+    this.open = !this.open;
+  }
+
+  updated() {
+    if (this.open) {
+      document.addEventListener('keydown', this._handleKeyDown);
+      window.addEventListener('scroll', this._handleLayoutShift, true);
+      window.addEventListener('resize', this._handleLayoutShift);
+      setTimeout(() => document.addEventListener('click', this._handleOutsideClick), 0);
+      this._position();
+    } else {
+      document.removeEventListener('keydown', this._handleKeyDown);
+      document.removeEventListener('click', this._handleOutsideClick);
+      window.removeEventListener('scroll', this._handleLayoutShift, true);
+      window.removeEventListener('resize', this._handleLayoutShift);
+    }
+  }
+
+  private _handleLayoutShift = () => {
+    if (this.open) this._position();
+  };
+
+  private _position() {
+    requestAnimationFrame(() => {
+      const trigger = this.shadowRoot?.querySelector('.trigger') as HTMLElement;
+      const content = this.shadowRoot?.querySelector('.content') as HTMLElement;
+      if (!trigger || !content) return;
+
+      const rect = trigger.getBoundingClientRect();
+      const cw = content.offsetWidth;
+      const ch = content.offsetHeight;
+      const vp = { w: window.innerWidth, h: window.innerHeight };
+
+      let top = rect.bottom + 4;
+      let left = rect.left;
+
+      if (this.placement === 'bottom-end') left = rect.right - cw;
+      if (this.placement === 'bottom') left = rect.left + rect.width / 2 - cw / 2;
+      
+      if (this.placement.startsWith('top')) {
+        top = rect.top - ch - 4;
+        if (this.placement === 'top-end') left = rect.right - cw;
+        if (this.placement === 'top') left = rect.left + rect.width / 2 - cw / 2;
+      }
+
+      // Viewport safety
+      if (top + ch > vp.h) top = rect.top - ch - 4;
+      if (left + cw > vp.w) left = vp.w - cw - 8;
+      if (left < 8) left = 8;
+
+      content.style.top = `${top}px`;
+      content.style.left = `${left}px`;
+    });
+  }
+
+  static styles: any = css`
+    :host { display: inline-flex; position: relative; }
+    .trigger { display: contents; }
+    .content {
+      position: fixed;
+      z-index: var(--mui-z-popover, 1200);
+      background: var(--mui-surface, #fff);
+      border: 1px solid var(--mui-border, #e5e7eb);
+      border-radius: var(--mui-radius-lg, 8px);
+      box-shadow: var(--mui-shadow-lg, 0 8px 24px rgba(0,0,0,0.12));
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-4px);
+      transition: opacity 100ms, transform 100ms, visibility 100ms;
+    }
+    :host([open]) .content {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+  `;
+
+  template() {
+    return html`
+      <div class="trigger" @click=${() => this._toggle()}>
+        <slot name="trigger"></slot>
+      </div>
+      <div class="content" aria-hidden="${!this.open}">
+        <slot name="content"></slot>
+        <slot></slot>
+      </div>
+    `;
+  }
+}
+
