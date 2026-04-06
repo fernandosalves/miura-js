@@ -14,6 +14,13 @@ export class MuiBox extends MiuraElement {
     shadow: { type: String, default: '' },
   };
 
+  padding!: string;
+  margin!: string;
+  background!: string;
+  border!: string;
+  radius!: string;
+  shadow!: string;
+
   static get styles() {
     return css`
       :host {

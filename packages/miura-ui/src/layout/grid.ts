@@ -14,6 +14,13 @@ export class MuiGrid extends MiuraElement {
     autoFit: { type: Boolean, reflect: true, default: false },
   };
 
+  columns!: number;
+  minWidth!: string;
+  gap!: string;
+  columnGap!: string | null;
+  rowGap!: string | null;
+  autoFit!: boolean;
+
   static get styles() {
     return css`
       :host { 

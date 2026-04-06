@@ -16,6 +16,15 @@ export class MuiInput extends MiuraElement {
     required: { type: Boolean, reflect: true, default: false },
   };
 
+  value!: string;
+  type!: string;
+  placeholder!: string;
+  size!: string;
+  status!: string;
+  disabled!: boolean;
+  readonly!: boolean;
+  required!: boolean;
+
   static get styles() {
     return css`
       :host {

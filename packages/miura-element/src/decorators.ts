@@ -7,7 +7,7 @@ export interface ComponentOptions {
 export interface PropertyOptions {
   type?: typeof String | typeof Number | typeof Boolean | typeof Array | typeof Object;
   default?: unknown;
-  attribute?: string | boolean;
+  attribute?: string | false;
   reflect?: boolean;
 }
 

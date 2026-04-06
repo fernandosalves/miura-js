@@ -14,6 +14,13 @@ export class MuiButton extends MiuraElement {
     block: { type: Boolean, reflect: true, default: false },
   };
 
+  variant!: string;
+  size!: string;
+  tone!: string;
+  loading!: boolean;
+  disabled!: boolean;
+  block!: boolean;
+
   static get styles() {
     return css`
       :host {

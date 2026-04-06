@@ -20,6 +20,10 @@ export class MuiContainer extends MiuraElement {
     center: { type: Boolean, reflect: true, default: true },
   };
 
+  size!: string;
+  padding!: string;
+  center!: boolean;
+
   static get styles() {
     return css`
       :host {
