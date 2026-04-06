@@ -1,61 +1,272 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css, component, property } from '@miurajs/miura-element';
 
 /**
- * <mui-pagination page="1" pageCount="5"></mui-pagination>
+ * Pagination component for navigating through pages
+ * Usage:
+ * <mui-pagination 
+ *   current-page="1" 
+ *   total-pages="10"
+ *   @page-change=${(e) => console.log(e.detail.page)}
+ * ></mui-pagination>
  */
+@component({ tag: 'mui-pagination' })
 export class MuiPagination extends MiuraElement {
-  static properties = {
-    page: { type: Number },
-    pageCount: { type: Number },
-  };
-  page = 1;
-  pageCount = 1;
+    @property({ type: Number, default: 1 })
+    currentPage!: number;
 
-  _setPage(page: number) {
-    if (page < 1 || page > this.pageCount) return;
-    this.page = page;
-    this.dispatchEvent(new CustomEvent('change', { detail: { page }, bubbles: true, composed: true }));
-  }
+    @property({ type: Number, default: 1 })
+    totalPages!: number;
 
-  template() {
-    return html`
-      <nav class="mui-pagination">
-        <button @click=${() => this._setPage(this.page - 1)} ?disabled=${this.page <= 1}>&lt;</button>
-        ${Array.from({ length: this.pageCount }, (_, i) => html`
-          <button
-            class="${this.page === i + 1 ? 'active' : ''}"
-            @click=${() => this._setPage(i + 1)}
-          >${i + 1}</button>
-        `)}
-        <button @click=${() => this._setPage(this.page + 1)} ?disabled=${this.page >= this.pageCount}>&gt;</button>
-      </nav>
+    @property({ type: Number, default: 7 })
+    maxVisible!: number;
+
+    @property({ type: Boolean, default: false })
+    showFirstLast!: boolean;
+
+    @property({ type: Boolean, default: true })
+    showPrevNext!: boolean;
+
+    @property({ type: String, default: 'md' })
+    size!: 'sm' | 'md' | 'lg';
+
+    @property({ type: Boolean, default: false })
+    disabled!: boolean;
+
+    static get styles() {
+        return css`
+      :host {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--mui-space-1);
+        font-size: var(--mui-text-sm);
+      }
+
+      .page-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: var(--_button-size, 40px);
+        height: var(--_button-size, 40px);
+        padding: 0 var(--mui-space-2, 8px);
+        background: var(--mui-surface, #fff);
+        border: 1px solid var(--mui-border, #e5e7eb);
+        border-radius: var(--mui-radius-md, 6px);
+        color: var(--mui-text, #374151);
+        font-size: var(--mui-text-sm, 0.875rem);
+        font-weight: var(--mui-weight-medium, 500);
+        cursor: pointer;
+        transition: all var(--mui-duration-fast, 100ms) var(--mui-easing-standard, ease);
+        user-select: none;
+      }
+
+      .page-button:hover:not(:disabled):not(.active) {
+        background: var(--mui-surface-hover, #f9fafb);
+        border-color: var(--mui-border-hover, #d1d5db);
+        transform: translateY(-1px);
+      }
+
+      .page-button:focus-visible {
+        outline: 2px solid var(--mui-primary);
+        outline-offset: 2px;
+      }
+
+      .page-button:active:not(:disabled) {
+        transform: scale(0.95);
+      }
+
+      .page-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .page-button.active {
+        background: var(--mui-primary, #3b82f6);
+        border-color: var(--mui-primary, #3b82f6);
+        color: var(--mui-primary-foreground, #fff);
+        cursor: default;
+      }
+
+      .page-button svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .ellipsis {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: var(--_button-size, 40px);
+        height: var(--_button-size, 40px);
+        color: var(--mui-text-secondary, #6b7280);
+        user-select: none;
+      }
+
+      /* Size variants */
+      :host([size="sm"]) {
+        --_button-size: 32px;
+        font-size: var(--mui-text-xs, 0.75rem);
+        font-size: var(--mui-text-xs);
+      }
+
+      :host([size="lg"]) {
+        --_button-size: 44px;
+        font-size: var(--mui-text-md);
+      }
+
+      /* Disabled state */
+      :host([disabled]) {
+        opacity: 0.6;
+        pointer-events: none;
+      }
     `;
-  }
+    }
 
-  styles = css`
-    .mui-pagination {
-      display: flex;
-      gap: var(--mui-spacing-1);
-      align-items: center;
+    private _goToPage(page: number) {
+        if (page < 1 || page > this.totalPages || page === this.currentPage || this.disabled) {
+            return;
+        }
+
+        this.currentPage = page;
+        this.emit('page-change', { page });
     }
-    button {
-      background: none;
-      border: 1px solid #ccc;
-      border-radius: var(--mui-radius);
-      padding: 0.25em 0.75em;
-      cursor: pointer;
-      font: inherit;
-      transition: background 0.2s, border-color 0.2s;
+
+    private _getVisiblePages(): (number | 'ellipsis')[] {
+        const { currentPage, totalPages, maxVisible } = this;
+
+        if (totalPages <= maxVisible) {
+            return Array.from({ length: totalPages }, (_, i) => i + 1);
+        }
+
+        const pages: (number | 'ellipsis')[] = [];
+        const halfVisible = Math.floor(maxVisible / 2);
+
+        // Always show first page
+        pages.push(1);
+
+        // Calculate range around current page
+        let start = Math.max(2, currentPage - halfVisible);
+        let end = Math.min(totalPages - 1, currentPage + halfVisible);
+
+        // Adjust if at boundaries
+        if (currentPage <= halfVisible + 1) {
+            end = Math.min(totalPages - 1, maxVisible - 1);
+        } else if (currentPage >= totalPages - halfVisible) {
+            start = Math.max(2, totalPages - maxVisible + 2);
+        }
+
+        // Add left ellipsis
+        if (start > 2) {
+            pages.push('ellipsis');
+        }
+
+        // Add middle pages
+        for (let i = start; i <= end; i++) {
+            pages.push(i);
+        }
+
+        // Add right ellipsis
+        if (end < totalPages - 1) {
+            pages.push('ellipsis');
+        }
+
+        // Always show last page
+        if (totalPages > 1) {
+            pages.push(totalPages);
+        }
+
+        return pages;
     }
-    button.active {
-      background: var(--mui-primary, #0078d4);
-      color: #fff;
-      border-color: var(--mui-primary, #0078d4);
+
+    template() {
+        const { currentPage, totalPages, showFirstLast, showPrevNext, disabled } = this;
+        const pages = this._getVisiblePages();
+
+        const prevIcon = html`
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    `;
+
+        const nextIcon = html`
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 18l6-6-6-6"/>
+      </svg>
+    `;
+
+        const firstIcon = html`
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 18l-6-6 6-6M12 18l-6-6 6-6"/>
+      </svg>
+    `;
+
+        const lastIcon = html`
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M6 18l6-6-6-6M12 18l6-6-6-6"/>
+      </svg>
+    `;
+
+        return html`
+      ${showFirstLast ? html`
+        <button
+          class="page-button"
+          @click=${() => this._goToPage(1)}
+          ?disabled=${currentPage === 1 || disabled}
+          aria-label="First page"
+        >
+          ${firstIcon}
+        </button>
+      ` : ''}
+
+      ${showPrevNext ? html`
+        <button
+          class="page-button"
+          @click=${() => this._goToPage(currentPage - 1)}
+          ?disabled=${currentPage === 1 || disabled}
+          aria-label="Previous page"
+        >
+          ${prevIcon}
+        </button>
+      ` : ''}
+
+      ${pages.map(page => {
+            if (page === 'ellipsis') {
+                return html`<span class="ellipsis">...</span>`;
+            }
+
+            return html`
+          <button
+            class="page-button ${page === currentPage ? 'active' : ''}"
+            @click=${() => this._goToPage(page as number)}
+            ?disabled=${disabled}
+            aria-label="Page ${page}"
+            aria-current=${page === currentPage ? 'page' : undefined}
+          >
+            ${page}
+          </button>
+        `;
+        })}
+
+      ${showPrevNext ? html`
+        <button
+          class="page-button"
+          @click=${() => this._goToPage(currentPage + 1)}
+          ?disabled=${currentPage === totalPages || disabled}
+          aria-label="Next page"
+        >
+          ${nextIcon}
+        </button>
+      ` : ''}
+
+      ${showFirstLast ? html`
+        <button
+          class="page-button"
+          @click=${() => this._goToPage(totalPages)}
+          ?disabled=${currentPage === totalPages || disabled}
+          aria-label="Last page"
+        >
+          ${lastIcon}
+        </button>
+      ` : ''}
+    `;
     }
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  `;
 }
-customElements.define('mui-pagination', MuiPagination); 

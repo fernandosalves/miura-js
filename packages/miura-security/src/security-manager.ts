@@ -278,9 +278,9 @@ export class SecurityManager {
     // Here we just log what headers should be set
     
     if (this.config.headers) {
-      console.log('Security headers that should be set on the server:');
+      // console.log('Security headers that should be set on the server:');
       for (const [header, value] of Object.entries(this.config.headers)) {
-        console.log(`${header}: ${value}`);
+        // console.log(`${header}: ${value}`);
       }
     }
   }

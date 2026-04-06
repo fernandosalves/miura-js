@@ -661,6 +661,49 @@ export class MiuraElement extends HTMLElement {
     }
 
     /**
+     * Emits a custom event from this element.
+     * Convenience wrapper around CustomEvent and dispatchEvent.
+     * 
+     * @param {string} eventName - The name of the event to emit
+     * @param {any} detail - The detail payload for the event
+     * @param {CustomEventInit} options - Additional event options (bubbles, composed, cancelable)
+     * @returns {boolean} false if event is cancelable and was cancelled, true otherwise
+     * 
+     * @example
+     * this.emit('close');
+     * this.emit('selection-change', { selectedIds: [...this._selectedIds] });
+     * this.emit('item-select', { id: this.id }, { bubbles: true, composed: true });
+     */
+    protected emit(eventName: string, detail?: any, options?: CustomEventInit): boolean {
+        const event = new CustomEvent(eventName, {
+            detail,
+            bubbles: options?.bubbles ?? false,
+            composed: options?.composed ?? false,
+            cancelable: options?.cancelable ?? false,
+            ...options
+        });
+        return this.dispatchEvent(event);
+    }
+
+    /**
+     * Checks if a named slot has any assigned content.
+     * Useful for conditionally rendering UI based on slot content.
+     * 
+     * @param {string} name - The name of the slot to check
+     * @returns {boolean} true if the slot has assigned nodes, false otherwise
+     * 
+     * @example
+     * if (this.hasSlot('actions')) {
+     *   // Render actions container
+     * }
+     */
+    protected hasSlot(name: string): boolean {
+        const slot = this.shadowRoot?.querySelector(`slot[name="${name}"]`) as HTMLSlotElement | null;
+        if (!slot) return false;
+        return slot.assignedNodes({ flatten: true }).length > 0;
+    }
+
+    /**
      * Called after an update is completed.
      * Subclasses can override to react to updates.
      * @protected

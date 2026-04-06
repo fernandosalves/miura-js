@@ -1,161 +1,235 @@
-import { html, css } from '@miurajs/miura-element';
-import { MuiBase } from '../base/mui-base.js';
+/**
+ * MUI Badge Component
+ * 
+ * Displays a small badge for status indicators, counts, or labels.
+ * 
+ * @example
+ * ```html
+ * <mui-badge>New</mui-badge>
+ * <mui-badge variant="solid" color="success">Published</mui-badge>
+ * <mui-badge dot color="success"></mui-badge>
+ * <mui-badge icon="check" color="success">Done</mui-badge>
+ * ```
+ */
 
-type BadgeVariant = 'solid' | 'soft' | 'outline';
-type BadgeTone = 'primary' | 'neutral' | 'success' | 'warning' | 'danger';
-type BadgePlacement = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'inline';
+import { MiuraElement, html, css, component, property } from '@miurajs/miura-element';
 
-export class MuiBadge extends MuiBase {
-    static tagName = 'mui-badge';
+@component({ tag: 'mui-badge' })
+export class MuiBadge extends MiuraElement {
+  /**
+   * Badge variant
+   */
+  @property({ type: String })
+  variant: 'solid' | 'soft' | 'outline' | 'dot' = 'soft';
 
-    static properties = {
-        value: { type: String },
-        max: { type: Number },
-        variant: { type: String, reflect: true },
-        tone: { type: String, reflect: true },
-        placement: { type: String, reflect: true },
-        dot: { type: Boolean, reflect: true },
-    };
+  /**
+   * Badge color
+   */
+  @property({ type: String })
+  color: 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info' = 'default';
 
-    value = '';
-    max = 99;
-    variant: BadgeVariant = 'solid';
-    tone: BadgeTone = 'primary';
-    placement: BadgePlacement = 'top-right';
-    dot = false;
+  /**
+   * Badge size
+   */
+  @property({ type: String })
+  size: 'sm' | 'md' | 'lg' = 'md';
 
-    static styles = css`
-        :host {
-            display: inline-flex;
-            position: relative;
-        }
+  /**
+   * Icon to display before label (Lucide icon name)
+   */
+  @property({ type: String })
+  icon = '';
 
-        .wrapper {
-            display: inline-flex;
-            position: relative;
-        }
+  /**
+   * Display as dot only (no content)
+   */
+  @property({ type: Boolean })
+  dot = false;
 
-        .badge {
-            position: absolute;
-            min-width: 1.2rem;
-            height: 1.2rem;
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 0.35rem;
-            font-size: 0.7rem;
-            font-weight: var(--mui-type-font-weight-semibold);
-            background: var(--mui-badge-bg, var(--mui-color-primary));
-            color: var(--mui-badge-fg, var(--mui-color-primary-foreground));
-            box-shadow: var(--mui-shadow-soft);
-            pointer-events: none;
-            border: var(--mui-badge-border, none);
-        }
+  /**
+   * Numeric count (auto-formats large numbers)
+   */
+  @property({ type: Number })
+  count: number | null = null;
 
-        :host([placement='inline']) .badge {
-            position: static;
-            transform: none;
-            margin-left: var(--mui-spacing-xs);
-        }
+  /**
+   * Maximum count before showing "99+"
+   */
+  @property({ type: Number })
+  max = 99;
 
-        :host(:not([placement='inline'])) .badge {
-            transform: translate(var(--mui-badge-translate-x, 50%), var(--mui-badge-translate-y, -50%));
-        }
+  /**
+   * Pill shape (fully rounded)
+   */
+  @property({ type: Boolean })
+  pill = true;
 
-        :host([placement='top-right']) .badge {
-            top: 0;
-            right: 0;
-            --mui-badge-translate-x: 50%;
-            --mui-badge-translate-y: -50%;
-        }
+  static styles = css`
+    :host {
+      display: inline-flex;
+    }
 
-        :host([placement='top-left']) .badge {
-            top: 0;
-            left: 0;
-            --mui-badge-translate-x: -50%;
-            --mui-badge-translate-y: -50%;
-        }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-family: inherit;
+      font-weight: 500;
+      white-space: nowrap;
+      border: 1px solid transparent;
+      transition: all var(--mui-duration-fast, 100ms) ease;
+    }
 
-        :host([placement='bottom-right']) .badge {
-            bottom: 0;
-            right: 0;
-            --mui-badge-translate-x: 50%;
-            --mui-badge-translate-y: 50%;
-        }
+    /* Sizes */
+    .badge.size-sm {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      min-height: 18px;
+    }
 
-        :host([placement='bottom-left']) .badge {
-            bottom: 0;
-            left: 0;
-            --mui-badge-translate-x: -50%;
-            --mui-badge-translate-y: 50%;
-        }
+    .badge.size-md {
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      min-height: 22px;
+    }
 
-        :host([dot]) .badge {
-            min-width: 0.5rem;
-            height: 0.5rem;
-            padding: 0;
-        }
+    .badge.size-lg {
+      font-size: 14px;
+      padding: 4px 12px;
+      border-radius: 8px;
+      min-height: 28px;
+    }
 
-        :host([variant='soft']) {
-            --mui-badge-bg: color-mix(in srgb, var(--mui-color-primary) 15%, var(--mui-surface));
-            --mui-badge-fg: var(--mui-color-primary);
-            --mui-badge-border: none;
-        }
+    .badge.pill {
+      border-radius: 999px;
+    }
 
-        :host([variant='outline']) {
-            --mui-badge-bg: transparent;
-            --mui-badge-fg: var(--mui-color-primary);
-            --mui-badge-border: 1px solid color-mix(in srgb, var(--mui-color-primary) 40%, transparent);
-        }
+    /* Dot variant */
+    .badge.dot {
+      width: 8px;
+      height: 8px;
+      min-height: auto;
+      padding: 0;
+      border-radius: 50%;
+    }
 
-        :host([tone='neutral']) {
-            --mui-badge-bg: var(--mui-color-neutral);
-            --mui-badge-fg: var(--mui-surface);
-        }
+    .badge.dot.size-sm { width: 6px; height: 6px; }
+    .badge.dot.size-lg { width: 10px; height: 10px; }
 
-        :host([tone='success']) {
-            --mui-badge-bg: var(--mui-color-success);
-            --mui-badge-fg: var(--mui-surface);
-        }
+    /* Soft variant (default) */
+    .badge.variant-soft {
+      background: var(--badge-soft-bg);
+      color: var(--badge-color);
+    }
 
-        :host([tone='warning']) {
-            --mui-badge-bg: var(--mui-color-warning);
-            --mui-badge-fg: var(--mui-color-text);
-        }
+    /* Solid variant */
+    .badge.variant-solid {
+      background: var(--badge-solid-bg);
+      color: white;
+    }
 
-        :host([tone='danger']) {
-            --mui-badge-bg: var(--mui-color-danger);
-            --mui-badge-fg: var(--mui-color-danger-foreground);
-        }
+    /* Outline variant */
+    .badge.variant-outline {
+      background: transparent;
+      border-color: var(--badge-border);
+      color: var(--badge-color);
+    }
+
+    /* Dot variant colors */
+    .badge.variant-dot {
+      background: var(--badge-solid-bg);
+    }
+
+    /* Color: Default */
+    .badge.color-default {
+      --badge-soft-bg: var(--mui-surface-subtle, #f3f4f6);
+      --badge-solid-bg: var(--mui-text-secondary, #6b7280);
+      --badge-border: var(--mui-border, #e5e7eb);
+      --badge-color: var(--mui-text-secondary, #6b7280);
+    }
+
+    /* Color: Primary */
+    .badge.color-primary {
+      --badge-soft-bg: rgba(59, 130, 246, 0.1);
+      --badge-solid-bg: var(--mui-primary, #3b82f6);
+      --badge-border: rgba(59, 130, 246, 0.4);
+      --badge-color: var(--mui-primary, #3b82f6);
+    }
+
+    /* Color: Success */
+    .badge.color-success {
+      --badge-soft-bg: rgba(34, 197, 94, 0.1);
+      --badge-solid-bg: var(--mui-success, #22c55e);
+      --badge-border: rgba(34, 197, 94, 0.4);
+      --badge-color: var(--mui-success, #16a34a);
+    }
+
+    /* Color: Warning */
+    .badge.color-warning {
+      --badge-soft-bg: rgba(245, 158, 11, 0.1);
+      --badge-solid-bg: var(--mui-warning, #f59e0b);
+      --badge-border: rgba(245, 158, 11, 0.4);
+      --badge-color: var(--mui-warning, #d97706);
+    }
+
+    /* Color: Error */
+    .badge.color-error {
+      --badge-soft-bg: rgba(239, 68, 68, 0.1);
+      --badge-solid-bg: var(--mui-error, #ef4444);
+      --badge-border: rgba(239, 68, 68, 0.4);
+      --badge-color: var(--mui-error, #dc2626);
+    }
+
+    /* Color: Info */
+    .badge.color-info {
+      --badge-soft-bg: rgba(14, 165, 233, 0.1);
+      --badge-solid-bg: var(--mui-info, #0ea5e9);
+      --badge-border: rgba(14, 165, 233, 0.4);
+      --badge-color: var(--mui-info, #0284c7);
+    }
+
+    /* Icon styling */
+    mui-icon {
+      flex-shrink: 0;
+    }
+  `;
+
+  private _formatCount(): string {
+    if (this.count === null) return '';
+    if (this.count > this.max) return `${this.max}+`;
+    return String(this.count);
+  }
+
+  template() {
+    const displayCount = this._formatCount();
+    const isDot = this.dot || this.variant === 'dot';
+
+    const classes = [
+      'badge',
+      `variant-${isDot ? 'dot' : this.variant}`,
+      `color-${this.color}`,
+      `size-${this.size}`,
+      isDot ? 'dot' : '',
+      this.pill ? 'pill' : '',
+    ].filter(Boolean).join(' ');
+
+    // Icon size based on badge size
+    const iconSize = this.size === 'sm' ? 'xs' as const : 'sm' as const;
+
+    if (isDot) {
+      return html`<span class="${classes}"></span>`;
+    }
+
+    return html`
+      <span class="${classes}">
+        ${this.icon ? html`<mui-icon name="${this.icon}" size="${iconSize}"></mui-icon>` : ''}
+        ${displayCount || html`<slot></slot>`}
+      </span>
     `;
-
-    private get displayValue(): string | null {
-        if (!this.value) return null;
-        if (this.dot) return null;
-        const numeric = Number(this.value);
-        if (!Number.isNaN(numeric) && numeric > this.max) {
-            return `${this.max}+`;
-        }
-        return this.value;
-    }
-
-    template() {
-        const badgeContent = this.displayValue;
-        const showBadge = this.dot || badgeContent;
-        return html`
-            <span class="wrapper" part="wrapper">
-                <slot></slot>
-                ${showBadge ? html`<span class="badge" part="badge" aria-label=${this.value}>${badgeContent}</span>` : null}
-            </span>
-        `;
-    }
+  }
 }
 
-export function registerMuiBadge() {
-    if (!customElements.get(MuiBadge.tagName)) {
-        customElements.define(MuiBadge.tagName, MuiBadge);
-    }
-}
-
-registerMuiBadge();
+export default MuiBadge;

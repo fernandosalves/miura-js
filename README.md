@@ -1,8 +1,8 @@
 # miura Framework
 
 [![MiuraJS Status: Beta](https://img.shields.io/badge/MiuraJS-Beta-f97316?style=flat-square&labelColor=0f172a)](#)
-[![npm version](https://img.shields.io/npm/v/@miurajsjs/miura/alpha?style=flat-square&labelColor=0f172a)](https://www.npmjs.com/package/@miurajsjs/miura)
-[![npm downloads](https://img.shields.io/npm/dm/@miurajsjs/miura?style=flat-square&labelColor=0f172a)](https://www.npmjs.com/package/@miurajsjs/miura)
+[![npm version](https://img.shields.io/npm/v/@miurajs/miura/alpha?style=flat-square&labelColor=0f172a)](https://www.npmjs.com/package/@miurajs/miura)
+[![npm downloads](https://img.shields.io/npm/dm/@miurajs/miura?style=flat-square&labelColor=0f172a)](https://www.npmjs.com/package/@miurajs/miura)
 
 miura is a lightweight, enterprise-ready web component framework designed for building modern, scalable web applications with a simple and intuitive development experience.
 
@@ -83,17 +83,17 @@ miura-js/
 
 ### Published Packages
 
-All packages are published under the `@miurajsjs` organization:
+All packages are published under the `@miurajs` organization:
 
-- **@miurajsjs/miura** - Complete framework bundle
-- **@miurajsjs/miura-element** - Component system
-- **@miurajsjs/miura-framework** - Framework base class
-- **@miurajsjs/miura-render** - Rendering engine
-- **@miurajsjs/miura-router** - Routing system
-- **@miurajsjs/miura-data-flow** - State management
-- **@miurajsjs/miura-debugger** - Debugging tools
-- **@miurajsjs/miura-security** - Security features
-- **@miurajsjs/miura-ui** - UI components
+- **@miurajs/miura** - Complete framework bundle
+- **@miurajs/miura-element** - Component system
+- **@miurajs/miura-framework** - Framework base class
+- **@miurajs/miura-render** - Rendering engine
+- **@miurajs/miura-router** - Routing system
+- **@miurajs/miura-data-flow** - State management
+- **@miurajs/miura-debugger** - Debugging tools
+- **@miurajs/miura-security** - Security features
+- **@miurajs/miura-ui** - UI components
 
 ## Installation
 
@@ -102,7 +102,7 @@ All packages are published under the `@miurajsjs` organization:
 Install the complete framework (recommended):
 
 ```bash
-npm install @miurajsjs/miura@alpha
+npm install @miurajs/miura@alpha
 ```
 
 ### Individual Packages
@@ -111,21 +111,21 @@ You can also install individual packages:
 
 ```bash
 # Core framework
-npm install @miurajsjs/miura-element
-npm install @miurajsjs/miura-framework
-npm install @miurajsjs/miura-render
+npm install @miurajs/miura-element
+npm install @miurajs/miura-framework
+npm install @miurajs/miura-render
 
 # Optional packages
-npm install @miurajsjs/miura-router
-npm install @miurajsjs/miura-data-flow
-npm install @miurajsjs/miura-ui
-npm install @miurajsjs/miura-security
+npm install @miurajs/miura-router
+npm install @miurajs/miura-data-flow
+npm install @miurajs/miura-ui
+npm install @miurajs/miura-security
 ```
 
 ### Usage Example
 
 ```typescript
-import { MiuraFramework, html } from '@miurajsjs/miura';
+import { MiuraFramework, html } from '@miurajs/miura';
 
 class MyApp extends MiuraFramework {
   static tagName = 'my-app';
@@ -165,21 +165,55 @@ The framework is structured as a monorepo with the following packages:
 
 | Package | Description |
 |---------|-------------|
-| **`@miurajsjs/miura`** | Meta-package that bundles and re-exports all framework features |
-| **`@miurajsjs/miura-element`** | Base class for reactive web components — properties, lifecycle, decorators. [README →](./packages/miura-element/README.md) |
-| **`@miurajsjs/miura-render`** | Rendering engine — `html`/`css` tagged templates, parser, bindings, directives. [README →](./packages/miura-render/README.md) |
-| **`@miurajsjs/miura-framework`** | Orchestration layer — plugin manager, event bus, performance monitor |
-| **`@miurajsjs/miura-data-flow`** | State management — store, middleware, 9 data providers (REST, GraphQL, Firebase, etc.) |
-| **`@miurajsjs/miura-ui`** | 70+ pre-built UI components (primitives, navigation, overlay, layout, typography) |
-| **`@miurajsjs/miura-router`** | Client-side router — hash/history/memory modes, guards, loaders, nested routes, layout outlets |
-| **`@miurajsjs/miura-security`** | Auth, AuthZ, CSP, input validation |
-| **`@miurajsjs/miura-debugger`** | Category/level logger for development |
-| **`@miurajsjs/miura-i18n`** | Internationalization — `t()`, dot-notation keys, pluralization, interpolation, fallback locale |
-| **`@miurajsjs/miura-computing`** | Reactive Web Worker bridge — `WorkerBridge`, `expose()`, typed call/stream protocol |
-| **`@miurajsjs/miura-graphics`** | *(Coming Soon)* 2D/3D rendering and animations |
-| **`@miurajsjs/miura-ai`** | *(Coming Soon)* `#stream` directive — progressive token rendering from SSE/WebSocket/ReadableStream |
+| **`@miurajs/miura`** | Meta-package that bundles and re-exports all framework features |
+| **`@miurajs/miura-element`** | Base class for reactive web components — properties, lifecycle, decorators. [README →](./packages/miura-element/README.md) |
+| **`@miurajs/miura-render`** | Rendering engine — `html`/`css` tagged templates, parser, bindings, directives. [README →](./packages/miura-render/README.md) |
+| **`@miurajs/miura-framework`** | Orchestration layer — plugin manager, event bus, performance monitor |
+| **`@miurajs/miura-data-flow`** | State management — store, middleware, 9 data providers (REST, GraphQL, Firebase, etc.) |
+| **`@miurajs/miura-ui`** | 70+ pre-built UI components (primitives, navigation, overlay, layout, typography) |
+| **`@miurajs/miura-router`** | Client-side router — hash/history/memory modes, guards, loaders, nested routes, layout outlets |
+| **`@miurajs/miura-security`** | Auth, AuthZ, CSP, input validation |
+| **`@miurajs/miura-debugger`** | Category/level logger for development |
+| **`@miurajs/miura-i18n`** | Internationalization — `t()`, dot-notation keys, pluralization, interpolation, fallback locale |
+| **`@miurajs/miura-computing`** | Reactive Web Worker bridge — `WorkerBridge`, `expose()`, typed call/stream protocol |
+| **`@miurajs/miura-graphics`** | *(Coming Soon)* 2D/3D rendering and animations |
+| **`@miurajs/miura-ai`** | *(Coming Soon)* `#stream` directive — progressive token rendering from SSE/WebSocket/ReadableStream |
 
 ## Features
+
+### Decorators
+
+MiuraElement provides TypeScript decorators for cleaner, more declarative component definitions:
+
+```typescript
+import { MiuraElement, html, component, property, state } from '@miurajs/miura-element';
+
+@component({ tag: 'user-profile' })
+export class UserProfile extends MiuraElement {
+  // Public reactive properties
+  @property({ type: String, default: '' })
+  username!: string;
+
+  @property({ type: Number, default: 0 })
+  score!: number;
+
+  // Internal state (not reflected to attributes)
+  @state({ default: false })
+  isEditing!: boolean;
+
+  template() {
+    return html`<h3>${this.username}: ${this.score}</h3>`;
+  }
+}
+```
+
+| Decorator | Purpose |
+|-----------|---------|
+| `@component({ tag })` | Auto-registers custom element |
+| `@property(options)` | Defines public reactive property |
+| `@state(options)` | Defines internal state (private) |
+
+See [decorators documentation](./docs/miura-element/decorators.md) for full API and migration guide.
 
 ### Reactive Properties
 - Type-safe property definitions with automatic type conversion
@@ -278,7 +312,73 @@ html`<div #virtualScroll=${{
 
 The lower-level `computeVirtualSlice()` function is also available for custom implementations.
 
-### Slot Utilities
+### Helper Methods
+
+#### Event Emission
+
+Use `emit(eventName, detail?, options?)` to dispatch custom events:
+
+```typescript
+@component({ tag: 'mui-drawer' })
+class MuiDrawer extends MiuraElement {
+  private handleClose() {
+    this.open = false;
+    this.emit('close'); // Simple event
+  }
+
+  private handleToggle() {
+    this.collapsed = !this.collapsed;
+    // Event with detail payload
+    this.emit('toggle', { collapsed: this.collapsed });
+  }
+
+  private handleSelect(id: string) {
+    // Event that crosses shadow DOM boundaries
+    this.emit('item-select', { id }, { bubbles: true, composed: true });
+  }
+}
+```
+
+**Options:**
+- `bubbles` (default: `false`) - Event bubbles up the DOM tree
+- `composed` (default: `false`) - Event crosses shadow DOM boundaries
+- `cancelable` (default: `false`) - Event can be prevented with `preventDefault()`
+
+#### Slot Utilities
+
+```typescript
+@component({ tag: 'mui-panel' })
+class MuiPanel extends MiuraElement {
+  onMount() {
+    // Get elements assigned to a slot
+    const headerEls = this.querySlotted('header');
+    
+    // React to slot content changes
+    this.onSlotChange('', (elements) => {
+      this.hasContent = elements.length > 0;
+    });
+  }
+
+  template() {
+    return html`
+      <div class="panel">
+        ${when(this.hasSlot('actions'),
+          () => html`
+            <div class="actions">
+              <slot name="actions"></slot>
+            </div>
+          `
+        )}
+        <slot></slot>
+      </div>
+    `;
+  }
+}
+```
+
+**Methods:**
+- **`emit(name, detail?, options?)`** — Dispatch a custom event
+- **`hasSlot(name)`** — Check if a named slot has assigned content
 - **`querySlotted(name?)`** — Get elements assigned to a slot
 - **`onSlotChange(name, callback)`** — React to slot content changes
 

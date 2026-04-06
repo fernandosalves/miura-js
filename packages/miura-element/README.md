@@ -4,6 +4,7 @@ The core component system for the miura framework. Provides the `MiuraElement` b
 
 ## Features
 
+- **Decorators** — `@component`, `@property`, `@state` for cleaner definitions
 - **Reactive Properties** — Type-safe definitions with automatic type conversion and attribute reflection; each property is signal-backed
 - **Internal State** — `static state()` for private, non-reflected reactive state fields
 - **Computed Properties** — Derived values with dependency tracking and caching
@@ -53,6 +54,47 @@ class Counter extends MiuraElement {
   }
 }
 ```
+
+## Decorators (Recommended)
+
+MiuraElement provides TypeScript decorators for cleaner component definitions:
+
+```typescript
+import { MiuraElement, html, css, component, property, state } from '@miurajs/miura-element';
+
+@component({ tag: 'user-card' })
+export class UserCard extends MiuraElement {
+  @property({ type: String, default: '' })
+  name!: string;
+
+  @property({ type: Number, default: 0 })
+  age!: number;
+
+  @state({ default: false })
+  isEditing!: boolean;
+
+  static get styles() {
+    return css`
+      :host { display: block; padding: 1rem; }
+    `;
+  }
+
+  template() {
+    return html`
+      <h3>${this.name}, ${this.age}</h3>
+      <p>Editing: ${this.isEditing}</p>
+    `;
+  }
+}
+```
+
+**Benefits:**
+- No `static properties` object needed
+- Auto-registration with `@component`
+- `@property` for public props, `@state` for internal state
+- Type and property definition in one place
+
+See [../../docs/miura-element/decorators.md](../../docs/miura-element/decorators.md) for full documentation and migration guide.
 
 ## API Reference
 
@@ -205,6 +247,61 @@ class MyCard extends MiuraElement {
         <slot name="header"></slot>
         <slot></slot>
         <slot name="footer"></slot>
+      </div>
+    `;
+  }
+}
+```
+
+### Helper Methods
+
+#### `emit(eventName, detail?, options?)`
+
+Convenience wrapper for dispatching custom events.
+
+```typescript
+@component({ tag: 'mui-drawer' })
+class MuiDrawer extends MiuraElement {
+  private handleClose() {
+    this.open = false;
+    this.emit('close');
+  }
+
+  private handleToggle() {
+    this.collapsed = !this.collapsed;
+    this.emit('toggle', { collapsed: this.collapsed });
+  }
+
+  private handleSelect(id: string) {
+    // Emit with bubbles and composed for cross shadow-DOM
+    this.emit('item-select', { id }, { bubbles: true, composed: true });
+  }
+}
+```
+
+**Options:**
+- `bubbles` (default: `false`) - Event bubbles up the DOM
+- `composed` (default: `false`) - Event crosses shadow DOM boundary
+- `cancelable` (default: `false`) - Event can be prevented
+
+#### `hasSlot(name)`
+
+Checks if a named slot has assigned content. Useful for conditional rendering.
+
+```typescript
+@component({ tag: 'mui-panel' })
+class MuiPanel extends MiuraElement {
+  template() {
+    return html`
+      <div class="panel">
+        ${when(this.hasSlot('actions'),
+          () => html`
+            <div class="actions">
+              <slot name="actions"></slot>
+            </div>
+          `
+        )}
+        <slot></slot>
       </div>
     `;
   }

@@ -46,7 +46,7 @@ export class NodeBinding implements Binding {
         private startMarker: Comment,
         private endMarker: Comment,
         private processor?: ITemplateProcessor
-    ) {}
+    ) { }
 
     async setValue(value: unknown): Promise<void> {
         // Fast path: identical value reference
@@ -141,46 +141,36 @@ export class NodeBinding implements Binding {
         const prevLen = this.arrayInstances.length;
         const newLen = value.length;
 
-        // Try to reuse instances that have the same template strings
-        const reusableCount = Math.min(prevLen, newLen);
-        let canReuseAll = this.prevKind === PrevKind.TemplateArray && prevLen > 0;
-
-        // Check if we can do in-place updates for existing items
-        for (let i = 0; i < reusableCount && canReuseAll; i++) {
-            const item = value[i];
-            if (
-                item instanceof TemplateResult &&
-                this.arrayStrings[i] === item.strings &&
-                this.arrayInstances[i]
-            ) {
-                // This item can be reused
-            } else {
-                canReuseAll = false;
-            }
-        }
-
-        if (canReuseAll && newLen <= prevLen) {
-            // Fast path: update existing items in-place, remove extras
-            for (let i = 0; i < reusableCount; i++) {
-                const item = value[i] as TemplateResult;
-                await this.arrayInstances[i].update(item.values);
-            }
-            // Remove excess items from the end
-            for (let i = newLen; i < prevLen; i++) {
-                if (this.arrayInstances[i]?.disconnect) {
-                    this.arrayInstances[i].disconnect();
+        // Fast path: same length AND same template structure → pure in-place value update, no DOM changes.
+        // NOTE: We intentionally exclude shrink/grow from this path because getFragment() on an already-
+        // inserted TemplateInstance returns an empty DocumentFragment (its children were moved to the live
+        // DOM on first insert). removeTrailingNodes relied on re-inserting from those empty fragments,
+        // which caused all "kept" cards to disappear. Shrink/grow go to the slow path instead.
+        if (
+            this.prevKind === PrevKind.TemplateArray &&
+            prevLen > 0 &&
+            newLen === prevLen
+        ) {
+            let canReuse = true;
+            for (let i = 0; i < newLen && canReuse; i++) {
+                const item = value[i];
+                if (
+                    !(item instanceof TemplateResult) ||
+                    this.arrayStrings[i] !== item.strings ||
+                    !this.arrayInstances[i]
+                ) {
+                    canReuse = false;
                 }
             }
-            // Remove excess DOM nodes (from the last reusable instance to end marker)
-            if (newLen < prevLen) {
-                this.removeTrailingNodes(newLen);
+            if (canReuse) {
+                for (let i = 0; i < newLen; i++) {
+                    await this.arrayInstances[i].update((value[i] as TemplateResult).values);
+                }
+                return;
             }
-            this.arrayInstances.length = newLen;
-            this.arrayStrings.length = newLen;
-            return;
         }
 
-        // Slow path: full teardown + rebuild
+        // Slow path: full teardown + rebuild (handles grow, shrink, and structure changes)
         this.teardown();
 
         const fragment = document.createDocumentFragment();

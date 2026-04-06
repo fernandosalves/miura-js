@@ -331,7 +331,7 @@ const meta: Meta = {
         docs: {
             description: {
                 component: `
-**\`@miurajsjs/miura-computing\`** — Reactive Web Worker bridge.
+**\`@miurajs/miura-computing\`** — Reactive Web Worker bridge.
 
 Move CPU-heavy work off the main thread with a typed \`call()\` / \`stream()\` protocol.
 The worker is created from an inline Blob URL here; in real apps point to a compiled worker file.
