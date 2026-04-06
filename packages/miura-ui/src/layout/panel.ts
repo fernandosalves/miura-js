@@ -42,31 +42,37 @@ export class MuiPanel extends MiuraElement {
         flex-direction: column;
         height: 100%;
         background: var(--mui-surface);
-        border: 1px solid var(--mui-border);
+        border-right: 1px solid var(--mui-border);
+        box-shadow: var(--mui-shadow-sm);
         transition: width var(--mui-duration-normal) var(--mui-easing-emphasized),
-                    height var(--mui-duration-normal) var(--mui-easing-emphasized);
+                    height var(--mui-duration-normal) var(--mui-easing-emphasized),
+                    box-shadow var(--mui-duration-normal) var(--mui-easing-standard);
         position: relative;
       }
 
-      /* Placement borders */
+      /* Placement borders & shadows */
       :host([placement="left"]) .panel {
         border-left: none;
         border-right: 1px solid var(--mui-border);
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
       }
 
       :host([placement="right"]) .panel {
         border-right: none;
         border-left: 1px solid var(--mui-border);
+        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.04);
       }
 
       :host([placement="top"]) .panel {
         border-top: none;
         border-bottom: 1px solid var(--mui-border);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
       }
 
       :host([placement="bottom"]) .panel {
         border-bottom: none;
         border-top: 1px solid var(--mui-border);
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
       }
 
       /* Size variants - horizontal */
@@ -168,8 +174,13 @@ export class MuiPanel extends MiuraElement {
       }
 
       .action-button:hover {
-        background: var(--mui-surface-subtle);
+        background: var(--mui-surface-hover);
         color: var(--mui-text);
+      }
+
+      .action-button:focus-visible {
+        outline: 2px solid var(--mui-primary);
+        outline-offset: 1px;
       }
 
       .action-button svg {
@@ -181,23 +192,45 @@ export class MuiPanel extends MiuraElement {
       .panel-body {
         flex: 1;
         overflow: auto;
-        padding: var(--mui-space-3);
+        padding: 0;
+      }
+
+      .panel-body::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      .panel-body::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .panel-body::-webkit-scrollbar-thumb {
+        background: var(--mui-border);
+        border-radius: 4px;
+      }
+
+      .panel-body::-webkit-scrollbar-thumb:hover {
+        background: var(--mui-border-hover);
       }
 
       /* Resize handle */
       .resize-handle {
         position: absolute;
-        background: transparent;
+        background: var(--mui-border);
+        opacity: 0.3;
         z-index: 10;
-        transition: background var(--mui-duration-fast) var(--mui-easing-standard);
+        transition: background var(--mui-duration-fast) var(--mui-easing-standard),
+                    opacity var(--mui-duration-fast) var(--mui-easing-standard);
       }
 
       .resize-handle:hover {
         background: var(--mui-primary);
+        opacity: 1;
       }
 
       .resize-handle:active {
         background: var(--mui-primary-hover);
+        opacity: 1;
       }
 
       /* Horizontal resize handle */

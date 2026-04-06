@@ -18,21 +18,24 @@ export class MuiTreeView extends MiuraElement {
   @property({ type: String, default: 'single' })
   selection!: 'none' | 'single' | 'multiple';
 
-  @state({ default: new Set() })
-  private _selectedIds!: Set<string>;
+  private _selectedIds: Set<string> = new Set();
 
   static get styles() {
     return css`
       :host {
         display: block;
-        font-family: var(--mui-font-family);
+        font-family: system-ui, -apple-system, sans-serif;
         font-size: var(--mui-text-sm);
+        line-height: 1.5;
       }
 
       .tree {
         list-style: none;
-        padding: 0;
+        padding: var(--mui-space-1);
         margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--mui-space-1);
       }
     `;
   }
@@ -100,11 +103,8 @@ export class MuiTreeItem extends MiuraElement {
   @property({ type: Boolean, default: true })
   expandable!: boolean;
 
-  @state({ default: false })
-  private _isDragging!: boolean;
-
-  @state({ default: false })
-  private _isDragOver!: boolean;
+  private _isDragging: boolean = false;
+  private _isDragOver: boolean = false;
 
   static get styles() {
     return css`
@@ -117,21 +117,37 @@ export class MuiTreeItem extends MiuraElement {
         align-items: center;
         gap: var(--mui-space-2);
         padding: var(--mui-space-2) var(--mui-space-3);
-        margin: var(--mui-space-1) 0;
+        min-height: 36px;
         border-radius: var(--mui-radius-md);
         cursor: pointer;
         user-select: none;
-        transition: background var(--mui-duration-fast) var(--mui-easing-standard);
+        transition: background var(--mui-duration-fast) var(--mui-easing-standard),
+                    color var(--mui-duration-fast) var(--mui-easing-standard),
+                    transform var(--mui-duration-fast) var(--mui-easing-standard);
         position: relative;
       }
 
       .item:hover {
-        background: var(--mui-surface-subtle);
+        background: var(--mui-surface-hover);
+      }
+
+      .item:active {
+        transform: scale(0.98);
+      }
+
+      .item:focus-visible {
+        outline: 2px solid var(--mui-primary);
+        outline-offset: 2px;
       }
 
       :host([selected]) .item {
-        background: color-mix(in srgb, var(--mui-primary) 15%, transparent);
+        background: color-mix(in srgb, var(--mui-primary) 12%, transparent);
         color: var(--mui-primary);
+        font-weight: var(--mui-weight-medium);
+      }
+
+      :host([selected]) .item:hover {
+        background: color-mix(in srgb, var(--mui-primary) 18%, transparent);
       }
 
       :host([disabled]) .item {
@@ -156,8 +172,8 @@ export class MuiTreeItem extends MiuraElement {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
         padding: 0;
         background: transparent;
         border: none;
@@ -166,11 +182,18 @@ export class MuiTreeItem extends MiuraElement {
         cursor: pointer;
         flex-shrink: 0;
         transition: transform var(--mui-duration-fast) var(--mui-easing-standard),
-                    background var(--mui-duration-fast) var(--mui-easing-standard);
+                    background var(--mui-duration-fast) var(--mui-easing-standard),
+                    color var(--mui-duration-fast) var(--mui-easing-standard);
       }
 
       .expand-button:hover {
-        background: var(--mui-surface-subtle);
+        background: var(--mui-surface-hover);
+        color: var(--mui-text);
+      }
+
+      .expand-button:focus-visible {
+        outline: 2px solid var(--mui-primary);
+        outline-offset: 1px;
       }
 
       .expand-button svg {
@@ -239,12 +262,15 @@ export class MuiTreeItem extends MiuraElement {
       }
 
       .children {
-        padding-left: var(--mui-space-6);
+        padding-left: calc(var(--mui-space-6) + var(--mui-space-2));
         display: none;
+        margin-top: var(--mui-space-1);
       }
 
       :host([expanded]) .children {
-        display: block;
+        display: flex;
+        flex-direction: column;
+        gap: var(--mui-space-1);
       }
     `;
   }
@@ -275,11 +301,13 @@ export class MuiTreeItem extends MiuraElement {
       e.dataTransfer.setData('text/plain', this.id);
     }
     this.emit('drag-start', { id: this.id, element: this });
+    this.requestUpdate();
   }
 
   private _handleDragEnd() {
     this._isDragging = false;
     this.emit('drag-end', { id: this.id });
+    this.requestUpdate();
   }
 
   private _handleDragOver(e: DragEvent) {
@@ -288,10 +316,12 @@ export class MuiTreeItem extends MiuraElement {
       e.dataTransfer.dropEffect = 'move';
     }
     this._isDragOver = true;
+    this.requestUpdate();
   }
 
   private _handleDragLeave() {
     this._isDragOver = false;
+    this.requestUpdate();
   }
 
   private _handleDrop(e: DragEvent) {
@@ -303,6 +333,7 @@ export class MuiTreeItem extends MiuraElement {
     if (draggedId && draggedId !== this.id) {
       this.emit('drop', { draggedId, targetId: this.id }, { bubbles: true, composed: true });
     }
+    this.requestUpdate();
   }
 
   private _handleActionClick(e: Event) {

@@ -1,7 +1,7 @@
 import { MiuraElement, html, css } from '@miurajs/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import './panel';
-import '../data-display/tree-view';
+import '../../src/layout/panel.js';
+import '../../src/data-display/tree-view.js';
 
 class PanelDemo extends MiuraElement {
   static get styles() {
@@ -28,7 +28,15 @@ class PanelDemo extends MiuraElement {
         background: var(--mui-surface-subtle);
       }
       .panel-content {
-        padding: var(--mui-space-2);
+        padding: var(--mui-space-4);
+        display: flex;
+        flex-direction: column;
+        gap: var(--mui-space-3);
+      }
+      .panel-content p {
+        margin: 0;
+        line-height: 1.6;
+        color: var(--mui-text-secondary);
       }
       h2 {
         margin-top: 0;
@@ -162,7 +170,7 @@ class PanelDemo extends MiuraElement {
 customElements.define('panel-demo', PanelDemo);
 
 const meta: Meta<PanelDemo> = {
-  title: 'Layout/Panel',
+  title: 'MiuraUI/Layout/Panel',
   component: 'panel-demo',
   tags: ['autodocs'],
   parameters: {
