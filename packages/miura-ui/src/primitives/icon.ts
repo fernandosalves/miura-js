@@ -30,31 +30,25 @@ const SIZES: Record<string, number> = {
 // Cache for loaded icons
 const iconCache = new Map<string, string>();
 
-// Lucide icons base URL - using skypack for CDN delivery
-// In production, you'd want to bundle these or use a local copy
-const LUCIDE_CDN = 'https://unpkg.com/lucide-static@latest/icons';
+
+import { loadLucideIcon } from './lucide-loader';
 
 /**
- * Load an icon SVG by name
+ * Load an icon SVG by name (Lucide or custom)
  */
 async function loadIcon(name: string): Promise<string | null> {
   if (iconCache.has(name)) {
     return iconCache.get(name)!;
   }
-
-  try {
-    const response = await fetch(`${LUCIDE_CDN}/${name}.svg`);
-    if (!response.ok) {
-      console.warn(`[mui-icon] Icon "${name}" not found`);
-      return null;
-    }
-    const svg = await response.text();
+  // Try to load from lucide-static dynamically
+  const svg = await loadLucideIcon(name);
+  if (svg) {
     iconCache.set(name, svg);
     return svg;
-  } catch (error) {
-    console.warn(`[mui-icon] Failed to load icon "${name}":`, error);
-    return null;
   }
+  // Not found
+  console.warn(`[mui-icon] Icon "${name}" not found in lucide-static`);
+  return null;
 }
 
 /**
