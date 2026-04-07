@@ -535,8 +535,14 @@ export class MiuraElement extends HTMLElement {
             this._hasError = false;
 
             const template = this.template();
-            if (template instanceof TemplateResult) {
-                await this.renderTemplateInstance(template);
+            // Duck-typing check for TemplateResult to handle multiple module instances
+            const isTemplate = template && 
+                              typeof template === 'object' && 
+                              'strings' in template && 
+                              'values' in template;
+
+            if (isTemplate) {
+                await this.renderTemplateInstance(template as TemplateResult);
             }
 
             const isFirstRender = !this._hasRendered;
@@ -942,6 +948,8 @@ export class MiuraElement extends HTMLElement {
      */
     protected getComponentStyles(): CSSResult | CSSResult[] | undefined {
         const ctor = this.constructor as any;
+        
+        // 1. Try property descriptor to support getters
         const desc = Object.getOwnPropertyDescriptor(ctor, 'styles');
         if (desc) {
             if (typeof desc.get === 'function') {
@@ -949,6 +957,8 @@ export class MiuraElement extends HTMLElement {
             }
             return desc.value;
         }
+        
+        // 2. Fallback to direct property access (handles prototype inheritance and Babel-defined properties)
         return ctor.styles;
     }
 

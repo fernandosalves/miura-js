@@ -19,8 +19,8 @@ export async function loadLucideIcon(name: string): Promise<string | null> {
     const lucide = await import('lucide');
     const pascalName = toPascalCase(name);
     
-    // Look up the AST definition from lucide.icons
-    const iconData = (lucide.icons as Record<string, any>)[pascalName];
+    // Look up the AST definition directly from the exports
+    const iconData = (lucide as Record<string, any>)[pascalName];
     if (!iconData || !Array.isArray(iconData)) return null;
 
     // Convert Lucide AST to SVG innerHTML string (SSR safe, no DOM required)
