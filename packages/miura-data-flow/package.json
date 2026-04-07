@@ -1,6 +1,6 @@
 {
   "name": "@miurajs/miura-data-flow",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,7 +14,7 @@
       "import": "./src/providers/graphql-provider.ts"
     },
     "./providers/s3": {
-      "types": "./src/providers/s3-provider.d.ts", 
+      "types": "./src/providers/s3-provider.d.ts",
       "import": "./src/providers/s3-provider.ts"
     },
     "./providers/firebase": {
@@ -33,7 +33,7 @@
   "files": [
     "dist",
     "src/providers/graphql-provider.ts",
-    "src/providers/s3-provider.ts", 
+    "src/providers/s3-provider.ts",
     "src/providers/firebase-provider.ts",
     "src/providers/supabase-provider.ts",
     "src/providers/grpc-web-provider.ts"

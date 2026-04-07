@@ -28,6 +28,7 @@ export class GlobalStateManager {
   private static instance: GlobalStateManager;
   private store: Store<GlobalState>;
   private componentSubscriptions = new Map<string, Set<string>>();
+  private componentUnsubscribers = new Map<string, Set<() => void>>();
 
   private constructor() {
     this.store = new Store<GlobalState>({
@@ -81,17 +82,37 @@ export class GlobalStateManager {
 
     debugLog('element', 'Subscribed to global state', { componentId, properties });
 
-    // Subscribe to store with selector
-    return this.store.subscribe(
-      callback,
-      (state) => {
-        const selected: Partial<GlobalState> = {};
-        properties.forEach(prop => {
-          selected[prop] = state[prop];
-        });
-        return selected;
+    // Handle property change detection here so multi-property subscriptions
+    // do not retrigger just because a selector produced a new object/array.
+    const unsubscribe = this.store.subscribe(
+      (state, prevState) => {
+        const hasRelevantChange = properties.some((prop) => state[prop] !== prevState[prop]);
+
+        if (hasRelevantChange) {
+          callback(state, prevState);
+        }
       }
     );
+
+    if (!this.componentUnsubscribers.has(componentId)) {
+      this.componentUnsubscribers.set(componentId, new Set());
+    }
+
+    const unsubscribers = this.componentUnsubscribers.get(componentId)!;
+    const trackedUnsubscribe = () => {
+      unsubscribe();
+
+      const tracked = this.componentUnsubscribers.get(componentId);
+      tracked?.delete(trackedUnsubscribe);
+
+      if (tracked?.size === 0) {
+        this.componentUnsubscribers.delete(componentId);
+      }
+    };
+
+    unsubscribers.add(trackedUnsubscribe);
+
+    return trackedUnsubscribe;
   }
 
   /**
@@ -113,6 +134,12 @@ export class GlobalStateManager {
    * Unsubscribe component from all global state
    */
   unsubscribe(componentId: string): void {
+    const unsubscribers = this.componentUnsubscribers.get(componentId);
+    if (unsubscribers) {
+      [...unsubscribers].forEach((unsubscribe) => unsubscribe());
+      this.componentUnsubscribers.delete(componentId);
+    }
+
     this.componentSubscriptions.delete(componentId);
     debugLog('element', 'Unsubscribed from global state', { componentId });
   }
@@ -148,6 +175,12 @@ export class GlobalStateManager {
         Array.from(this.componentSubscriptions.entries()).map(([id, props]) => [
           id, 
           Array.from(props)
+        ])
+      ),
+      activeUnsubscribers: Object.fromEntries(
+        Array.from(this.componentUnsubscribers.entries()).map(([id, unsubscribers]) => [
+          id,
+          unsubscribers.size
         ])
       )
     };
