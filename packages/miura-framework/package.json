@@ -1,48 +1,48 @@
 {
-  "name": "@miurajs/miura-framework",
-  "version": "0.1.18",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+    "name": "@miurajs/miura-framework",
+    "version": "0.1.19",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch"
+    },
+    "keywords": [
+        "web-components",
+        "framework",
+        "javascript",
+        "typescript"
+    ],
+    "author": "Fernando Alves",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/fernandosalves/miura-js.git"
+    },
+    "bugs": {
+        "url": "https://github.com/fernandosalves/miura-js/issues"
+    },
+    "homepage": "https://github.com/fernandosalves/miura-js#readme",
+    "dependencies": {
+        "@miurajs/miura-data-flow": "^0.1.4",
+        "@miurajs/miura-debugger": "^0.2.2",
+        "@miurajs/miura-element": "^0.2.2",
+        "@miurajs/miura-render": "^0.2.14",
+        "@miurajs/miura-router": "^0.1.6",
+        "@miurajs/miura-ui": "^0.2.3"
+    },
+    "devDependencies": {
+        "typescript": "^5.4.5"
     }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch"
-  },
-  "keywords": [
-    "web-components",
-    "framework",
-    "javascript",
-    "typescript"
-  ],
-  "author": "Fernando Alves",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/fernandosalves/miura-js.git"
-  },
-  "bugs": {
-    "url": "https://github.com/fernandosalves/miura-js/issues"
-  },
-  "homepage": "https://github.com/fernandosalves/miura-js#readme",
-  "dependencies": {
-    "@miurajs/miura-data-flow": "^0.1.4",
-    "@miurajs/miura-debugger": "^0.2.2",
-    "@miurajs/miura-element": "^0.1.6",
-    "@miurajs/miura-render": "^0.2.6",
-    "@miurajs/miura-router": "^0.1.6",
-    "@miurajs/miura-ui": "^0.1.8"
-  },
-  "devDependencies": {
-    "typescript": "^5.4.5"
-  }
 }
