@@ -4,7 +4,7 @@ import { signal, Signal } from './signals.js';
  * Options for defining a property.
  */
 export interface PropertyOptions {
-    type: NumberConstructor | StringConstructor | BooleanConstructor | ArrayConstructor | ObjectConstructor;
+    type?: NumberConstructor | StringConstructor | BooleanConstructor | ArrayConstructor | ObjectConstructor;
     attribute?: string | false;
     reflect?: boolean;
     default?: any;
@@ -119,6 +119,7 @@ export function createStateProperties(
 
 export function convertValue(value: unknown, type: PropertyOptions['type']): unknown {
     if (value == null) return value;
+    if (!type) return value;
     switch (type) {
         case String:  return String(value);
         case Number:  return Number(value);

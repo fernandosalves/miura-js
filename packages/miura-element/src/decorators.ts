@@ -60,7 +60,9 @@ export function property(options: PropertyOptions = {}) {
     };
 }
 
-function _inferType(defaultValue: unknown): typeof String | typeof Number | typeof Boolean | typeof Array | typeof Object {
+function _inferType(defaultValue: unknown): typeof String | typeof Number | typeof Boolean | typeof Array | typeof Object | undefined {
+    if (defaultValue === undefined) return undefined;
+    if (defaultValue === null) return Object;
     if (typeof defaultValue === 'boolean') return Boolean;
     if (typeof defaultValue === 'number') return Number;
     if (typeof defaultValue === 'string') return String;
