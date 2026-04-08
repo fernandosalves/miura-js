@@ -510,64 +510,81 @@ export class MiuraElement extends HTMLElement {
      * @returns {Promise<void>}
      */
     protected async performUpdate(): Promise<void> {
-        if (!this._initialized) {
-            this._pendingUpdate = true;
-            return;
-        }
+        const previousUpdate = this._updatePromise;
+        const currentUpdate = (async () => {
+            if (previousUpdate) {
+                await previousUpdate;
+            }
 
-        const startTime = performance.now();
-        this._performanceMetrics.updateCount++;
-
-        try {
-            // Get all changed properties and clear the map
-            const changedProperties = new Map(this._changedProperties);
-            this._changedProperties.clear();
-
-            // Allow subclass to skip update
-            if (!this.shouldUpdate(changedProperties)) {
+            if (!this._initialized) {
+                this._pendingUpdate = true;
                 return;
             }
 
-            // Pre-render hook
-            this.willUpdate(changedProperties);
+            const startTime = performance.now();
+            this._performanceMetrics.updateCount++;
 
-            // Clear error state on successful re-render attempt
-            this._hasError = false;
+            try {
+                // Get all changed properties and clear the map
+                const changedProperties = new Map(this._changedProperties);
+                this._changedProperties.clear();
 
-            const template = this.template();
-            // Duck-typing check for TemplateResult to handle multiple module instances
-            const isTemplate = template && 
-                              typeof template === 'object' && 
-                              'strings' in template && 
-                              'values' in template;
+                // Allow subclass to skip update
+                if (!this.shouldUpdate(changedProperties)) {
+                    return;
+                }
 
-            if (isTemplate) {
-                await this.renderTemplateInstance(template as TemplateResult);
+                // Pre-render hook
+                this.willUpdate(changedProperties);
+
+                // Clear error state on successful re-render attempt
+                this._hasError = false;
+
+                const template = this.template();
+                // Duck-typing check for TemplateResult to handle multiple module instances
+                const isTemplate = template && 
+                                typeof template === 'object' && 
+                                'strings' in template && 
+                                'values' in template;
+
+                if (isTemplate) {
+                    await this.renderTemplateInstance(template as TemplateResult);
+                }
+
+                const isFirstRender = !this._hasRendered;
+                this._hasRendered = true;
+
+                this.updated(changedProperties);
+
+                if (isFirstRender && !this._hasCalledFirstUpdated) {
+                    this._hasCalledFirstUpdated = true;
+                    this.firstUpdated(changedProperties);
+                }
+
+                // Call onMount once after first render
+                if (isFirstRender) {
+                    this.onMount();
+                }
+
+                // Track performance
+                this._performanceMetrics.renderTime = performance.now() - startTime;
+                this._performanceMetrics.lastRenderTime = Date.now();
+            } catch (error) {
+                this._hasError = true;
+                const handled = this.onError(error as Error);
+                if (!handled) {
+                    console.error(`Error updating ${this.constructor.name}:`, error);
+                }
             }
+        })();
 
-            const isFirstRender = !this._hasRendered;
-            this._hasRendered = true;
+        this._updatePromise = currentUpdate;
 
-            this.updated(changedProperties);
-
-            if (isFirstRender && !this._hasCalledFirstUpdated) {
-                this._hasCalledFirstUpdated = true;
-                this.firstUpdated(changedProperties);
-            }
-
-            // Call onMount once after first render
-            if (isFirstRender) {
-                this.onMount();
-            }
-
-            // Track performance
-            this._performanceMetrics.renderTime = performance.now() - startTime;
-            this._performanceMetrics.lastRenderTime = Date.now();
-        } catch (error) {
-            this._hasError = true;
-            const handled = this.onError(error as Error);
-            if (!handled) {
-                console.error(`Error updating ${this.constructor.name}:`, error);
+        try {
+            await currentUpdate;
+        } finally {
+            if (this._updatePromise === currentUpdate) {
+                this._updatePromise = null;
             }
         }
     }
