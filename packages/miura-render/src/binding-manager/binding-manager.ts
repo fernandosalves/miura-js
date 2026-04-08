@@ -92,6 +92,23 @@ export class BindingManager {
         const attrBindingCache = new Map<number, MultipartBinding>();
 
         bindings.forEach(binding => {
+            if (binding.type === BindingType.Node) {
+                const [startMarker, endMarker] = this.findNodeMarkers(fragment, binding.index);
+                const markerHost =
+                    startMarker.parentElement ||
+                    endMarker.parentElement ||
+                    fragment.firstElementChild ||
+                    document.createElement('template');
+
+                bindingInstances[binding.index] = new NodeBinding(
+                    markerHost,
+                    startMarker,
+                    endMarker,
+                    processor
+                );
+                return;
+            }
+
             // Handle multi-part Attribute bindings
             if (binding.type === BindingType.Attribute || binding.type === BindingType.Utility) {
                 const groupStart = binding.groupStart ?? binding.index;
@@ -131,7 +148,6 @@ export class BindingManager {
                 }
                 return;
             }
-
             // Non-attribute bindings — original logic
             const element = this.findBindingElement(fragment, binding.index);
             if (element) {
@@ -153,10 +169,6 @@ export class BindingManager {
         const name = binding.name || '';
         
         switch (binding.type) {
-            case BindingType.Node:
-                const [startMarker, endMarker] = this.findMarkers(element, binding.index);
-                return new NodeBinding(element, startMarker, endMarker, processor);
-                
             case BindingType.Property:
                 return new PropertyBinding(element, name.slice(1)); // Remove . prefix
                 
@@ -277,6 +289,46 @@ export class BindingManager {
                 parentHTML: element.parentElement?.innerHTML
             });
             throw new Error(`Could not find markers for binding:${index}`);
+        }
+
+        return [startMarker, endMarker];
+    }
+
+    private static findNodeMarkers(
+        fragment: DocumentFragment,
+        index: number
+    ): [Comment, Comment] {
+        const walker = document.createTreeWalker(
+            fragment,
+            NodeFilter.SHOW_COMMENT
+        );
+
+        let startMarker: Comment | null = null;
+        let endMarker: Comment | null = null;
+        let foundStart = false;
+
+        let node: Node | null;
+        while ((node = walker.nextNode())) {
+            const comment = node as Comment;
+            const value = comment.nodeValue || '';
+
+            if (!foundStart && value === `binding:${index}`) {
+                startMarker = comment;
+                foundStart = true;
+            } else if (foundStart && value === `/binding:${index}`) {
+                endMarker = comment;
+                break;
+            }
+        }
+
+        if (!startMarker || !endMarker) {
+            debugLog('bindingManager', 'Failed to find node markers in fragment', {
+                index,
+                fragmentHtml: Array.from(fragment.childNodes)
+                    .map(node => node.nodeType === Node.ELEMENT_NODE ? (node as Element).outerHTML : node.textContent)
+                    .join('')
+            });
+            throw new Error(`Could not find node markers for binding:${index}`);
         }
 
         return [startMarker, endMarker];

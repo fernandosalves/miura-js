@@ -31,6 +31,7 @@
     },
     "dependencies": {
         "@miurajs/miura": "^2.4.0",
-        "@storybook/web-components": "8.6.18"
+        "@storybook/web-components": "8.6.18",
+        "acorn-walk": "^8.3.5"
     }
 }
