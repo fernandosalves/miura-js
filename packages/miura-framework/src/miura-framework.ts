@@ -360,10 +360,13 @@ export abstract class MiuraFramework extends MiuraElement {
                 return;
             }
             layoutEl = new component();
-            this._injectRouteData(layoutEl, context);
             zoneElement.appendChild(layoutEl);
             this._activeRouteElements.set(routeKey, layoutEl);
         }
+
+        // Always refresh the reused layout's route context so layouts that
+        // depend on route data stay in sync across child navigations.
+        this._injectRouteData(layoutEl, context);
 
         // 2. Walk remaining records, finding each nested outlet in the previous element
         let parentEl: Element = layoutEl;
@@ -382,8 +385,8 @@ export abstract class MiuraFramework extends MiuraElement {
                 return;
             }
 
-            outlet.renderRoute(record, context);
-            parentEl = outlet;
+            const renderedChild = outlet.renderRoute(record, context);
+            parentEl = renderedChild;
         }
 
         this.eventBus.emit('router:rendered', { route: context.route, matched }, 5);

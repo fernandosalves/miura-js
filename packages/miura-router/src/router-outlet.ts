@@ -45,13 +45,14 @@ export class RouterOutlet extends HTMLElement {
      * Render a route component into this outlet.
      * Called by MiuraRouter when the matched route targets this outlet.
      */
-    renderRoute(record: RouteRecord, context: RouteContext): void {
+    renderRoute(record: RouteRecord, context: RouteContext): HTMLElement {
         this._clearCurrent();
 
         const element = document.createElement(record.component);
         this._injectContext(element, context);
         this.appendChild(element);
         this._current = element as HTMLElement;
+        return this._current;
     }
 
     /**
@@ -62,10 +63,14 @@ export class RouterOutlet extends HTMLElement {
     }
 
     private _clearCurrent(): void {
-        if (this._current) {
+        if (this._current?.parentNode === this) {
             this._current.remove();
-            this._current = null;
         }
+
+        // Defensive cleanup: if rendering ever drifted and extra nodes remained
+        // in the outlet, clear them so each navigation starts from a clean slate.
+        this.replaceChildren();
+        this._current = null;
     }
 
     private _injectContext(element: Element, context: RouteContext): void {
