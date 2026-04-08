@@ -28,6 +28,15 @@ function _isSignal(v: unknown): v is SignalLike {
 }
 
 export class BindingManager {
+    private static formatBindingContext(binding?: TemplateBinding, fallbackIndex?: number): string {
+        if (binding?.debugLabel) {
+            return `${binding.debugLabel} (binding:${binding.index})`;
+        }
+        if (binding) {
+            return `binding:${binding.index}`;
+        }
+        return `binding:${fallbackIndex ?? 'unknown'}`;
+    }
     /**
      * Performance tracking
      */
@@ -64,7 +73,7 @@ export class BindingManager {
     ): Promise<Binding[]> {
         const startTime = performance.now();
         const parts = this.createBindings(fragment, bindings, processor);
-        await this.initializeBindings(parts, values, context);
+        await this.initializeBindings(parts, bindings, values, context);
         this.metrics.createTime = performance.now() - startTime;
         this.metrics.bindingCount += bindings.length;
         return parts;
@@ -267,7 +276,7 @@ export class BindingManager {
                 element,
                 parentHTML: element.parentElement?.innerHTML
             });
-            throw new Error(`Could not find markers for binding ${index}`);
+            throw new Error(`Could not find markers for binding:${index}`);
         }
 
         return [startMarker, endMarker];
@@ -285,6 +294,7 @@ export class BindingManager {
 
     public static async initializeBindings(
         bindings: Binding[],
+        bindingDefs: TemplateBinding[],
         values: unknown[],
         context?: unknown
     ): Promise<void> {
@@ -296,6 +306,7 @@ export class BindingManager {
 
         const promises = bindings.map(async (binding, i) => {
             try {
+                const bindingDef = bindingDefs[i];
                 const value = values[i];
                 if (value === undefined) return;
 
@@ -324,7 +335,7 @@ export class BindingManager {
                     binding.setValue(value, context);
                 }
             } catch (error) {
-                console.error(`Error initializing binding ${i}:`, error);
+                console.error(`Error initializing ${this.formatBindingContext(bindingDefs[i], i)}:`, error);
                 throw error;
             }
         });

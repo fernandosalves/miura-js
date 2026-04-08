@@ -72,4 +72,6 @@ export interface TemplateBinding {
     name?: string;
     /** The index of the value in the template's values array */
     index: number;
+    /** Human-readable debug context for developer-facing errors */
+    debugLabel?: string;
 }

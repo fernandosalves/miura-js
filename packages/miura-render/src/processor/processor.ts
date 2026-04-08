@@ -103,7 +103,7 @@ export class TemplateProcessor {
         );
 
         this.metrics.createTime = performance.now() - startTime;
-        return new TemplateInstance(result, parts, fragment);
+        return new TemplateInstance(result, parsed, parts, fragment);
     }
 
     private getOrCreateParsedTemplate(result: TemplateResult): ParsedTemplate {
@@ -135,6 +135,7 @@ class TemplateInstance {
 
     constructor(
         private result: TemplateResult,
+        private parsed: ParsedTemplate,
         private parts: Binding[],
         private fragment: DocumentFragment
     ) {}
@@ -149,7 +150,7 @@ class TemplateInstance {
 
     async update(values: unknown[], context?: unknown): Promise<void> {
         const startTime = performance.now();
-        await BindingManager.initializeBindings(this.parts, values, context);
+        await BindingManager.initializeBindings(this.parts, this.parsed.bindings, values, context);
         this.updateMetrics.updateTime = performance.now() - startTime;
         this.updateMetrics.updateCount++;
     }

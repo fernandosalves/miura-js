@@ -21,6 +21,8 @@ export interface TemplateBinding {
     partIndex?: number;
     /** For multi-part attribute bindings: index of the first binding in the group */
     groupStart?: number;
+    /** Human-readable debug context for developer-facing errors */
+    debugLabel?: string;
 }
 
 /**
@@ -297,6 +299,7 @@ export class TemplateParser {
                             index: i,
                             partIndex: 0,
                             groupStart: i,
+                            debugLabel: this.buildBindingDebugLabel(prefix === '%' ? BindingType.Utility : BindingType.Attribute, lastAttrName, str, i),
                         });
                     } else {
                         // Subsequent expression in same attribute
@@ -309,6 +312,7 @@ export class TemplateParser {
                             index: i,
                             partIndex: attrCtx.partCount - 1,
                             groupStart: attrCtx.startBindingIndex,
+                            debugLabel: this.buildBindingDebugLabel(attrCtx.prefix === '%' ? BindingType.Utility : BindingType.Attribute, attrCtx.name, str, i),
                         });
 
                         // Don't emit HTML for intermediate parts
@@ -338,6 +342,7 @@ export class TemplateParser {
                         strings: ['', ''],
                         partIndex: 0,
                         groupStart: i,
+                        debugLabel: this.buildBindingDebugLabel(type, lastAttrName, str, i),
                     });
 
                     // Emit HTML: up to the = sign, replace with marker
@@ -356,6 +361,7 @@ export class TemplateParser {
                     bindings.push({
                         type: BindingType.Node,
                         index: i,
+                        debugLabel: this.buildBindingDebugLabel(BindingType.Node, undefined, str, i),
                     });
                 }
             } else {
@@ -443,6 +449,36 @@ export class TemplateParser {
                 if (name === 'class') return BindingType.Class;
                 if (name === 'style') return BindingType.Style;
                 return BindingType.Attribute;
+        }
+    }
+
+    private buildBindingDebugLabel(type: BindingType, name: string | undefined, source: string, index: number): string {
+        const compact = source.replace(/\s+/g, ' ').trim();
+        const snippet = compact.length > 120 ? `${compact.slice(Math.max(0, compact.length - 120))}...` : compact;
+
+        switch (type) {
+            case BindingType.Event:
+                return `event ${name ?? '(unknown)'} near "${snippet}"`;
+            case BindingType.Property:
+                return `property ${name ?? '(unknown)'} near "${snippet}"`;
+            case BindingType.Boolean:
+                return `boolean ${name ?? '(unknown)'} near "${snippet}"`;
+            case BindingType.Attribute:
+                return `attribute ${name ?? '(unknown)'} near "${snippet}"`;
+            case BindingType.Class:
+            case BindingType.ObjectClass:
+                return `class binding near "${snippet}"`;
+            case BindingType.Style:
+            case BindingType.ObjectStyle:
+                return `style binding near "${snippet}"`;
+            case BindingType.Bind:
+                return `two-way bind ${name ?? '(unknown)'} near "${snippet}"`;
+            case BindingType.Utility:
+                return `utility ${name ?? '(unknown)'} near "${snippet}"`;
+            case BindingType.Node:
+                return `node binding #${index} near "${snippet}"`;
+            default:
+                return `${type} ${name ?? ''}`.trim();
         }
     }
 
