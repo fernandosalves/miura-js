@@ -6,9 +6,9 @@ miura is a comprehensive, modular framework designed for building scalable and m
 
 ### Core
 
-- **[miura Element](../packages/miura-element/README.md)**: Base class for reactive web components — properties, lifecycle hooks, error boundaries, two-way binding, slot utilities.
+- **[miura Element](../packages/miura-element/README.md)**: Base class for reactive web components — properties, computed values, async resources, form state, lifecycle hooks, error boundaries, two-way binding, slot utilities.
 - **[miura Render](../packages/miura-render/README.md)**: Rendering engine — `html`/`css` templates, state-machine parser, 10 binding types, LIS-based keyed diff, async rendering, virtual scrolling.
-- **[miura Framework](./miura-framework.md)**: Orchestration layer — plugin manager, event bus, performance monitor.
+- **[miura Framework](./miura-framework.md)**: Orchestration layer — app primitives, plugins, resources, and framework direction.
 
 ### Data & Routing
 

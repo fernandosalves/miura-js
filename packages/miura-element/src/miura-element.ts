@@ -1,6 +1,8 @@
 import { PropertyValues } from './property-values';
 import { PropertyDeclarations, createProperties, createStateProperties, SIGNAL_KEY_PREFIX } from './properties';
 import { signal, computed, Signal, ReadonlySignal } from './signals.js';
+import { createForm, Form, FormOptions } from './form.js';
+import { createResource, Resource, ResourceOptions } from './resource.js';
 
 import { TemplateResult, CSSResult, debugLog } from '@miurajs/miura-render';
 import { TemplateProcessor, TemplateCompiler, NodeBinding, DirectiveBinding, ensureUtilityStylesInRoot } from '@miurajs/miura-render';
@@ -146,6 +148,10 @@ export class MiuraElement extends HTMLElement {
     private _slotListeners: Map<string, (e: Event) => void> = new Map();
     /** @private */
     private _shadowRoot: ShadowRoot;
+    /** Root render region markers so we can replace the component template safely. */
+    private _renderStart!: Comment;
+    /** @private */
+    private _renderEnd!: Comment;
     /** @private */
     private _updatePromise: Promise<void> | null = null;
     /** @private */
@@ -202,6 +208,8 @@ export class MiuraElement extends HTMLElement {
         updateCount: 0,
         lastRenderTime: 0
     };
+    /** Track the current root template identity so we can recreate when shape changes. */
+    private _templateStrings: TemplateStringsArray | null = null;
     /** Tracks whether firstUpdated has been invoked. */
     private _hasCalledFirstUpdated = false;
 
@@ -392,6 +400,9 @@ export class MiuraElement extends HTMLElement {
         
         this._shadowRoot = this.attachShadow({ mode: 'open' });
         this.applyStyles();
+        this._renderStart = document.createComment('miura-root-start');
+        this._renderEnd = document.createComment('miura-root-end');
+        this._shadowRoot.append(this._renderStart, this._renderEnd);
         this._initialized = true;
         this._pendingUpdate = true;  // Mark for update
     }
@@ -468,7 +479,8 @@ export class MiuraElement extends HTMLElement {
         }
         this._aotRefs = null;
         this._aotCompiled = null;
-        
+        this._templateStrings = null;
+
         this.cleanupObservers();
     }
 
@@ -624,11 +636,15 @@ export class MiuraElement extends HTMLElement {
             // refs directly; NodeBindings handle complex node content.
             const compiled = _getAotCompiler().compile(template);
             this._aotCompiled = compiled;
+            const shouldRecreate = !this._aotRefs || this._templateStrings !== template.strings;
 
-            if (!this._aotRefs) {
+            if (shouldRecreate) {
+                this.disconnectAotBindings();
+                this.clearRenderedRegion();
                 const { fragment, refs } = compiled.render(template.values);
                 this._aotRefs = refs;
-                this._shadowRoot.appendChild(fragment);
+                this._renderEnd.parentNode?.insertBefore(fragment, this._renderEnd);
+                this._templateStrings = template.strings;
 
                 // Create NodeBinding instances for every Node-type ref
                 this._aotNodeBindings = [];
@@ -676,14 +692,42 @@ export class MiuraElement extends HTMLElement {
             // ── JIT path (default) ──────────────────────────────────────────────
             // Full TemplateProcessor pipeline with BindingManager-managed Binding
             // objects. Supports directives, signals, async bindings, etc.
-            if (!this.templateInstance) {
+            if (!this.templateInstance || this._templateStrings !== template.strings) {
+                if (this.templateInstance) {
+                    this.templateInstance.disconnect();
+                    this.templateInstance = null;
+                }
+                this.clearRenderedRegion();
                 this.templateInstance = await this._processor.createInstance(template, this);
                 this.templateInstance.connect(this);
-                this._shadowRoot.appendChild(this.templateInstance.getFragment());
+                this._renderEnd.parentNode?.insertBefore(this.templateInstance.getFragment(), this._renderEnd);
+                this._templateStrings = template.strings;
             } else {
                 await this.templateInstance.update(template.values, this);
             }
         }
+    }
+
+    private clearRenderedRegion(): void {
+        let node = this._renderStart.nextSibling;
+        while (node && node !== this._renderEnd) {
+            const next = node.nextSibling;
+            node.parentNode?.removeChild(node);
+            node = next;
+        }
+    }
+
+    private disconnectAotBindings(): void {
+        if (this._aotNodeBindings) {
+            for (const nb of this._aotNodeBindings) nb.disconnect();
+            this._aotNodeBindings = null;
+        }
+        if (this._aotDirectiveBindings) {
+            for (const db of this._aotDirectiveBindings) db.disconnect();
+            this._aotDirectiveBindings = null;
+        }
+        this._aotRefs = null;
+        this._aotCompiled = null;
     }
 
     /**
@@ -892,6 +936,29 @@ export class MiuraElement extends HTMLElement {
      */
     protected $computed<T>(fn: () => T): ReadonlySignal<T> {
         return computed(fn);
+    }
+
+    /**
+     * Create a resource tied to this component.
+     * A resource tracks async loading state and requests an update whenever its
+     * state changes.
+     */
+    protected $resource<T>(
+        loader: () => Promise<T> | T,
+        options?: ResourceOptions
+    ): Resource<T> {
+        return createResource(loader, () => this.requestUpdate(), options);
+    }
+
+    /**
+     * Create a form tied to this component.
+     * A form tracks values, dirty/touched state, validation, and submit state.
+     */
+    protected $form<T extends Record<string, any>>(
+        initialValues: T,
+        options?: FormOptions<T>
+    ): Form<T> {
+        return createForm(initialValues, () => this.requestUpdate(), options);
     }
 
     // ── Slot Utilities ──────────────────────────────────────

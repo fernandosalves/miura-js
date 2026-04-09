@@ -1,4 +1,6 @@
 export * from './src/miura-element.js';
+export * from './src/form.js';
+export * from './src/resource.js';
 export * from './src/decorators.js';
 export * from './src/types.js';
 export { MiuraIsland } from './src/miura-island.js';

@@ -1,6 +1,6 @@
 # @miurajs/miura-element
 
-The core component system for the miura framework. Provides the `MiuraElement` base class for creating reactive web components with properties, computed properties, lifecycle hooks, error boundaries, two-way binding, and slot utilities.
+The core component system for the miura framework. Provides the `MiuraElement` base class for creating reactive web components with properties, computed properties, lifecycle hooks, async resources, error boundaries, two-way binding, and slot utilities.
 
 ## Features
 
@@ -8,6 +8,8 @@ The core component system for the miura framework. Provides the `MiuraElement` b
 - **Reactive Properties** — Type-safe definitions with automatic type conversion and attribute reflection; each property is signal-backed
 - **Internal State** — `static state()` for private, non-reflected reactive state fields
 - **Computed Properties** — Derived values with dependency tracking and caching
+- **Async Resources** — `$resource()` for component-scoped async state with `idle`, `pending`, `resolved`, and `rejected` states
+- **Form State** — `$form()` for field binders, validation, dirty/touched tracking, and submit state
 - **Lifecycle Hooks** — `onMount`, `onUnmount`, `willUpdate`, `shouldUpdate`, `updated`, `onAdopt`
 - **Error Boundaries** — `onError` handler with fallback UI and recovery
 - **Two-Way Binding** — `&` prefix with `bind()` helper for form elements
@@ -134,6 +136,150 @@ static computed() {
   };
 }
 ```
+
+### Async Resources
+
+Use `$resource()` when a component needs to track async work and rerender automatically as the request state changes.
+
+```typescript
+import { MiuraElement, html, component } from '@miurajs/miura-element';
+
+@component({ tag: 'user-card' })
+class UserCard extends MiuraElement {
+  declare userId: string;
+  user = this.$resource(() => fetch(`/api/users/${this.userId}`).then((r) => r.json()));
+
+  static properties = {
+    userId: { type: String, default: '1' }
+  };
+
+  template() {
+    return this.user.view({
+      idle: () => html`<p>Idle</p>`,
+      pending: () => html`<p>Loading user...</p>`,
+      ok: (user) => html`<h3>${user.name}</h3>`,
+      error: (error) => html`<p>Failed: ${String(error)}</p>`
+    });
+  }
+}
+```
+
+`$resource()` returns an object with:
+
+| Field | Description |
+|------|-------------|
+| `state` | Current state: `idle`, `pending`, `resolved`, `rejected` |
+| `loading` | `true` while a request is in flight |
+| `value` / `data` | Latest resolved value |
+| `error` | Latest rejection value |
+| `promise` | The current in-flight promise, if any |
+| `refresh()` | Re-run the loader and update the component |
+| `view()` | Render a template for each resource state |
+
+Pass `{ auto: false }` if you want to create the resource without starting the first request immediately:
+
+```typescript
+class SearchResults extends MiuraElement {
+  results = this.$resource(() => this.fetchResults(), { auto: false });
+
+  connectedCallback() {
+    super.connectedCallback();
+    void this.results.refresh();
+  }
+}
+```
+
+### Form State
+
+Use `$form()` when a component needs local form state that works directly with Miura's two-way bindings.
+
+```typescript
+import { MiuraElement, html, component } from '@miurajs/miura-element';
+
+@component({ tag: 'profile-form' })
+class ProfileForm extends MiuraElement {
+  form = this.$form(
+    { name: '', newsletter: false },
+    {
+      validate: (values) => ({
+        name: values.name.trim() ? undefined : 'Name is required'
+      }),
+      validateAsync: async (values) => {
+        const taken = await fetch(`/api/profile/check-name?name=${values.name}`).then((r) => r.json());
+        return {
+          name: taken.exists ? 'Name is already taken' : undefined
+        };
+      },
+      validateAsyncOn: 'blur'
+    }
+  );
+
+  async save() {
+    await this.form.submit(async (values) => {
+      await fetch('/api/profile', {
+        method: 'POST',
+        body: JSON.stringify(values)
+      });
+    });
+  }
+
+  template() {
+    const name = this.form.field('name');
+    const newsletter = this.form.field('newsletter');
+
+    return html`
+      <form @submit=${this.form.handleSubmit(async (values) => {
+        await fetch('/api/profile', {
+          method: 'POST',
+          body: JSON.stringify(values)
+        });
+      })}>
+        <input &value=${name} @blur=${name.touch}>
+        <input type="checkbox" &checked=${newsletter}>
+        <p>${name.showError ? name.error ?? '' : ''}</p>
+        <button ?disabled=${!this.form.valid || this.form.submitting} type="submit">
+        ${this.form.submitting ? 'Saving...' : 'Save'}
+        </button>
+      </form>
+    `;
+  }
+}
+```
+
+`$form()` returns an object with:
+
+| Field | Description |
+|------|-------------|
+| `values` / `data` | Current form values |
+| `initialValues` | Baseline values used for `dirty` checks and `reset()` |
+| `errors` | Current validation errors |
+| `visibleErrors` | Validation errors for touched fields only |
+| `dirty` | `true` when any field differs from its initial value |
+| `valid` | `true` when no validation errors are present |
+| `validating` | `true` while `validateAsync()` is running |
+| `submitting` | `true` while `submit()` is in flight |
+| `touched` | Set of fields changed or manually touched |
+| `field(name)` | Returns a binder with `value`, `set`, `touch`, `isTouched`, `isDirty`, `showError`, and `error` |
+| `set(name, value)` | Set one field value |
+| `patch(values)` | Update multiple fields at once |
+| `reset(values?)` | Reset to the initial values or replace the baseline entirely |
+| `touchAll()` | Mark every field as touched |
+| `shouldShowError(name)` | `true` when a field is touched and currently invalid |
+| `validate()` | Re-run validation and return whether the form is valid |
+| `validateAsync()` | Run async validation and return whether the form is valid |
+| `submit(handler)` | Validate, set `submitting`, run the async handler, then clear `submitting` |
+| `handleSubmit(handler)` | Wrap a native form submit event, prevent default, and run `submit(handler)` |
+
+Invalid `submit()` calls automatically mark all fields as touched, which makes it easy to reveal all validation messages after the first submit attempt without extra template logic.
+
+Use `validateAsync` for checks like username uniqueness or server-backed business rules. It is explicit by default: Miura runs it during `submit()` or when you call `form.validateAsync()` yourself.
+
+Automatic async validation is opt-in:
+
+- `validateAsyncOn: 'manual'` keeps validation explicit
+- `validateAsyncOn: 'blur'` runs async validation when a field is touched
+- `validateAsyncOn: 'change'` runs debounced async validation after value changes
+- `validateAsyncDebounce` controls the debounce delay for `'change'` mode
 
 ### Styles
 
