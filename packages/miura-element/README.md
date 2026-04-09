@@ -369,6 +369,43 @@ You can also pass array keys directly:
 this.theme = this.$shared(['blog-editor', 'theme'], 'light');
 ```
 
+### Context Injection
+
+Use tree-scoped context when a parent should expose data or services to deep descendants without threading them through props or global shared keys.
+
+```typescript
+import { MiuraElement, createContextKey, html, signal, type Signal } from '@miurajs/miura-element';
+
+const themeContext = createContextKey<Signal<string>>('theme');
+
+class ThemeProvider extends MiuraElement {
+  theme = this.$signal('light');
+
+  constructor() {
+    super();
+    this.$provide(themeContext, this.theme);
+  }
+
+  template() {
+    return html`
+      <button @click=${() => this.theme(this.theme() === 'light' ? 'dark' : 'light')}>
+        Toggle
+      </button>
+      <theme-badge></theme-badge>
+    `;
+  }
+}
+
+class ThemeBadge extends MiuraElement {
+  template() {
+    const theme = this.$inject(themeContext, signal('light'));
+    return html`<p>Theme: ${theme}</p>`;
+  }
+}
+```
+
+The nearest provider wins, so nested layouts can override context locally. For reactive context, provide a signal, resource, form, or another reactive primitive and let descendants bind to it directly.
+
 ### Router Bridge
 
 Use the router bridge helpers when a component should react to route context or loader data directly.

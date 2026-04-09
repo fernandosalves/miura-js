@@ -13,6 +13,7 @@ This package bundles and exports all the core modules, making it easy to get sta
 - component-scoped async resources with `$resource()`
 - component-scoped form state with `$form()`
 - lightweight shared state with `$shared()`
+- tree-scoped dependency injection with `$provide()` and `$inject()`
 - router bridge helpers with `$route()`, `$routeSelect()`, and `$routeData()`
 - route-driven async state with `$routeResource()`
 - signals and shared reactive primitives
@@ -66,5 +67,7 @@ For submit flows, `failSubmit()` can capture the submit error and field errors t
 `view()` can render submit-state UI declaratively from the form itself.
 
 For lightweight cross-component state, `$shared(key, initial)` gives multiple components the same signal instance without requiring a full store setup. Use namespaced keys like `blog-editor:theme`, `sharedKey(...)`, or `createSharedNamespace(...)` to avoid collisions.
+
+For parent-to-descendant dependencies, use `createContextKey(...)` with `$provide()` and `$inject()` instead of reaching for shared global keys. Context stays tree-scoped, and the nearest provider wins. When descendants should react to changes, provide a signal or another reactive primitive as the context value.
 
 See [@miurajs/miura-element](/Users/fernandoalves/Desktop/_dev/miura-js/packages/miura-element/README.md) for the component API and [docs](/Users/fernandoalves/Desktop/_dev/miura-js/docs/README.md) for the broader framework documentation.

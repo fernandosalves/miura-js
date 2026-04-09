@@ -1,4 +1,5 @@
 import { PropertyValues } from './property-values';
+import { consumeContext, provideContext, type ContextKey } from './context.js';
 import { PropertyDeclarations, createProperties, createStateProperties, SIGNAL_KEY_PREFIX } from './properties';
 import type { RouteSignalLike, RouterBridgeLike } from './router-bridge.js';
 import { signal, computed, Signal, ReadonlySignal } from './signals.js';
@@ -949,6 +950,22 @@ export class MiuraElement extends HTMLElement {
      */
     protected $shared<T>(key: SharedKey, initial: T): Signal<T> {
         return shared(key, initial);
+    }
+
+    /**
+     * Provide a tree-scoped value to descendant components.
+     * Descendants can retrieve it with `$inject()`.
+     */
+    protected $provide<T>(key: ContextKey<T>, value: T): T {
+        return provideContext(this, key, value);
+    }
+
+    /**
+     * Resolve the nearest tree-scoped value for this component.
+     * When the provided value is a signal, descendants can bind it directly for reactive updates.
+     */
+    protected $inject<T>(key: ContextKey<T>, fallback?: T): T | undefined {
+        return consumeContext(this, key, fallback);
     }
 
     /**
