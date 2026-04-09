@@ -1,6 +1,6 @@
 {
     "name": "@miurajs",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "miura is a framework for building web components.",
     "private": true,
     "type": "module",
@@ -30,7 +30,7 @@
         "vitest": "^3.2.3"
     },
     "dependencies": {
-        "@miurajs/miura": "^2.4.5",
+        "@miurajs/miura": "^2.4.6",
         "@storybook/web-components": "8.6.18",
         "acorn-walk": "^8.3.5"
     }
