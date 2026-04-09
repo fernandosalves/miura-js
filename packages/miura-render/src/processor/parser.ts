@@ -209,7 +209,6 @@ export class TemplateParser {
                     case ParserState.TAG:
                         if (ch === '>') {
                             if (tagNameStart !== -1) {
-                                // Extract tag name if we just started a tag
                                 const tagStr = str.substring(tagNameStart, j);
                                 const match = tagStr.match(/^[a-zA-Z0-9-]+/);
                                 if (match) {
@@ -222,7 +221,18 @@ export class TemplateParser {
                             currentTagName = '';
                             state = ParserState.TEXT;
                             j++;
-                        } else if (!/[\s/]/.test(ch) && ch !== '=' && ch !== '"' && ch !== "'") {
+                        } else if (/\s/.test(ch)) {
+                            if (tagNameStart !== -1) {
+                                const tagStr = str.substring(tagNameStart, j);
+                                const match = tagStr.match(/^[a-zA-Z0-9-]+/);
+                                if (match) {
+                                    currentTagName = match[0].toLowerCase();
+                                }
+                                tagNameStart = -1;
+                            }
+                        } else if (tagNameStart === -1 && !/[\s/]/.test(ch) && ch !== '=' && ch !== '"' && ch !== "'") {
+                            // We have already finished the tag name (tagNameStart === -1),
+                            // so this must be the start of an attribute name.
                             attrNameStart = j;
                             state = ParserState.ATTR_NAME;
                         }

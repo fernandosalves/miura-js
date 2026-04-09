@@ -6,6 +6,16 @@ import { BindingType, type TemplateBinding } from '../processor/template-result'
 describe('Textarea and Diagnostic Regressions', () => {
     const parser = new TemplateParser();
 
+    it('automatically promotes textarea interpolation to a .value property binding even with attributes (Smart Upgrade)', async () => {
+        const result = parser.parse(['<textarea @input=', ' placeholder="foo">', '</textarea>'] as unknown as TemplateStringsArray);
+        
+        // Should find 2 bindings: 1 for @input, 1 for .value (promoted)
+        expect(result.bindings.length).toBe(2);
+        expect(result.bindings[1].type).toBe(BindingType.Property);
+        expect(result.bindings[1].name).toBe('.value');
+        expect(result.html).toContain('<textarea @input="binding:0" placeholder="foo" .value="binding:1">');
+    });
+
     it('automatically promotes style and title interpolation (Smart Upgrade)', async () => {
         const styleResult = parser.parse(['<style>', '</style>'] as unknown as TemplateStringsArray);
         expect(styleResult.html).toContain('<style .textContent="binding:0">');
