@@ -400,4 +400,34 @@ describe('TemplateParser', () => {
       expect(result.html).toBe('<div #if="binding:0">Shown</div>');
     });
   });
+
+  describe('Class And Style Unification', () => {
+    it('treats :class as a normal class binding', () => {
+      const result = parser.parse(createTemplateStrings(['<div :class=', '></div>']));
+
+      expect(result.bindings).toHaveLength(1);
+      expectBinding(result.bindings[0], {
+        type: BindingType.Class,
+        name: ':class',
+        index: 0,
+        strings: ['', ''],
+        partIndex: 0,
+        groupStart: 0,
+      });
+    });
+
+    it('treats :style as a normal style binding', () => {
+      const result = parser.parse(createTemplateStrings(['<div :style=', '></div>']));
+
+      expect(result.bindings).toHaveLength(1);
+      expectBinding(result.bindings[0], {
+        type: BindingType.Style,
+        name: ':style',
+        index: 0,
+        strings: ['', ''],
+        partIndex: 0,
+        groupStart: 0,
+      });
+    });
+  });
 });

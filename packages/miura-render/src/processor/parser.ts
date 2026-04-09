@@ -431,8 +431,8 @@ export class TemplateParser {
             case '&':
                 return BindingType.Bind;
             case ':':
-                if (name === 'class') return BindingType.ObjectClass;
-                if (name === 'style') return BindingType.ObjectStyle;
+                if (name === 'class') return BindingType.Class;
+                if (name === 'style') return BindingType.Style;
                 return BindingType.Property;
             case '~':
                 return BindingType.Async;

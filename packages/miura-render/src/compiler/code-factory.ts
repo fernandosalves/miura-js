@@ -15,6 +15,8 @@ interface RefSlot {
     listener?: EventListener;
     /** Utility classes/styles applied by % bindings */
     utilityState?: unknown;
+    /** Track active style keys for object-style updates */
+    styleKeys?: Set<string> | null;
 }
 
 // ── Shared runtime helper code injected into every generated function ─────────
@@ -93,8 +95,17 @@ function setObjectClass(el, prev, next) {
 }
 
 /** Apply a style object map { property: value }. */
-function setObjectStyle(el, next) {
-    Object.entries(next).forEach(([k, v]) => { el.style[k] = v == null ? '' : String(v); });
+function setObjectStyle(el, prevKeys, next) {
+    const nextKeys = new Set(Object.keys(next));
+    if (prevKeys) {
+        prevKeys.forEach((key) => {
+            if (!nextKeys.has(key)) el.style[key] = '';
+        });
+    }
+    Object.entries(next).forEach(([k, v]) => {
+        el.style[k] = typeof v === 'number' ? \`\${v}px\` : (v == null ? '' : String(v));
+    });
+    return nextKeys;
 }
 `;
 
@@ -132,11 +143,34 @@ function _updateCode(b: TemplateBinding, ri: number): string {
         }
 
         case BindingType.Class: {
-            return `if (${r}.prev !== ${v}) { ${r}.prev = ${v}; ${r}.el.className = ${v}; }`;
+            return `
+                if (${r}.prev !== ${v}) {
+                    const _next = ${v};
+                    if (typeof _next === 'string') {
+                        ${r}.el.className = _next;
+                    } else {
+                        if (typeof ${r}.prev === 'string') ${r}.el.className = '';
+                        setObjectClass(${r}.el, ${r}.prev && typeof ${r}.prev === 'object' ? ${r}.prev : null, _next || {});
+                    }
+                    ${r}.prev = _next;
+                }
+            `;
         }
 
         case BindingType.Style:
-            return `if (${r}.prev !== ${v}) { ${r}.prev = ${v}; ${r}.el.style.cssText = ${v}; }`;
+            return `
+                if (${r}.prev !== ${v}) {
+                    const _next = ${v};
+                    if (typeof _next === 'string') {
+                        ${r}.el.style.cssText = _next;
+                        ${r}.styleKeys = null;
+                    } else {
+                        if (typeof ${r}.prev === 'string') ${r}.el.style.cssText = '';
+                        ${r}.styleKeys = setObjectStyle(${r}.el, ${r}.styleKeys, _next || {});
+                    }
+                    ${r}.prev = _next;
+                }
+            `;
 
         case BindingType.Attribute: {
             const attrName = JSON.stringify(b.name);
@@ -148,10 +182,19 @@ function _updateCode(b: TemplateBinding, ri: number): string {
             return `/* event: ${b.name} — set at render */`;
 
         case BindingType.ObjectClass:
-            return `{ const _next = ${v}||{}; setObjectClass(${r}.el, ${r}.prev, _next); ${r}.prev = _next; }`;
+            return `
+                { const _next = ${v}||{}; setObjectClass(${r}.el, ${r}.prev && typeof ${r}.prev === 'object' ? ${r}.prev : null, _next); ${r}.prev = _next; }
+            `;
 
         case BindingType.ObjectStyle:
-            return `if (${r}.prev !== ${v}) { ${r}.prev = ${v}; setObjectStyle(${r}.el, ${v}||{}); }`;
+            return `
+                if (${r}.prev !== ${v}) {
+                    const _next = ${v} || {};
+                    if (typeof ${r}.prev === 'string') ${r}.el.style.cssText = '';
+                    ${r}.styleKeys = setObjectStyle(${r}.el, ${r}.styleKeys, _next);
+                    ${r}.prev = _next;
+                }
+            `;
 
         case BindingType.Spread:
             return `if (${r}.prev !== ${v}) { ${r}.prev = ${v}; Object.assign(${r}.el, ${v}||{}); }`;

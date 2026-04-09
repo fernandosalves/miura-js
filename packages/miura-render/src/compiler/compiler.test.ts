@@ -54,4 +54,29 @@ describe('TemplateCompiler events', () => {
 
     document.body.innerHTML = '';
   });
+
+  it('supports object values on class and style in compiled templates', () => {
+    const compiler = new TemplateCompiler();
+    const template = html`
+      <div id="compiled-box" class=${{ active: true }} style=${{ width: 10, color: 'red' }}></div>
+    `;
+
+    const compiled = compiler.compile(template);
+    const { fragment, refs } = compiled.render(template.values);
+    document.body.appendChild(fragment);
+
+    const element = document.getElementById('compiled-box') as HTMLDivElement;
+    expect(element.classList.contains('active')).toBe(true);
+    expect(element.style.width).toBe('10px');
+    expect(element.style.color).toBe('red');
+
+    compiled.update(refs, [{ active: false, hidden: true }, { height: 18, color: 'blue' }]);
+    expect(element.classList.contains('active')).toBe(false);
+    expect(element.classList.contains('hidden')).toBe(true);
+    expect(element.style.width).toBe('');
+    expect(element.style.height).toBe('18px');
+    expect(element.style.color).toBe('blue');
+
+    document.body.innerHTML = '';
+  });
 });

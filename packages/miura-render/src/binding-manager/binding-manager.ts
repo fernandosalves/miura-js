@@ -14,8 +14,6 @@ import { StyleBinding } from './bindings/style-binding';
 import { DirectiveBinding } from './bindings/directive-binding';
 import { AttributeBinding, AttributePartBinding } from './bindings/attribute-binding';
 import { BindBinding } from './bindings/bind-binding';
-import { ObjectClassBinding } from './bindings/object-class-binding';
-import { ObjectStyleBinding } from './bindings/object-style-binding';
 import { SpreadBinding } from './bindings/spread-binding';
 import { AsyncBinding } from './bindings/async-binding';
 import { UtilityBinding, UtilityPartBinding } from './bindings/utility-binding';
@@ -207,10 +205,10 @@ export class BindingManager {
             }
 
             case BindingType.ObjectClass:
-                return new ObjectClassBinding(element);
+                return new ClassBinding(element);
 
             case BindingType.ObjectStyle:
-                return new ObjectStyleBinding(element as HTMLElement);
+                return new StyleBinding(element);
 
             case BindingType.Spread:
                 return new SpreadBinding(element);
