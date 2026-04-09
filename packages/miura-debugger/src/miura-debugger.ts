@@ -144,7 +144,7 @@ type TimelineListener = (events: MiuraTimelineEvent[]) => void;
 
 const DEFAULT_OPTIONS: Required<MiuraDebuggerOptions> = {
     disabled: false,
-    report: true,
+    report: false,
     overlay: true,
     layers: false,
     performance: false,

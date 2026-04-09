@@ -29,4 +29,24 @@ describe('BindingManager diagnostics', () => {
         expect(diagnostic?.message).not.toContain('binding:0');
         expect(diagnostic?.bindingIndex).toBe(0);
     });
+
+    it('reports labels for missing attribute elements', async () => {
+        const fragment = document.createDocumentFragment();
+        const bindings: TemplateBinding[] = [
+            {
+                type: BindingType.Property,
+                name: '.disabled',
+                index: 0,
+                debugLabel: 'property .disabled for submit button',
+            },
+        ];
+
+        // Should successfully report diagnostic via BindingManager.createAndInitializeParts catch block
+        await expect(
+            BindingManager.createAndInitializeParts(fragment, bindings, [true]),
+        ).rejects.toThrow();
+
+        const diagnostic = getDiagnostics()[0];
+        expect(diagnostic?.message).toContain('property .disabled for submit button');
+    });
 });

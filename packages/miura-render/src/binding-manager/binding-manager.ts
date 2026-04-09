@@ -93,7 +93,7 @@ export class BindingManager {
         bindings.forEach(binding => {
             try {
                 if (binding.type === BindingType.Node) {
-                    const [startMarker, endMarker] = this.findNodeMarkers(fragment, binding.index);
+                    const [startMarker, endMarker] = this.findNodeMarkers(fragment, binding.index, binding.debugLabel);
                     const markerHost =
                         startMarker.parentElement ||
                         endMarker.parentElement ||
@@ -116,14 +116,16 @@ export class BindingManager {
 
                     if (groupStart === binding.index) {
                         // First part in the group — find element via marker
-                        element = this.findBindingElement(fragment, binding.index);
+                        element = this.findBindingElement(fragment, binding.index, binding.debugLabel);
                         if (element) elementCache.set(groupStart, element);
                     } else {
                         // Subsequent part — reuse cached element
                         element = elementCache.get(groupStart) || null;
                     }
 
-                    if (!element) return;
+                    if (!element) {
+                        throw new Error(`Could not find element for ${binding.debugLabel ?? `binding:${binding.index}`}`);
+                    }
 
                     if (groupStart === binding.index) {
                         const strings = binding.strings || ['', ''];
@@ -150,12 +152,13 @@ export class BindingManager {
                 }
 
                 // Non-attribute bindings — original logic
-                const element = this.findBindingElement(fragment, binding.index);
-                if (element) {
-                    const bindingInstance = this.createBindingForType(element, binding, processor);
-                    if (bindingInstance) {
-                        bindingInstances[binding.index] = bindingInstance;
-                    }
+                const element = this.findBindingElement(fragment, binding.index, binding.debugLabel);
+                if (!element) {
+                    throw new Error(`Could not find element for ${binding.debugLabel ?? `binding:${binding.index}`}`);
+                }
+                const bindingInstance = this.createBindingForType(element, binding, processor);
+                if (bindingInstance) {
+                    bindingInstances[binding.index] = bindingInstance;
                 }
             } catch (error) {
                 reportDiagnostic({
@@ -281,7 +284,8 @@ export class BindingManager {
 
     private static findBindingElement(
         fragment: DocumentFragment,
-        index: number
+        index: number,
+        label?: string
     ): Element | null {
         const walker = document.createTreeWalker(
             fragment,
@@ -308,7 +312,8 @@ export class BindingManager {
 
     private static findMarkers(
         element: Element,
-        index: number
+        index: number,
+        label?: string
     ): [Comment, Comment] {
         const walker = document.createTreeWalker(
             element.parentElement || element,
@@ -336,10 +341,11 @@ export class BindingManager {
         if (!startMarker || !endMarker) {
             debugLog('bindingManager', 'Failed to find markers', {
                 index,
+                label,
                 element,
                 parentHTML: element.parentElement?.innerHTML
             });
-            throw new Error(`Could not find markers for binding:${index}`);
+            throw new Error(`Could not find markers for ${label ?? `binding:${index}`}`);
         }
 
         return [startMarker, endMarker];
@@ -347,7 +353,8 @@ export class BindingManager {
 
     private static findNodeMarkers(
         fragment: DocumentFragment,
-        index: number
+        index: number,
+        label?: string
     ): [Comment, Comment] {
         const walker = document.createTreeWalker(
             fragment,
@@ -375,11 +382,12 @@ export class BindingManager {
         if (!startMarker || !endMarker) {
             debugLog('bindingManager', 'Failed to find node markers in fragment', {
                 index,
+                label,
                 fragmentHtml: Array.from(fragment.childNodes)
                     .map(node => node.nodeType === Node.ELEMENT_NODE ? (node as Element).outerHTML : node.textContent)
                     .join('')
             });
-            throw new Error(`Could not find node markers for binding:${index}`);
+            throw new Error(`Could not find node markers for ${label ?? `binding:${index}`}`);
         }
 
         return [startMarker, endMarker];

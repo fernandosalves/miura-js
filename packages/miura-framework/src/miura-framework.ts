@@ -102,7 +102,7 @@ export abstract class MiuraFramework extends MiuraElement {
             version: '1.0.0',
             environment: 'development',
             debug: true,
-            performance: true,
+            performance: false,
             plugins: [],
             dataStore: {
                 enabled: true,
@@ -148,8 +148,8 @@ export abstract class MiuraFramework extends MiuraElement {
             if (config.debug && config.environment !== 'production' && config.debugger !== false) {
                 enableMiuraDebugger({
                     overlay: true,
-                    layers: true,
-                    performance: config.performance,
+                    layers: false,
+                    performance: false,
                     ...config.debugger,
                 });
             }
