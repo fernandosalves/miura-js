@@ -237,6 +237,7 @@ class ProfileForm extends MiuraElement {
         <input &value=${name} @blur=${name.touch}>
         <input type="checkbox" &checked=${newsletter}>
         <p>${name.showError ? name.error ?? '' : ''}</p>
+        <p>${this.form.submitError ? 'Save failed' : ''}</p>
         <button ?disabled=${!this.form.valid || this.form.submitting} type="submit">
         ${this.form.submitting ? 'Saving...' : 'Save'}
         </button>
@@ -258,6 +259,9 @@ class ProfileForm extends MiuraElement {
 | `valid` | `true` when no validation errors are present |
 | `validating` | `true` while `validateAsync()` is running |
 | `submitting` | `true` while `submit()` is in flight |
+| `submitError` | Last error thrown by `submit()` |
+| `submitResult` | Last resolved value returned by `submit()` |
+| `submitSucceeded` | `true` after a successful submit until the form changes or state is cleared |
 | `touched` | Set of fields changed or manually touched |
 | `field(name)` | Returns a binder with `value`, `set`, `touch`, `isTouched`, `isDirty`, `showError`, and `error` |
 | `set(name, value)` | Set one field value |
@@ -267,6 +271,11 @@ class ProfileForm extends MiuraElement {
 | `shouldShowError(name)` | `true` when a field is touched and currently invalid |
 | `validate()` | Re-run validation and return whether the form is valid |
 | `validateAsync()` | Run async validation and return whether the form is valid |
+| `clearSubmitState()` | Clear `submitError` and `submitResult` |
+| `setErrors(errors, { touch })` | Apply field errors directly, useful for server validation responses |
+| `clearErrors()` | Clear current field errors |
+| `failSubmit(error, { errors, touch })` | Record a submit failure, optionally map field errors, then rethrow |
+| `view({ ... })` | Render idle, validating, submitting, success, or error submit states declaratively |
 | `submit(handler)` | Validate, set `submitting`, run the async handler, then clear `submitting` |
 | `handleSubmit(handler)` | Wrap a native form submit event, prevent default, and run `submit(handler)` |
 
@@ -280,6 +289,35 @@ Automatic async validation is opt-in:
 - `validateAsyncOn: 'blur'` runs async validation when a field is touched
 - `validateAsyncOn: 'change'` runs debounced async validation after value changes
 - `validateAsyncDebounce` controls the debounce delay for `'change'` mode
+
+For server-side validation, `failSubmit()` lets you map field errors and preserve the submit failure in one place:
+
+```typescript
+await this.form.submit(async (values, form) => {
+  try {
+    await api.saveProfile(values);
+  } catch (error) {
+    form.failSubmit(error, {
+      errors: {
+        name: 'Name already exists'
+      },
+      touch: true
+    });
+  }
+});
+```
+
+For state-specific UI around submit flows, `view()` keeps the branching close to the form:
+
+```typescript
+${this.form.view({
+  idle: () => html`<p>Ready</p>`,
+  validating: () => html`<p>Checking...</p>`,
+  submitting: () => html`<p>Saving...</p>`,
+  success: () => html`<p>Saved</p>`,
+  error: (error) => html`<p>${String(error)}</p>`
+})}
+```
 
 ### Styles
 

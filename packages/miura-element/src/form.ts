@@ -1,5 +1,15 @@
+import type { TemplateResult } from '@miurajs/miura-render';
+
 export type FormErrors<T extends Record<string, any>> = Partial<Record<keyof T, string>>;
 export type AsyncValidationMode = 'manual' | 'blur' | 'change';
+
+export interface FormViewOptions<T extends Record<string, any>, R extends TemplateResult> {
+    idle?: (values: Readonly<T>, form: Form<T>) => R;
+    validating?: (values: Readonly<T>, form: Form<T>) => R;
+    submitting?: (values: Readonly<T>, form: Form<T>) => R;
+    success?: (result: unknown, values: Readonly<T>, form: Form<T>) => R;
+    error?: (error: unknown, values: Readonly<T>, form: Form<T>) => R;
+}
 
 export interface FormField<T> {
     value: T;
@@ -29,6 +39,9 @@ export interface Form<T extends Record<string, any>> {
     readonly valid: boolean;
     readonly validating: boolean;
     readonly submitting: boolean;
+    readonly submitError: unknown;
+    readonly submitResult: unknown;
+    readonly submitSucceeded: boolean;
     readonly touched: ReadonlySet<keyof T>;
     field<K extends keyof T>(name: K): FormField<T[K]>;
     get<K extends keyof T>(name: K): T[K];
@@ -42,6 +55,11 @@ export interface Form<T extends Record<string, any>> {
     shouldShowError<K extends keyof T>(name: K): boolean;
     validate(): boolean;
     validateAsync(): Promise<boolean>;
+    clearSubmitState(): void;
+    setErrors(errors: FormErrors<T>, options?: { touch?: boolean }): void;
+    clearErrors(options?: { touch?: boolean }): void;
+    failSubmit(error: unknown, options?: { errors?: FormErrors<T>; touch?: boolean }): never;
+    view<R extends TemplateResult>(options: FormViewOptions<T, R>): R | undefined;
     submit<R>(handler: (values: Readonly<T>, form: Form<T>) => Promise<R> | R): Promise<R>;
     handleSubmit<R>(handler: (values: Readonly<T>, form: Form<T>) => Promise<R> | R): (event?: Event) => Promise<R>;
 }
@@ -54,6 +72,8 @@ class FormController<T extends Record<string, any>> implements Form<T> {
     private _touched = new Set<keyof T>();
     private _validating = false;
     private _submitting = false;
+    private _submitError: unknown = undefined;
+    private _submitResult: unknown = undefined;
     private _submitGeneration = 0;
     private _validationGeneration = 0;
     private _validationTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -114,6 +134,18 @@ class FormController<T extends Record<string, any>> implements Form<T> {
         return this._submitting;
     }
 
+    get submitError(): unknown {
+        return this._submitError;
+    }
+
+    get submitResult(): unknown {
+        return this._submitResult;
+    }
+
+    get submitSucceeded(): boolean {
+        return this._submitError === undefined && this._submitResult !== undefined;
+    }
+
     get touched(): ReadonlySet<keyof T> {
         return this._touched;
     }
@@ -141,6 +173,8 @@ class FormController<T extends Record<string, any>> implements Form<T> {
     set<K extends keyof T>(name: K, value: T[K]): void {
         const nextValues = { ...this._values, [name]: value };
         this._values = nextValues;
+        this._submitError = undefined;
+        this._submitResult = undefined;
 
         if (this.options.touchOnChange !== false) {
             this._touched = new Set(this._touched).add(name);
@@ -153,6 +187,8 @@ class FormController<T extends Record<string, any>> implements Form<T> {
 
     patch(values: Partial<T>): void {
         this._values = { ...this._values, ...values };
+        this._submitError = undefined;
+        this._submitResult = undefined;
 
         if (this.options.touchOnChange !== false) {
             const touched = new Set(this._touched);
@@ -177,6 +213,8 @@ class FormController<T extends Record<string, any>> implements Form<T> {
         this._syncErrors = {};
         this._asyncErrors = {};
         this._validating = false;
+        this._submitError = undefined;
+        this._submitResult = undefined;
         this._validationGeneration++;
         this.clearScheduledAsyncValidation();
         this._touched = new Set();
@@ -262,6 +300,76 @@ class FormController<T extends Record<string, any>> implements Form<T> {
         return this.valid;
     }
 
+    clearSubmitState(): void {
+        this._submitError = undefined;
+        this._submitResult = undefined;
+        this.onChange();
+    }
+
+    setErrors(errors: FormErrors<T>, options: { touch?: boolean } = {}): void {
+        this._syncErrors = Object.fromEntries(
+            Object.entries(errors).filter(([, value]) => value !== undefined && value !== '')
+        ) as FormErrors<T>;
+        this._asyncErrors = {};
+
+        if (options.touch) {
+            const touched = new Set(this._touched);
+            for (const key of Object.keys(this._syncErrors) as Array<keyof T>) {
+                touched.add(key);
+            }
+            this._touched = touched;
+        }
+
+        this.onChange();
+    }
+
+    clearErrors(options: { touch?: boolean } = {}): void {
+        this._syncErrors = {};
+        this._asyncErrors = {};
+
+        if (options.touch === false) {
+            this._touched = new Set();
+        }
+
+        this.onChange();
+    }
+
+    failSubmit(error: unknown, options: { errors?: FormErrors<T>; touch?: boolean } = {}): never {
+        this._submitError = error;
+        this._submitResult = undefined;
+
+        if (options.errors) {
+            this.setErrors(options.errors, { touch: options.touch });
+        } else if (options.touch) {
+            this.touchAll();
+            this.onChange();
+        } else {
+            this.onChange();
+        }
+
+        throw error;
+    }
+
+    view<R extends TemplateResult>(options: FormViewOptions<T, R>): R | undefined {
+        if (this._submitting) {
+            return options.submitting?.(this._values, this);
+        }
+
+        if (this._validating) {
+            return options.validating?.(this._values, this);
+        }
+
+        if (this._submitError !== undefined) {
+            return options.error?.(this._submitError, this._values, this);
+        }
+
+        if (this._submitResult !== undefined) {
+            return options.success?.(this._submitResult, this._values, this);
+        }
+
+        return options.idle?.(this._values, this);
+    }
+
     async submit<R>(handler: (values: Readonly<T>, form: Form<T>) => Promise<R> | R): Promise<R> {
         const submitGeneration = ++this._submitGeneration;
 
@@ -276,10 +384,23 @@ class FormController<T extends Record<string, any>> implements Form<T> {
         }
 
         this._submitting = true;
+        this._submitError = undefined;
         this.onChange();
 
         try {
-            return await handler(this._values, this);
+            const result = await handler(this._values, this);
+            if (submitGeneration === this._submitGeneration) {
+                this._submitResult = result;
+                this._submitError = undefined;
+            }
+            return result;
+        } catch (error) {
+            if (submitGeneration === this._submitGeneration) {
+                this._submitError = error;
+                this._submitResult = undefined;
+                this.onChange();
+            }
+            throw error;
         } finally {
             if (submitGeneration === this._submitGeneration) {
                 this._submitting = false;

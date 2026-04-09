@@ -312,6 +312,263 @@ describe('MiuraElement $form', () => {
         expect(element.savedValue).toBe('Published');
     });
 
+    it('tracks submit results and clears them after edits', async () => {
+        const tagName = 'miura-form-submit-result';
+
+        class SubmitResultElement extends MiuraElement {
+            form: Form<{ title: string }>;
+
+            constructor() {
+                super();
+                this.form = this.$form({ title: 'Draft' });
+            }
+
+            protected override template() {
+                return html`
+                    <p class="result">${String(this.form.submitResult ?? '')}</p>
+                    <p class="succeeded">${String(this.form.submitSucceeded)}</p>
+                `;
+            }
+        }
+
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, SubmitResultElement);
+        }
+
+        const element = document.createElement(tagName) as SubmitResultElement;
+        document.body.appendChild(element);
+        await element.updateComplete;
+
+        const result = await element.form.submit(async (values) => `${values.title}:saved`);
+        expect(result).toBe('Draft:saved');
+        await waitFor(() => element.shadowRoot?.querySelector('.result')?.textContent === 'Draft:saved');
+
+        expect(element.form.submitResult).toBe('Draft:saved');
+        expect(element.form.submitSucceeded).toBe(true);
+
+        element.form.set('title', 'Updated');
+        await element.updateComplete;
+
+        expect(element.form.submitResult).toBeUndefined();
+        expect(element.form.submitSucceeded).toBe(false);
+    });
+
+    it('tracks submit errors and allows clearing submit state', async () => {
+        const tagName = 'miura-form-submit-error';
+
+        class SubmitErrorElement extends MiuraElement {
+            form: Form<{ title: string }>;
+
+            constructor() {
+                super();
+                this.form = this.$form({ title: 'Draft' });
+            }
+
+            protected override template() {
+                const message = this.form.submitError instanceof Error
+                    ? this.form.submitError.message
+                    : String(this.form.submitError ?? '');
+
+                return html`
+                    <p class="error">${message}</p>
+                    <p class="succeeded">${String(this.form.submitSucceeded)}</p>
+                `;
+            }
+        }
+
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, SubmitErrorElement);
+        }
+
+        const element = document.createElement(tagName) as SubmitErrorElement;
+        document.body.appendChild(element);
+        await element.updateComplete;
+
+        await expect(element.form.submit(async () => {
+            throw new Error('Save failed');
+        })).rejects.toThrow('Save failed');
+
+        await waitFor(() => element.shadowRoot?.querySelector('.error')?.textContent === 'Save failed');
+
+        expect((element.form.submitError as Error).message).toBe('Save failed');
+        expect(element.form.submitSucceeded).toBe(false);
+
+        element.form.clearSubmitState();
+        await waitFor(() => element.shadowRoot?.querySelector('.error')?.textContent === '');
+
+        expect(element.form.submitError).toBeUndefined();
+        expect(element.form.submitResult).toBeUndefined();
+    });
+
+    it('can map server field errors onto the form', async () => {
+        const tagName = 'miura-form-server-errors';
+
+        class ServerErrorsElement extends MiuraElement {
+            form: Form<{ email: string; password: string }>;
+
+            constructor() {
+                super();
+                this.form = this.$form({ email: '', password: '' });
+            }
+
+            protected override template() {
+                return html`
+                    <p class="email-error">${this.form.visibleErrors.email ?? ''}</p>
+                    <p class="password-error">${this.form.visibleErrors.password ?? ''}</p>
+                `;
+            }
+        }
+
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, ServerErrorsElement);
+        }
+
+        const element = document.createElement(tagName) as ServerErrorsElement;
+        document.body.appendChild(element);
+        await element.updateComplete;
+
+        element.form.setErrors(
+            {
+                email: 'Email already in use',
+                password: 'Password is too weak',
+            },
+            { touch: true }
+        );
+
+        await waitFor(() => element.shadowRoot?.querySelector('.email-error')?.textContent === 'Email already in use');
+
+        expect(element.form.errors.email).toBe('Email already in use');
+        expect(element.form.errors.password).toBe('Password is too weak');
+        expect(element.form.isTouched('email')).toBe(true);
+        expect(element.form.isTouched('password')).toBe(true);
+        expect(element.form.visibleErrors.password).toBe('Password is too weak');
+
+        element.form.clearErrors();
+        await waitFor(() => element.shadowRoot?.querySelector('.email-error')?.textContent === '');
+
+        expect(element.form.errors.email).toBeUndefined();
+        expect(element.form.errors.password).toBeUndefined();
+    });
+
+    it('can fail a submit with top-level and field errors together', async () => {
+        const tagName = 'miura-form-fail-submit';
+
+        class FailSubmitElement extends MiuraElement {
+            form: Form<{ email: string }>;
+
+            constructor() {
+                super();
+                this.form = this.$form({ email: 'a@b.com' });
+            }
+
+            protected override template() {
+                const submitMessage = this.form.submitError instanceof Error
+                    ? this.form.submitError.message
+                    : String(this.form.submitError ?? '');
+
+                return html`
+                    <p class="submit-error">${submitMessage}</p>
+                    <p class="field-error">${this.form.visibleErrors.email ?? ''}</p>
+                `;
+            }
+        }
+
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, FailSubmitElement);
+        }
+
+        const element = document.createElement(tagName) as FailSubmitElement;
+        document.body.appendChild(element);
+        await element.updateComplete;
+
+        await expect(
+            element.form.submit(async (_values, form) => {
+                try {
+                    throw new Error('Request failed');
+                } catch (error) {
+                    form.failSubmit(error, {
+                        errors: {
+                            email: 'Email already registered',
+                        },
+                        touch: true,
+                    });
+                }
+            })
+        ).rejects.toThrow('Request failed');
+
+        await waitFor(() => element.shadowRoot?.querySelector('.submit-error')?.textContent === 'Request failed');
+
+        expect(element.form.submitError).toBeInstanceOf(Error);
+        expect((element.form.submitError as Error).message).toBe('Request failed');
+        expect(element.form.visibleErrors.email).toBe('Email already registered');
+    });
+
+    it('can render submit state declaratively with view()', async () => {
+        const tagName = 'miura-form-view';
+        let releaseValidation!: (value: { title?: string }) => void;
+
+        class FormViewElement extends MiuraElement {
+            form: Form<{ title: string }>;
+
+            constructor() {
+                super();
+                this.form = this.$form(
+                    { title: 'Draft' },
+                    {
+                        validateAsync: () =>
+                            new Promise((resolve) => {
+                                releaseValidation = resolve;
+                            }),
+                    }
+                );
+            }
+
+            protected override template() {
+                return html`
+                    ${this.form.view({
+                        idle: () => html`<p class="state">idle</p>`,
+                        validating: () => html`<p class="state">validating</p>`,
+                        submitting: () => html`<p class="state">submitting</p>`,
+                        success: (result) => html`<p class="state">success:${String(result)}</p>`,
+                        error: (error) => html`<p class="state">error:${(error as Error).message}</p>`,
+                    })}
+                `;
+            }
+        }
+
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, FormViewElement);
+        }
+
+        const element = document.createElement(tagName) as FormViewElement;
+        document.body.appendChild(element);
+        await element.updateComplete;
+
+        expect(element.shadowRoot?.querySelector('.state')?.textContent).toBe('idle');
+
+        const successPromise = element.form.submit(async (values) => `saved:${values.title}`);
+        await waitFor(() => element.shadowRoot?.querySelector('.state')?.textContent === 'validating');
+        releaseValidation({});
+        await successPromise;
+        await waitFor(() => element.shadowRoot?.querySelector('.state')?.textContent === 'success:saved:Draft');
+
+        element.form.set('title', 'Changed');
+        await waitFor(() => element.shadowRoot?.querySelector('.state')?.textContent === 'idle');
+
+        const failurePromise = element.form.submit(async (_values, form) => {
+            try {
+                throw new Error('Boom');
+            } catch (error) {
+                form.failSubmit(error);
+            }
+        });
+
+        await waitFor(() => element.shadowRoot?.querySelector('.state')?.textContent === 'validating');
+        releaseValidation({});
+        await expect(failurePromise).rejects.toThrow('Boom');
+        await waitFor(() => element.shadowRoot?.querySelector('.state')?.textContent === 'error:Boom');
+    });
+
     it('blocks submit on async validation errors and exposes validating state', async () => {
         const tagName = 'miura-form-async-validation';
         let resolveValidation!: (value: { title?: string }) => void;

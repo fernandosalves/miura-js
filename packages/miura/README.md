@@ -56,4 +56,10 @@ class AppSignupForm extends MiuraElement {
 
 Async validation is also supported through `validateAsync`, and is automatically respected by `submit()` / `handleSubmit()`. Automatic modes are opt-in through `validateAsyncOn: 'blur' | 'change'`.
 
+Forms also keep submit outcome state through `submitError`, `submitResult`, and `submitSucceeded`, which helps keep success/error UI close to the form primitive instead of in separate component state.
+
+Server-side field validation can also be mapped back into the form with `setErrors()`.
+For submit flows, `failSubmit()` can capture the submit error and field errors together.
+`view()` can render submit-state UI declaratively from the form itself.
+
 See [@miurajs/miura-element](/Users/fernandoalves/Desktop/_dev/miura-js/packages/miura-element/README.md) for the component API and [docs](/Users/fernandoalves/Desktop/_dev/miura-js/docs/README.md) for the broader framework documentation.
