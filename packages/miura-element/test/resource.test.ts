@@ -293,4 +293,55 @@ describe('MiuraElement $resource', () => {
         expect(loadCount).toBe(2);
         expect(element.user.value).toBe('second');
     });
+
+    it('can keep stale data visible while revalidating', async () => {
+        const tagName = 'miura-resource-stale-while-revalidate';
+        let resolveNext!: (value: string) => void;
+
+        class StaleWhileRevalidateElement extends MiuraElement {
+            user!: Resource<string>;
+            private values = ['first', 'second'];
+
+            constructor() {
+                super();
+                this.user = this.$resource(() => new Promise<string>((resolve) => {
+                    const next = this.values.shift() ?? 'done';
+                    resolveNext = () => resolve(next);
+                }), { auto: false, staleWhileRevalidate: true });
+            }
+
+            protected override template() {
+                return html`
+                    <p class="state">${this.user.state}</p>
+                    <p class="refreshing">${String(this.user.refreshing)}</p>
+                    <p class="value">${this.user.value ?? 'none'}</p>
+                `;
+            }
+        }
+
+        if (!customElements.get(tagName)) customElements.define(tagName, StaleWhileRevalidateElement);
+
+        const element = document.createElement(tagName) as StaleWhileRevalidateElement;
+        document.body.appendChild(element);
+        await element.updateComplete;
+
+        const first = element.user.refresh();
+        resolveNext();
+        await first;
+        await waitFor(() => element.shadowRoot?.querySelector('.value')?.textContent === 'first');
+
+        const second = element.user.refresh();
+        await element.updateComplete;
+
+        expect(element.user.state).toBe('resolved');
+        expect(element.user.refreshing).toBe(true);
+        expect(element.shadowRoot?.querySelector('.value')?.textContent).toBe('first');
+
+        resolveNext();
+        await second;
+        await waitFor(() => element.shadowRoot?.querySelector('.value')?.textContent === 'second');
+
+        expect(element.user.refreshing).toBe(false);
+        expect(element.user.value).toBe('second');
+    });
 });

@@ -61,6 +61,7 @@ class AppSignupForm extends MiuraElement {
 Async validation is also supported through `validateAsync`, and is automatically respected by `submit()` / `handleSubmit()`. Automatic modes are opt-in through `validateAsyncOn: 'blur' | 'change'`.
 
 Resources can also participate in shared async caching through `key`, which gives you cache reuse, in-flight dedupe, and explicit invalidation with helpers like `resourceKey(...)` and `invalidateResource(...)`.
+They also support `staleWhileRevalidate`, so cached data can remain visible while refreshes run in the background.
 
 Forms also keep submit outcome state through `submitError`, `submitResult`, and `submitSucceeded`, which helps keep success/error UI close to the form primitive instead of in separate component state.
 
@@ -71,5 +72,7 @@ For submit flows, `failSubmit()` can capture the submit error and field errors t
 For lightweight cross-component state, `$shared(key, initial)` gives multiple components the same signal instance without requiring a full store setup. Use namespaced keys like `blog-editor:theme`, `sharedKey(...)`, or `createSharedNamespace(...)` to avoid collisions.
 
 For parent-to-descendant dependencies, use `createContextKey(...)` with `$provide()` and `$inject()` instead of reaching for shared global keys. Context stays tree-scoped, and the nearest provider wins. When descendants should react to changes, provide a signal or another reactive primitive as the context value.
+
+Route-driven resources now bridge cleanly with router loaders too: `$routeResource()` can derive route-based cache keys automatically and hydrate from route data before revalidating.
 
 See [@miurajs/miura-element](/Users/fernandoalves/Desktop/_dev/miura-js/packages/miura-element/README.md) for the component API and [docs](/Users/fernandoalves/Desktop/_dev/miura-js/docs/README.md) for the broader framework documentation.

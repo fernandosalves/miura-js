@@ -93,6 +93,7 @@ describe('MiuraElement router bridge helpers', () => {
 
     it('can create route-driven resources that refresh when params change', async () => {
         const tagName = 'miura-route-resource-element';
+        let loadCount = 0;
 
         const router = createRouter({
             mode: 'memory',
@@ -107,7 +108,10 @@ describe('MiuraElement router bridge helpers', () => {
             user = this.$routeResource(
                 router,
                 (context) => (context as RouteRenderContext | undefined)?.params.id,
-                async (id) => ({ id, label: `User ${id}` }),
+                async (id) => {
+                    loadCount++;
+                    return { id, label: `User ${id}` };
+                },
                 { skip: (id) => !id },
             );
 
@@ -141,6 +145,83 @@ describe('MiuraElement router bridge helpers', () => {
         await waitFor(() => element.shadowRoot?.querySelector('.state')?.textContent === 'User 22');
 
         expect(element.user.value).toEqual({ id: '22', label: 'User 22' });
+        expect(element.user.key).toBe('route:22');
+        expect(loadCount).toBe(2);
+
+        router.destroy();
+    });
+
+    it('can hydrate and revalidate route resources from loader data', async () => {
+        const tagName = 'miura-route-resource-hydrated';
+        let loadCount = 0;
+        const resolvers: Array<(value: { slug: string | undefined; title: string }) => void> = [];
+
+        const router = createRouter({
+            mode: 'memory',
+            routes: [
+                { path: '/', component: 'app-home' },
+                {
+                    path: '/post/:slug',
+                    component: 'app-post',
+                    loaders: [
+                        ({ params }) => ({ post: { slug: params.slug, title: `Loader ${params.slug}` } }),
+                    ],
+                },
+            ],
+            render: () => undefined,
+        });
+
+        class RouteHydratedResourceElement extends MiuraElement {
+            post = this.$routeResource(
+                router,
+                (context) => (context as RouteRenderContext | undefined)?.params.slug,
+                (slug) => new Promise<{ slug: string | undefined; title: string }>((resolve) => {
+                    loadCount++;
+                    resolvers.push(resolve);
+                }),
+                {
+                    skip: (slug) => !slug,
+                    hydrateFromRouteData: 'post',
+                    staleWhileRevalidate: true,
+                },
+            );
+
+            protected override template() {
+                return html`
+                    <p class="title">${this.post.value?.title ?? 'none'}</p>
+                    <p class="refreshing">${String(this.post.refreshing)}</p>
+                `;
+            }
+        }
+
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, RouteHydratedResourceElement);
+        }
+
+        await router.start();
+
+        const element = document.createElement(tagName) as RouteHydratedResourceElement;
+        document.body.appendChild(element);
+        await element.updateComplete;
+
+        await router.navigate('/post/intro');
+        resolvers.shift()?.({ slug: 'intro', title: 'Fetched intro' });
+        await waitFor(() => element.shadowRoot?.querySelector('.title')?.textContent === 'Fetched intro');
+
+        expect(loadCount).toBe(1);
+        expect(element.post.key).toBe('route:intro');
+        expect(element.post.refreshing).toBe(false);
+
+        await router.navigate('/');
+        await router.navigate('/post/intro');
+        await waitFor(() => element.shadowRoot?.querySelector('.title')?.textContent === 'Loader intro');
+
+        expect(element.post.refreshing).toBe(true);
+        expect(loadCount).toBe(2);
+
+        resolvers.shift()?.({ slug: 'intro', title: 'Fetched intro' });
+        await waitFor(() => element.shadowRoot?.querySelector('.title')?.textContent === 'Fetched intro');
+        expect(element.post.refreshing).toBe(false);
 
         router.destroy();
     });

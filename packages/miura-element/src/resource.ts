@@ -14,6 +14,7 @@ export interface ResourceViewOptions<T, R extends TemplateResult> {
 export interface Resource<T> {
     readonly state: ResourceState;
     readonly loading: boolean;
+    readonly refreshing: boolean;
     readonly value?: T;
     readonly data?: T;
     readonly error?: unknown;
@@ -21,16 +22,20 @@ export interface Resource<T> {
     readonly key?: string;
     refresh(): Promise<T>;
     invalidate(): void;
+    hydrate(value: T): void;
+    rekey(key?: ResourceKey): void;
     view<R extends TemplateResult>(options: ResourceViewOptions<T, R>): R | undefined;
 }
 
 export interface ResourceOptions {
     auto?: boolean;
     key?: ResourceKey;
+    staleWhileRevalidate?: boolean;
 }
 
 type CacheEntry<T> = {
     state: ResourceState;
+    refreshing: boolean;
     value?: T;
     error?: unknown;
     promise: Promise<T> | null;
@@ -51,6 +56,7 @@ function normalizeResourceKey(key: ResourceKey): string {
 function createCacheEntry<T>(): CacheEntry<T> {
     return {
         state: 'idle',
+        refreshing: false,
         value: undefined,
         error: undefined,
         promise: null,
@@ -88,21 +94,22 @@ export function hasResourceCache(key: ResourceKey): boolean {
 
 class ResourceController<T> implements Resource<T> {
     private _state: ResourceState = 'idle';
+    private _refreshing = false;
     private _value?: T;
     private _error?: unknown;
     private _promise: Promise<T> | null = null;
     private _generation = 0;
-    private readonly normalizedKey?: string;
+    private normalizedKey?: string;
     private cacheEntry?: CacheEntry<T>;
     private cacheListener?: () => void;
 
     constructor(
         private readonly loader: () => Promise<T> | T,
         private readonly onChange: () => void,
-        options: ResourceOptions = {}
+        private readonly options: ResourceOptions = {}
     ) {
-        if (options.key !== undefined) {
-            this.normalizedKey = normalizeResourceKey(options.key);
+        if (this.options.key !== undefined) {
+            this.normalizedKey = normalizeResourceKey(this.options.key);
             this.cacheEntry = getCacheEntry<T>(this.normalizedKey);
             this.cacheListener = () => {
                 this.syncFromCache();
@@ -112,7 +119,7 @@ class ResourceController<T> implements Resource<T> {
             this.syncFromCache();
         }
 
-        if (options.auto !== false) {
+        if (this.options.auto !== false) {
             void this.refresh();
         }
     }
@@ -123,6 +130,10 @@ class ResourceController<T> implements Resource<T> {
 
     get loading(): boolean {
         return this._state === 'pending';
+    }
+
+    get refreshing(): boolean {
+        return this._refreshing;
     }
 
     get value(): T | undefined {
@@ -158,6 +169,7 @@ class ResourceController<T> implements Resource<T> {
             this.cacheEntry.listeners.delete(this.cacheListener!);
             invalidateResource(this.normalizedKey);
             this._state = 'idle';
+            this._refreshing = false;
             this._value = undefined;
             this._error = undefined;
             this._promise = null;
@@ -166,11 +178,61 @@ class ResourceController<T> implements Resource<T> {
             this.cacheEntry = freshEntry;
         } else {
             this._state = 'idle';
+            this._refreshing = false;
             this._value = undefined;
             this._error = undefined;
             this._promise = null;
             this._generation = 0;
         }
+        this.onChange();
+    }
+
+    hydrate(value: T): void {
+        if (this.cacheEntry) {
+            this.cacheEntry.value = value;
+            this.cacheEntry.state = 'resolved';
+            this.cacheEntry.refreshing = false;
+            this.cacheEntry.error = undefined;
+            this.cacheEntry.promise = null;
+            notifyEntry(this.cacheEntry);
+            return;
+        }
+
+        this._value = value;
+        this._state = 'resolved';
+        this._refreshing = false;
+        this._error = undefined;
+        this._promise = null;
+        this.onChange();
+    }
+
+    rekey(key?: ResourceKey): void {
+        if (this.cacheEntry && this.cacheListener) {
+            this.cacheEntry.listeners.delete(this.cacheListener);
+        }
+
+        this.normalizedKey = key !== undefined ? normalizeResourceKey(key) : undefined;
+        this.cacheEntry = undefined;
+        this.cacheListener = undefined;
+
+        if (this.normalizedKey !== undefined) {
+            this.cacheEntry = getCacheEntry<T>(this.normalizedKey);
+            this.cacheListener = () => {
+                this.syncFromCache();
+                this.onChange();
+            };
+            this.cacheEntry.listeners.add(this.cacheListener);
+            this.syncFromCache();
+        }
+
+        if (!this.cacheEntry) {
+            this._state = 'idle';
+            this._refreshing = false;
+            this._value = undefined;
+            this._error = undefined;
+            this._promise = null;
+        }
+
         this.onChange();
     }
 
@@ -193,6 +255,7 @@ class ResourceController<T> implements Resource<T> {
         }
 
         this._state = this.cacheEntry.state;
+        this._refreshing = this.cacheEntry.refreshing;
         this._value = this.cacheEntry.value;
         this._error = this.cacheEntry.error;
         this._promise = this.cacheEntry.promise;
@@ -205,7 +268,8 @@ class ResourceController<T> implements Resource<T> {
         }
 
         const generation = ++entry.generation;
-        entry.state = 'pending';
+        entry.refreshing = this.shouldKeepValueWhileRefreshing();
+        entry.state = entry.refreshing ? 'resolved' : 'pending';
         entry.error = undefined;
         const promise = Promise.resolve(this.loader());
         entry.promise = promise;
@@ -219,6 +283,7 @@ class ResourceController<T> implements Resource<T> {
 
             entry.value = value;
             entry.state = 'resolved';
+            entry.refreshing = false;
             entry.promise = null;
             notifyEntry(entry);
             return value;
@@ -228,7 +293,8 @@ class ResourceController<T> implements Resource<T> {
             }
 
             entry.error = error;
-            entry.state = 'rejected';
+            entry.state = entry.value !== undefined && this.shouldKeepValueWhileRefreshing() ? 'resolved' : 'rejected';
+            entry.refreshing = false;
             entry.promise = null;
             notifyEntry(entry);
             throw error;
@@ -237,7 +303,8 @@ class ResourceController<T> implements Resource<T> {
 
     private async refreshLocal(): Promise<T> {
         const generation = ++this._generation;
-        this._state = 'pending';
+        this._refreshing = this.shouldKeepValueWhileRefreshing();
+        this._state = this._refreshing ? 'resolved' : 'pending';
         this._error = undefined;
 
         const promise = Promise.resolve(this.loader());
@@ -252,6 +319,7 @@ class ResourceController<T> implements Resource<T> {
 
             this._value = value;
             this._state = 'resolved';
+            this._refreshing = false;
             this._promise = null;
             this.onChange();
             return value;
@@ -261,11 +329,16 @@ class ResourceController<T> implements Resource<T> {
             }
 
             this._error = error;
-            this._state = 'rejected';
+            this._state = this._value !== undefined && this.shouldKeepValueWhileRefreshing() ? 'resolved' : 'rejected';
+            this._refreshing = false;
             this._promise = null;
             this.onChange();
             throw error;
         }
+    }
+
+    private shouldKeepValueWhileRefreshing(): boolean {
+        return this._value !== undefined && this.options.staleWhileRevalidate === true;
     }
 }
 

@@ -179,6 +179,8 @@ class UserCard extends MiuraElement {
 | `key` | Normalized cache key when the resource participates in shared caching |
 | `refresh()` | Re-run the loader and update the component |
 | `invalidate()` | Clear the local or keyed cached state so the next refresh starts fresh |
+| `refreshing` | `true` when a stale value is being kept visible during revalidation |
+| `hydrate(value)` | Seed the resource with a resolved value without running the loader |
 | `view()` | Render a template for each resource state |
 
 Pass `{ auto: false }` if you want to create the resource without starting the first request immediately:
@@ -213,6 +215,15 @@ class ProfileCard extends MiuraElement {
 ```
 
 Miura also exposes `resourceKey(...)`, `invalidateResource(...)`, `hasResourceCache(...)`, and `clearResourceCache()` for app-level cache control.
+
+Pass `{ staleWhileRevalidate: true }` if you want a resolved value to stay visible while a refresh is in flight:
+
+```typescript
+results = this.$resource(() => this.fetchResults(), {
+  key: ['search', this.query],
+  staleWhileRevalidate: true
+});
+```
 
 ### Form State
 
@@ -457,7 +468,11 @@ class ProfilePage extends MiuraElement {
     router,
     (context) => context?.params.id,
     (id) => fetch(`/api/users/${id}`).then((r) => r.json()),
-    { skip: (id) => !id }
+    {
+      skip: (id) => !id,
+      hydrateFromRouteData: 'profile',
+      staleWhileRevalidate: true
+    }
   );
 
   template() {
@@ -470,6 +485,8 @@ class ProfilePage extends MiuraElement {
   }
 }
 ```
+
+`$routeResource()` derives a stable cache key from the selected route value by default, so route-driven resources can reuse cached data naturally across navigation. You can override that with `key`, seed the resource from route loader data with `hydrateFromRouteData`, and keep stale data visible during refreshes with `staleWhileRevalidate`.
 
 ### Styles
 

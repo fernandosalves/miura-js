@@ -5,7 +5,7 @@ import type { RouteSignalLike, RouterBridgeLike } from './router-bridge.js';
 import { signal, computed, Signal, ReadonlySignal } from './signals.js';
 import { shared, type SharedKey } from './shared.js';
 import { createForm, Form, FormOptions } from './form.js';
-import { createResource, Resource, ResourceOptions } from './resource.js';
+import { createResource, resourceKey, Resource, ResourceKey, ResourceOptions } from './resource.js';
 
 import { TemplateResult, CSSResult, debugLog } from '@miurajs/miura-render';
 import { TemplateProcessor, TemplateCompiler, NodeBinding, DirectiveBinding, ensureUtilityStylesInRoot } from '@miurajs/miura-render';
@@ -999,10 +999,21 @@ export class MiuraElement extends HTMLElement {
         options?: ResourceOptions & {
             skip?: (key: TKey) => boolean;
             equals?: (previous: TKey, next: TKey) => boolean;
+            key?: ResourceKey | ((key: TKey) => ResourceKey);
+            hydrateFromRouteData?: string | ((context: unknown) => T | undefined);
         },
     ): Resource<T> {
         const selected = router.select(selector);
-        const resource = createResource(() => loader(selected.peek()), () => this.requestUpdate(), { auto: false });
+        const currentKey = selected.peek();
+        const resource = createResource(
+            () => loader(selected.peek()),
+            () => this.requestUpdate(),
+            {
+                ...options,
+                auto: false,
+                key: this._resolveRouteResourceKey(currentKey, options?.key),
+            },
+        );
         const equals = options?.equals ?? Object.is;
         const skip = options?.skip ?? (() => false);
         let hasValue = false;
@@ -1010,7 +1021,10 @@ export class MiuraElement extends HTMLElement {
 
         this._connectionSetups.push(() => {
             const sync = (nextValue: TKey) => {
+                resource.rekey(this._resolveRouteResourceKey(nextValue, options?.key));
+                this._hydrateRouteResource(router, resource, options?.hydrateFromRouteData);
                 if (skip(nextValue)) {
+                    hasValue = false;
                     return;
                 }
 
@@ -1028,6 +1042,48 @@ export class MiuraElement extends HTMLElement {
         });
 
         return resource;
+    }
+
+    private _resolveRouteResourceKey<TKey>(
+        selectedKey: TKey,
+        explicitKey?: ResourceKey | ((key: TKey) => ResourceKey),
+    ): ResourceKey | undefined {
+        if (typeof explicitKey === 'function') {
+            return explicitKey(selectedKey);
+        }
+
+        if (explicitKey !== undefined) {
+            return explicitKey;
+        }
+
+        if (selectedKey === undefined || selectedKey === null || typeof selectedKey === 'object') {
+            return undefined;
+        }
+
+        return resourceKey('route', selectedKey as string | number | boolean);
+    }
+
+    private _hydrateRouteResource<T>(
+        router: RouterBridgeLike,
+        resource: Resource<T>,
+        hydrateFromRouteData?: string | ((context: unknown) => T | undefined),
+    ): void {
+        if (!hydrateFromRouteData) {
+            return;
+        }
+
+        const context = router.currentSignal.peek();
+        if (!context) {
+            return;
+        }
+
+        const hydratedValue = typeof hydrateFromRouteData === 'function'
+            ? hydrateFromRouteData(context)
+            : router.dataSignal<T>(hydrateFromRouteData).peek();
+
+        if (hydratedValue !== undefined) {
+            resource.hydrate(hydratedValue);
+        }
     }
 
     /**
