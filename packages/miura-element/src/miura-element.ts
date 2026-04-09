@@ -1,6 +1,7 @@
 import { PropertyValues } from './property-values';
 import { PropertyDeclarations, createProperties, createStateProperties, SIGNAL_KEY_PREFIX } from './properties';
 import { signal, computed, Signal, ReadonlySignal } from './signals.js';
+import { shared, type SharedKey } from './shared.js';
 import { createForm, Form, FormOptions } from './form.js';
 import { createResource, Resource, ResourceOptions } from './resource.js';
 
@@ -936,6 +937,14 @@ export class MiuraElement extends HTMLElement {
      */
     protected $computed<T>(fn: () => T): ReadonlySignal<T> {
         return computed(fn);
+    }
+
+    /**
+     * Create or retrieve shared reactive state by key.
+     * Multiple components using the same key receive the same signal instance.
+     */
+    protected $shared<T>(key: SharedKey, initial: T): Signal<T> {
+        return shared(key, initial);
     }
 
     /**

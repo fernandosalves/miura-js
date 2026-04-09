@@ -12,6 +12,7 @@ This package bundles and exports all the core modules, making it easy to get sta
 - structural directives and fine-grained bindings
 - component-scoped async resources with `$resource()`
 - component-scoped form state with `$form()`
+- lightweight shared state with `$shared()`
 - signals and shared reactive primitives
 
 ## Example
@@ -61,5 +62,7 @@ Forms also keep submit outcome state through `submitError`, `submitResult`, and 
 Server-side field validation can also be mapped back into the form with `setErrors()`.
 For submit flows, `failSubmit()` can capture the submit error and field errors together.
 `view()` can render submit-state UI declaratively from the form itself.
+
+For lightweight cross-component state, `$shared(key, initial)` gives multiple components the same signal instance without requiring a full store setup. Use namespaced keys like `blog-editor:theme`, `sharedKey(...)`, or `createSharedNamespace(...)` to avoid collisions.
 
 See [@miurajs/miura-element](/Users/fernandoalves/Desktop/_dev/miura-js/packages/miura-element/README.md) for the component API and [docs](/Users/fernandoalves/Desktop/_dev/miura-js/docs/README.md) for the broader framework documentation.

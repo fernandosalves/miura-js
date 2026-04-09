@@ -15,6 +15,7 @@ The core component system for the miura framework. Provides the `MiuraElement` b
 - **Two-Way Binding** — `&` prefix with `bind()` helper for form elements
 - **AOT / JIT Compiler** — `static compiler = 'AOT'` to opt a component into the zero-DOM-query render path
 - **Standalone Signals** — `$signal()` and `$computed()` for use outside components
+- **Shared Signals** — `$shared(key, initial)` for lightweight app-wide reactive state
 - **Slot Utilities** — `querySlotted()` and `onSlotChange()` for managing distributed content
 - **Decorators** — `@component`, `@property`, `@computed` for concise definitions
 - **Islands Architecture** — `<miura-island>` wrapper for partial hydration with `load`, `visible`, and `idle` strategies
@@ -317,6 +318,53 @@ ${this.form.view({
   success: () => html`<p>Saved</p>`,
   error: (error) => html`<p>${String(error)}</p>`
 })}
+```
+
+### Shared State
+
+Use `$shared()` when multiple components should react to the same lightweight piece of state without setting up a larger store.
+
+```typescript
+class ThemeToggle extends MiuraElement {
+  theme = this.$shared('theme', 'light');
+
+  template() {
+    return html`
+      <button @click=${() => this.theme(this.theme() === 'light' ? 'dark' : 'light')}>
+        Theme: ${this.theme}
+      </button>
+    `;
+  }
+}
+
+class ThemeBadge extends MiuraElement {
+  theme = this.$shared('theme', 'light');
+
+  template() {
+    return html`<p>Current theme: ${this.theme}</p>`;
+  }
+}
+```
+
+Components using the same key receive the same shared signal. For larger workflows, actions, middleware, or persistence, use `miura-data-flow`.
+
+Best practice is to namespace shared keys to avoid collisions. Prefer keys like `blog-editor:theme` over very generic keys like `theme`.
+
+Miura also supports helpers for this:
+
+```typescript
+import { createSharedNamespace, sharedKey } from '@miurajs/miura-element';
+
+const blogShared = createSharedNamespace('blog-editor');
+
+const draft = blogShared.use('draft', '');
+const autosave = sharedKey('blog-editor', 'autosave');
+```
+
+You can also pass array keys directly:
+
+```typescript
+this.theme = this.$shared(['blog-editor', 'theme'], 'light');
 ```
 
 ### Styles
