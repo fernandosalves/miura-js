@@ -17,6 +17,7 @@ The core component system for the miura framework. Provides the `MiuraElement` b
 - **Standalone Signals** — `$signal()` and `$computed()` for use outside components
 - **Shared Signals** — `$shared(key, initial)` for lightweight app-wide reactive state
 - **Router Bridge** — `$route()`, `$routeSelect()`, and `$routeData()` for reactive route context in components
+- **Route Resources** — `$routeResource()` for param-driven async state tied to navigation
 - **Slot Utilities** — `querySlotted()` and `onSlotChange()` for managing distributed content
 - **Decorators** — `@component`, `@property`, `@computed` for concise definitions
 - **Islands Architecture** — `<miura-island>` wrapper for partial hydration with `load`, `visible`, and `idle` strategies
@@ -388,6 +389,28 @@ class ProfilePage extends MiuraElement {
 ```
 
 These helpers wrap the router's reactive route signals so components can consume route state without manually threading `context.data` through props.
+
+When route params should drive async fetching, use `$routeResource()`:
+
+```typescript
+class ProfilePage extends MiuraElement {
+  profile = this.$routeResource(
+    router,
+    (context) => context?.params.id,
+    (id) => fetch(`/api/users/${id}`).then((r) => r.json()),
+    { skip: (id) => !id }
+  );
+
+  template() {
+    return this.profile.view({
+      idle: () => html`<p>Select a user</p>`,
+      pending: () => html`<p>Loading...</p>`,
+      ok: (user) => html`<h2>${user.name}</h2>`,
+      error: (error) => html`<p>${String(error)}</p>`
+    });
+  }
+}
+```
 
 ### Styles
 

@@ -176,6 +176,8 @@ export class MiuraElement extends HTMLElement {
      * @private
      */
     private _propSignalUnsubs: (() => void)[] = [];
+    /** Reconnect-safe subscription factories for bridge helpers and other external signals */
+    private _connectionSetups: Array<() => (() => void) | void> = [];
 
     /**
      * Memory optimization: WeakMap for property storage
@@ -422,6 +424,7 @@ export class MiuraElement extends HTMLElement {
         });
         this.initializeObservers();
         this._subscribePropertySignals();
+        this._setupConnectionSubscriptions();
         if (this._pendingUpdate) {
             this.requestUpdate();  // Single render on connect
         }
@@ -970,6 +973,47 @@ export class MiuraElement extends HTMLElement {
     }
 
     /**
+     * Create a resource that refreshes whenever a selected route-derived value changes.
+     */
+    protected $routeResource<TKey, T>(
+        router: RouterBridgeLike,
+        selector: (context: unknown) => TKey,
+        loader: (key: TKey) => Promise<T> | T,
+        options?: ResourceOptions & {
+            skip?: (key: TKey) => boolean;
+            equals?: (previous: TKey, next: TKey) => boolean;
+        },
+    ): Resource<T> {
+        const selected = router.select(selector);
+        const resource = createResource(() => loader(selected.peek()), () => this.requestUpdate(), { auto: false });
+        const equals = options?.equals ?? Object.is;
+        const skip = options?.skip ?? (() => false);
+        let hasValue = false;
+        let previousValue!: TKey;
+
+        this._connectionSetups.push(() => {
+            const sync = (nextValue: TKey) => {
+                if (skip(nextValue)) {
+                    return;
+                }
+
+                if (hasValue && equals(previousValue, nextValue)) {
+                    return;
+                }
+
+                previousValue = nextValue;
+                hasValue = true;
+                void resource.refresh().catch(() => undefined);
+            };
+
+            sync(selected.peek());
+            return selected.subscribe(sync);
+        });
+
+        return resource;
+    }
+
+    /**
      * Create a resource tied to this component.
      * A resource tracks async loading state and requests an update whenever its
      * state changes.
@@ -1111,6 +1155,15 @@ export class MiuraElement extends HTMLElement {
                     this._invalidateComputedCache(name);
                     this.requestUpdate(name);
                 });
+                this._propSignalUnsubs.push(unsub);
+            }
+        }
+    }
+
+    private _setupConnectionSubscriptions(): void {
+        for (const setup of this._connectionSetups) {
+            const unsub = setup();
+            if (typeof unsub === 'function') {
                 this._propSignalUnsubs.push(unsub);
             }
         }

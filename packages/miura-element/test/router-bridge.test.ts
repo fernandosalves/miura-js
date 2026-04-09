@@ -90,4 +90,58 @@ describe('MiuraElement router bridge helpers', () => {
 
         router.destroy();
     });
+
+    it('can create route-driven resources that refresh when params change', async () => {
+        const tagName = 'miura-route-resource-element';
+
+        const router = createRouter({
+            mode: 'memory',
+            routes: [
+                { path: '/', component: 'app-home' },
+                { path: '/profile/:id', component: 'app-profile' },
+            ],
+            render: () => undefined,
+        });
+
+        class RouteResourceElement extends MiuraElement {
+            user = this.$routeResource(
+                router,
+                (context) => (context as RouteRenderContext | undefined)?.params.id,
+                async (id) => ({ id, label: `User ${id}` }),
+                { skip: (id) => !id },
+            );
+
+            protected override template() {
+                return this.user.view({
+                    idle: () => html`<p class="state">idle</p>`,
+                    pending: () => html`<p class="state">pending</p>`,
+                    ok: (user) => html`<p class="state">${user.label}</p>`,
+                });
+            }
+        }
+
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, RouteResourceElement);
+        }
+
+        await router.start();
+
+        const element = document.createElement(tagName) as RouteResourceElement;
+        document.body.appendChild(element);
+        await element.updateComplete;
+
+        expect(element.shadowRoot?.querySelector('.state')?.textContent).toBe('idle');
+
+        await router.navigate('/profile/21');
+        await waitFor(() => element.shadowRoot?.querySelector('.state')?.textContent === 'User 21');
+
+        expect(element.user.value).toEqual({ id: '21', label: 'User 21' });
+
+        await router.navigate('/profile/22');
+        await waitFor(() => element.shadowRoot?.querySelector('.state')?.textContent === 'User 22');
+
+        expect(element.user.value).toEqual({ id: '22', label: 'User 22' });
+
+        router.destroy();
+    });
 });
