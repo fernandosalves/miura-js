@@ -519,7 +519,6 @@ class MiuraDevOverlayElement extends HTMLElement {
     private dragOffset = { x: 0, y: 0 };
     private panelPosition = { x: 24, y: 24 };
     private controlsAttached = false;
-    private selectedLayerId: string | null = null;
     private readonly controlClickHandler = (event: Event) => {
         const target = event.target as HTMLElement | null;
         const action = target?.closest('[data-action]')?.getAttribute('data-action');
@@ -543,19 +542,6 @@ class MiuraDevOverlayElement extends HTMLElement {
         if (action === 'clear') {
             clearDiagnostics();
         }
-
-        if (action === 'close-inspector') {
-            this.selectedLayerId = null;
-            this.render();
-            return;
-        }
-    };
-    private readonly layerClickHandler = (event: Event) => {
-        const target = event.target as HTMLElement | null;
-        const layerId = target?.closest('[data-layer-id]')?.getAttribute('data-layer-id');
-        if (!layerId) return;
-        this.selectedLayerId = layerId;
-        this.render();
     };
 
     connectedCallback(): void {
@@ -592,7 +578,6 @@ class MiuraDevOverlayElement extends HTMLElement {
         this.layersUnsub?.();
         this.timelineUnsub?.();
         this.shadow.removeEventListener('click', this.controlClickHandler);
-        this.shadow.removeEventListener('click', this.layerClickHandler);
         this.controlsAttached = false;
         cancelAnimationFrame(this.rafId);
         this.rafId = 0;
@@ -751,15 +736,15 @@ class MiuraDevOverlayElement extends HTMLElement {
                 .layer-box {
                     position: fixed;
                     border: 1px solid rgba(79, 172, 254, 0.9);
-                    background: rgba(79, 172, 254, 0.08);
+                    background: transparent;
                     border-radius: 8px;
                     box-sizing: border-box;
-                    pointer-events: auto;
-                    cursor: pointer;
+                    pointer-events: none;
+                    animation: miura-layer-pulse 1.6s ease-in-out infinite;
                 }
                 .layer-box.error {
                     border-color: rgba(255, 95, 95, 0.95);
-                    background: rgba(255, 95, 95, 0.12);
+                    background: transparent;
                 }
                 .layer-label {
                     position: absolute;
@@ -772,6 +757,21 @@ class MiuraDevOverlayElement extends HTMLElement {
                     color: #fff;
                     font-size: 11px;
                     white-space: nowrap;
+                    pointer-events: none;
+                }
+                @keyframes miura-layer-pulse {
+                    0% {
+                        opacity: 0.28;
+                        transform: scale(0.998);
+                    }
+                    50% {
+                        opacity: 0.82;
+                        transform: scale(1);
+                    }
+                    100% {
+                        opacity: 0.28;
+                        transform: scale(0.998);
+                    }
                 }
             </style>
             <div class="panel hidden" part="panel">
@@ -782,7 +782,6 @@ class MiuraDevOverlayElement extends HTMLElement {
                     <div class="controls">
                         <button type="button" data-action="prev">Prev</button>
                         <button type="button" data-action="next">Next</button>
-                        <button type="button" data-action="close-inspector">Close Inspector</button>
                         <button type="button" data-action="clear">Clear</button>
                     </div>
                 </div>
@@ -830,11 +829,8 @@ class MiuraDevOverlayElement extends HTMLElement {
         if (!panel || !body) return;
 
         const items = getDiagnostics();
-        const selectedLayer = this.selectedLayerId
-            ? this.layerSnapshots.find((layer) => layer.id === this.selectedLayerId) ?? null
-            : null;
 
-        if (items.length === 0 && !selectedLayer) {
+        if (items.length === 0) {
             panel.classList.add('hidden');
             body.innerHTML = '';
             this.renderFocusHighlight(null);
@@ -845,21 +841,6 @@ class MiuraDevOverlayElement extends HTMLElement {
         panel.style.left = `${this.panelPosition.x}px`;
         panel.style.top = `${this.panelPosition.y}px`;
         const item = items[this.activeIndex] ?? items[0] ?? null;
-
-        if (!item && selectedLayer) {
-            body.innerHTML = `${this.renderLayerInspector(selectedLayer)}${this.renderTimelineSection(selectedLayer.element)}`;
-            this.renderFocusHighlight({
-                id: selectedLayer.id,
-                timestamp: Date.now(),
-                severity: 'info',
-                subsystem: 'debugger',
-                stage: 'runtime',
-                message: selectedLayer.label,
-                element: selectedLayer.element,
-                valuesSnapshot: selectedLayer.valuesSnapshot,
-            });
-            return;
-        }
 
         if (!item) {
             panel.classList.add('hidden');
@@ -1027,7 +1008,6 @@ class MiuraDevOverlayElement extends HTMLElement {
         }
         this.controlsAttached = true;
         this.shadow.addEventListener('click', this.controlClickHandler);
-        this.shadow.addEventListener('click', this.layerClickHandler);
     }
 
     private renderFocusHighlight(item: MiuraDiagnostic | null): void {
@@ -1080,8 +1060,7 @@ class MiuraDevOverlayElement extends HTMLElement {
 
                 return `
                     <div class="layer-box ${snapshot.status === 'error' ? 'error' : ''}"
-                        data-layer-id="${escapeHtml(snapshot.id)}"
-                        style="left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;border-color:rgba(${color},0.95);background:rgba(${color},0.12);">
+                        style="left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;border-color:rgba(${color},0.95);box-shadow:0 0 0 1px rgba(${color},0.18), 0 0 26px rgba(${color},0.18);">
                         ${showName ? `<div class="layer-label">${escapeHtml(label)}</div>` : ''}
                     </div>
                 `;

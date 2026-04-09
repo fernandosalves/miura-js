@@ -130,7 +130,7 @@ describe('miura debugger runtime', () => {
         expect(bodyText).toContain('Render completed for blog-card');
     });
 
-    it('opens an inspector view when a component layer is clicked', () => {
+    it('renders click-through layer highlights so the story remains interactive', () => {
         enableMiuraDebugger({ overlay: true, layers: true, performance: true });
 
         const element = document.createElement('div');
@@ -165,16 +165,12 @@ describe('miura debugger runtime', () => {
         });
 
         const overlay = document.querySelector('miura-dev-overlay') as HTMLElement | null;
-        const layerBox = overlay?.shadowRoot?.querySelector('[data-layer-id="blog-editor-1"]') as HTMLElement | null;
+        const layerBox = overlay?.shadowRoot?.querySelector('.layer-box') as HTMLElement | null;
         expect(layerBox).not.toBeNull();
 
         layerBox?.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
 
-        const bodyText = overlay?.shadowRoot?.querySelector('.body')?.textContent ?? '';
-        expect(bodyText).toContain('BlogEditor');
-        expect(bodyText).toContain('Component Values');
-        expect(bodyText).toContain('Hello');
-        expect(bodyText).toContain('Resources');
-        expect(bodyText).toContain('Forms');
+        const panel = overlay?.shadowRoot?.querySelector('.panel') as HTMLElement | null;
+        expect(panel?.classList.contains('hidden')).toBe(true);
     });
 });

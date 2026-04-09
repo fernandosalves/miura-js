@@ -219,7 +219,12 @@ class DebuggerTimelineDemo extends MiuraElement {
 
 const meta: Meta = {
   title: 'Miura/Debugger/02. Timeline Playground',
-  tags: ['autodocs'],
+  tags: [],
+  parameters: {
+    docs: {
+      disable: true,
+    },
+  },
   render: () => {
     clearDiagnostics();
     clearDebugLayers();

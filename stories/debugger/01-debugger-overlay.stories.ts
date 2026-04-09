@@ -150,7 +150,12 @@ class DebuggerOverlayDemo extends MiuraElement {
 
 const meta: Meta = {
   title: 'Miura/Debugger/01. Overlay And Layers',
-  tags: ['autodocs'],
+  tags: [],
+  parameters: {
+    docs: {
+      disable: true,
+    },
+  },
   render: () => {
     clearDiagnostics();
     clearDebugLayers();
