@@ -1,4 +1,4 @@
-import { MiuraElement, html } from '../src/miura-element';
+import { MiuraElement, html } from '../index.js';
 
 // Example 1: Simple component with automatic registration
 class MyButton extends MiuraElement {

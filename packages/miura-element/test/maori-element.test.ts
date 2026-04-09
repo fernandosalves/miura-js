@@ -1,9 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { MiuraElement } from '../miura-element';
-import { html } from '../../template/html';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { MiuraElement, html } from '../index.js';
 
-describe.skip('MiuraElement', () => {
-    // Setup cleanup
+describe('MiuraElement legacy coverage (modernized)', () => {
     beforeEach(() => {
         document.body.innerHTML = '';
     });
@@ -12,41 +10,59 @@ describe.skip('MiuraElement', () => {
         document.body.innerHTML = '';
     });
 
-    // Basic Component Creation
     describe('Component Creation', () => {
-        class TestElement extends MiuraElement {
-            static override template = html`<div>Hello World</div>`;
-        }
-        customElements.define('test-element', TestElement);
+        const tagName = 'miura-test-basic';
 
-        it('should create and render basic template', async () => {
-            const element = document.createElement('test-element') as TestElement;
+        class TestElement extends MiuraElement {
+            protected override template() {
+                return html`<div>Hello World</div>`;
+            }
+        }
+
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, TestElement);
+        }
+
+        it('should create and render a basic template', async () => {
+            const element = document.createElement(tagName) as TestElement;
             document.body.appendChild(element);
 
             await element.updateComplete;
 
-            expect(element.shadowRoot?.innerHTML).toContain('Hello World');
+            expect(element.shadowRoot?.textContent).toContain('Hello World');
         });
     });
 
-    // Property Binding Tests
     describe('Property Bindings', () => {
+        const tagName = 'miura-binding-element';
+
         class BindingElement extends MiuraElement {
-            static properties = {
-                name: { type: String }
+            static override properties = {
+                name: { type: String, default: 'World' }
             };
 
-            name = 'World';
+            declare name: string;
 
-            static override template = html`
-        <div id="content">Hello ${p => p.name}</div>
-        <input id="input" value=${p => p.name}>
-      `;
+            protected override template() {
+                return html`
+                    <div id="content">Hello ${this.name}</div>
+                    <input
+                        id="input"
+                        .value=${this.name}
+                        @input=${(event: Event) => {
+                            this.name = (event.target as HTMLInputElement).value;
+                        }}
+                    >
+                `;
+            }
         }
-        customElements.define('binding-element', BindingElement);
+
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, BindingElement);
+        }
 
         it('should update view when property changes', async () => {
-            const element = document.createElement('binding-element') as BindingElement;
+            const element = document.createElement(tagName) as BindingElement;
             document.body.appendChild(element);
 
             await element.updateComplete;
@@ -60,47 +76,52 @@ describe.skip('MiuraElement', () => {
             expect(content?.textContent).toBe('Hello Test');
         });
 
-        it('should update property when input changes (two-way binding)', async () => {
-            const element = document.createElement('binding-element') as BindingElement;
+        it('should update property when input changes', async () => {
+            const element = document.createElement(tagName) as BindingElement;
             document.body.appendChild(element);
 
             await element.updateComplete;
 
             const input = element.shadowRoot?.querySelector('#input') as HTMLInputElement;
             input.value = 'Changed';
-            input.dispatchEvent(new Event('input'));
+            input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
 
             await element.updateComplete;
 
             expect(element.name).toBe('Changed');
-            expect(element.shadowRoot?.querySelector('#content')?.textContent)
-                .toBe('Hello Changed');
+            expect(element.shadowRoot?.querySelector('#content')?.textContent).toBe('Hello Changed');
         });
     });
 
-    // Event Handling Tests
     describe('Event Handling', () => {
+        const tagName = 'miura-event-element';
+
         class EventElement extends MiuraElement {
-            static properties = {
-                count: { type: Number }
+            static override properties = {
+                count: { type: Number, default: 0 }
             };
 
-            count = 0;
+            declare count: number;
 
             increment() {
                 this.count++;
             }
 
-            static override template = html`
-        <button id="btn" @click=${p => p.increment()}>
-          Count: ${p => p.count}
-        </button>
-      `;
+            protected override template() {
+                return html`
+                    <button id="btn" @click=${() => this.increment()}>
+                        Count: ${this.count}
+                    </button>
+                `;
+            }
         }
-        customElements.define('event-element', EventElement);
+
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, EventElement);
+        }
 
         it('should handle click events and update view', async () => {
-            const element = document.createElement('event-element') as EventElement;
+            const element = document.createElement(tagName) as EventElement;
             document.body.appendChild(element);
 
             await element.updateComplete;
@@ -116,73 +137,81 @@ describe.skip('MiuraElement', () => {
         });
     });
 
-    // Nested Templates Tests
     describe('Nested Templates', () => {
+        const childTag = 'miura-child-element';
+        const parentTag = 'miura-parent-element';
+
         class ChildElement extends MiuraElement {
-            static properties = {
-                value: { type: String }
+            static override properties = {
+                value: { type: String, default: '' }
             };
 
-            value = '';
+            declare value: string;
 
-            static override template = html`
-        <div id="child">${p => p.value}</div>
-      `;
+            protected override template() {
+                return html`<div id="child">${this.value}</div>`;
+            }
         }
-        customElements.define('child-element', ChildElement);
 
         class ParentElement extends MiuraElement {
-            static properties = {
-                items: { type: Array }
+            static override properties = {
+                items: { type: Array, default: ['one', 'two', 'three'] }
             };
 
-            items = ['one', 'two', 'three'];
+            declare items: string[];
 
-            static override template = html`
-        <div id="parent">
-          ${p => p.items.map(item => html`
-            <child-element value=${item}></child-element>
-          `)}
-        </div>
-      `;
+            protected override template() {
+                return html`
+                    <div id="parent">
+                        ${this.items.map(item => html`
+                            <miura-child-element value=${item}></miura-child-element>
+                        `)}
+                    </div>
+                `;
+            }
         }
-        customElements.define('parent-element', ParentElement);
+
+        if (!customElements.get(childTag)) {
+            customElements.define(childTag, ChildElement);
+        }
+
+        if (!customElements.get(parentTag)) {
+            customElements.define(parentTag, ParentElement);
+        }
 
         it('should render and update nested templates', async () => {
-            const element = document.createElement('parent-element') as ParentElement;
+            const element = document.createElement(parentTag) as ParentElement;
             document.body.appendChild(element);
 
             await element.updateComplete;
 
-            const children = element.shadowRoot?.querySelectorAll('child-element');
+            const children = element.shadowRoot?.querySelectorAll(childTag);
             expect(children?.length).toBe(3);
+            await Promise.all(Array.from(children || []).map((child) => (child as ChildElement).updateComplete));
 
             const childValues = Array.from(children || []).map(
-                child => child.shadowRoot?.querySelector('#child')?.textContent
+                child => (child as ChildElement).shadowRoot?.querySelector('#child')?.textContent
             );
             expect(childValues).toEqual(['one', 'two', 'three']);
 
-            // Test updating array
             element.items = ['four', 'five'];
             await element.updateComplete;
 
-            const updatedChildren = element.shadowRoot?.querySelectorAll('child-element');
+            const updatedChildren = element.shadowRoot?.querySelectorAll(childTag);
             expect(updatedChildren?.length).toBe(2);
+            await Promise.all(Array.from(updatedChildren || []).map((child) => (child as ChildElement).updateComplete));
 
             const updatedValues = Array.from(updatedChildren || []).map(
-                child => child.shadowRoot?.querySelector('#child')?.textContent
+                child => (child as ChildElement).shadowRoot?.querySelector('#child')?.textContent
             );
             expect(updatedValues).toEqual(['four', 'five']);
         });
     });
 
-    // Lifecycle Tests
     describe('Lifecycle', () => {
-        class LifecycleElement extends MiuraElement {
-            static properties = {
-                events: { type: Array }
-            };
+        const tagName = 'miura-lifecycle-element';
 
+        class LifecycleElement extends MiuraElement {
             events: string[] = [];
 
             override connectedCallback() {
@@ -195,29 +224,30 @@ describe.skip('MiuraElement', () => {
                 this.events.push('disconnected');
             }
 
-            override updated() {
-                super.updated();
+            protected override updated() {
                 this.events.push('updated');
             }
 
-            override firstUpdated() {
-                super.firstUpdated();
+            protected override firstUpdated() {
                 this.events.push('firstUpdated');
             }
 
-            override onMount() {
-                super.onMount();
+            protected override onMount() {
                 this.events.push('onMount');
             }
 
-            static override template = html`<div>Lifecycle Test</div>`;
+            protected override template() {
+                return html`<div>Lifecycle Test</div>`;
+            }
         }
-        customElements.define('lifecycle-element', LifecycleElement);
 
-        it('should call lifecycle methods in correct order', async () => {
-            const element = document.createElement('lifecycle-element') as LifecycleElement;
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, LifecycleElement);
+        }
 
-            // Test connection
+        it('should call lifecycle methods in the current order', async () => {
+            const element = document.createElement(tagName) as LifecycleElement;
+
             document.body.appendChild(element);
             await element.updateComplete;
 
@@ -226,17 +256,12 @@ describe.skip('MiuraElement', () => {
             expect(element.events).toContain('firstUpdated');
             expect(element.events).toContain('onMount');
 
-            // Test disconnection
             document.body.removeChild(element);
             expect(element.events).toContain('disconnected');
 
-            // Verify order
-            expect(element.events.indexOf('connected'))
-                .toBeLessThan(element.events.indexOf('updated'));
-            expect(element.events.indexOf('updated'))
-                .toBeLessThan(element.events.indexOf('firstUpdated'));
-            expect(element.events.indexOf('firstUpdated'))
-                .toBeLessThan(element.events.indexOf('onMount'));
+            expect(element.events.indexOf('connected')).toBeLessThan(element.events.indexOf('updated'));
+            expect(element.events.indexOf('updated')).toBeLessThan(element.events.indexOf('firstUpdated'));
+            expect(element.events.indexOf('firstUpdated')).toBeLessThan(element.events.indexOf('onMount'));
         });
     });
 });

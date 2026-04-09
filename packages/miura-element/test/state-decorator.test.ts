@@ -4,11 +4,14 @@ import { state } from '../src/decorators.js';
 
 describe('@state decorator', () => {
   it('preserves raw boolean values when no explicit type/default is provided', () => {
+    const tagName = `state-bool-${crypto.randomUUID()}`;
+
     class TestElement extends MiuraElement {}
 
     state()(TestElement.prototype as MiuraElement, 'submitting');
+    customElements.define(tagName, TestElement);
 
-    const element = new TestElement() as TestElement & { submitting: boolean };
+    const element = document.createElement(tagName) as TestElement & { submitting: boolean };
     element.submitting = false;
     expect(element.submitting).toBe(false);
 
@@ -17,11 +20,14 @@ describe('@state decorator', () => {
   });
 
   it('preserves raw string values when no explicit type/default is provided', () => {
+    const tagName = `state-string-${crypto.randomUUID()}`;
+
     class TestElement extends MiuraElement {}
 
     state()(TestElement.prototype as MiuraElement, 'error');
+    customElements.define(tagName, TestElement);
 
-    const element = new TestElement() as TestElement & { error: string };
+    const element = document.createElement(tagName) as TestElement & { error: string };
     element.error = '';
     expect(element.error).toBe('');
 

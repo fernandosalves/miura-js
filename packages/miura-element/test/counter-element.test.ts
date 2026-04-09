@@ -1,13 +1,19 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import './counter-element';
 import { CounterElement } from './counter-element';
 
 describe('CounterElement', () => {
     let element: CounterElement;
 
-    beforeEach(() => {
+    beforeEach(async () => {
+        document.body.innerHTML = '';
         element = document.createElement('miura-counter') as CounterElement;
         document.body.appendChild(element);
+        await element.updateComplete;
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = '';
     });
 
     it('should initialize with count = 0', () => {

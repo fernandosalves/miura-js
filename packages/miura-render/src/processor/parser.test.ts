@@ -1,12 +1,23 @@
 import { TemplateParser } from './parser';
 import { BindingType } from './template-result';
 import { describe, beforeEach, expect } from 'vitest';
+import '../directives/lazy-setup';
 
 // Helper function to create a TemplateStringsArray-like object
 function createTemplateStrings(strings: string[]): TemplateStringsArray {
   const result = strings as unknown as TemplateStringsArray;
   result.raw = strings;
   return result;
+}
+
+function expectBinding(
+  actual: Record<string, unknown>,
+  expected: Record<string, unknown>,
+) {
+  expect(actual).toMatchObject(expected);
+  if ('debugLabel' in actual && actual.debugLabel !== undefined) {
+    expect(actual.debugLabel).toEqual(expect.any(String));
+  }
 }
 
 describe('TemplateParser', () => {
@@ -21,7 +32,7 @@ describe('TemplateParser', () => {
       const result = parser.parse(createTemplateStrings(['<button @click=', '>Click</button>']));
       
       expect(result.bindings).toHaveLength(1);
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Event,
         name: 'click',
         index: 0,
@@ -35,7 +46,7 @@ describe('TemplateParser', () => {
       const result = parser.parse(createTemplateStrings(['<button @click="', '">Click</button>']));
       
       expect(result.bindings).toHaveLength(1);
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Event,
         name: 'click',
         index: 0,
@@ -49,11 +60,14 @@ describe('TemplateParser', () => {
       const result = parser.parse(createTemplateStrings(['<input .value=', '>']));
       
       expect(result.bindings).toHaveLength(1);
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Property,
         name: '.value',
         index: 0,
-        modifiers: undefined
+        modifiers: undefined,
+        strings: ['', ''],
+        partIndex: 0,
+        groupStart: 0,
       });
       
       expect(result.html).toBe('<input .value="binding:0">');
@@ -63,11 +77,14 @@ describe('TemplateParser', () => {
       const result = parser.parse(createTemplateStrings(['<input .value="', '">']));
       
       expect(result.bindings).toHaveLength(1);
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Property,
         name: '.value',
         index: 0,
-        modifiers: undefined
+        modifiers: undefined,
+        strings: ['', ''],
+        partIndex: 0,
+        groupStart: 0,
       });
       
       expect(result.html).toBe('<input .value="binding:0">');
@@ -77,11 +94,14 @@ describe('TemplateParser', () => {
       const result = parser.parse(createTemplateStrings(['<button ?disabled=', '>Submit</button>']));
       
       expect(result.bindings).toHaveLength(1);
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Boolean,
         name: '?disabled',
         index: 0,
-        modifiers: undefined
+        modifiers: undefined,
+        strings: ['', ''],
+        partIndex: 0,
+        groupStart: 0,
       });
       
       expect(result.html).toBe('<button ?disabled="binding:0">Submit</button>');
@@ -91,11 +111,14 @@ describe('TemplateParser', () => {
       const result = parser.parse(createTemplateStrings(['<button ?disabled="', '">Submit</button>']));
       
       expect(result.bindings).toHaveLength(1);
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Boolean,
         name: '?disabled',
         index: 0,
-        modifiers: undefined
+        modifiers: undefined,
+        strings: ['', ''],
+        partIndex: 0,
+        groupStart: 0,
       });
       
       expect(result.html).toBe('<button ?disabled="binding:0">Submit</button>');
@@ -105,7 +128,7 @@ describe('TemplateParser', () => {
       const result = parser.parse(createTemplateStrings(['<button @click|prevent=', '>Submit</button>']));
       
       expect(result.bindings).toHaveLength(1);
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Event,
         name: 'click',
         index: 0,
@@ -119,7 +142,7 @@ describe('TemplateParser', () => {
       const result = parser.parse(createTemplateStrings(['<button @click|prevent="', '">Submit</button>']));
       
       expect(result.bindings).toHaveLength(1);
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Event,
         name: 'click',
         index: 0,
@@ -133,11 +156,14 @@ describe('TemplateParser', () => {
       const result = parser.parse(createTemplateStrings(['<div class=', '>Content</div>']));
       
       expect(result.bindings).toHaveLength(1);
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Class,
         name: 'class',
         index: 0,
-        modifiers: undefined
+        modifiers: undefined,
+        strings: ['', ''],
+        partIndex: 0,
+        groupStart: 0,
       });
       
       expect(result.html).toBe('<div class="binding:0">Content</div>');
@@ -147,11 +173,14 @@ describe('TemplateParser', () => {
       const result = parser.parse(createTemplateStrings(['<div class="', '">Content</div>']));
       
       expect(result.bindings).toHaveLength(1);
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Class,
         name: 'class',
         index: 0,
-        modifiers: undefined
+        modifiers: undefined,
+        strings: ['', ''],
+        partIndex: 0,
+        groupStart: 0,
       });
       
       expect(result.html).toBe('<div class="binding:0">Content</div>');
@@ -160,7 +189,7 @@ describe('TemplateParser', () => {
     it('should parse unquoted utility bindings', () => {
       const result = parser.parse(createTemplateStrings(['<div %=', '></div>']));
 
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Utility,
         name: '%',
         index: 0,
@@ -176,7 +205,7 @@ describe('TemplateParser', () => {
     it('should parse named utility bindings', () => {
       const result = parser.parse(createTemplateStrings(['<div %grow="', '"></div>']));
 
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Utility,
         name: '%grow',
         index: 0,
@@ -194,7 +223,7 @@ describe('TemplateParser', () => {
       const result = parser.parse(createTemplateStrings(['<div>Hello ', '</div>']));
       
       expect(result.bindings).toHaveLength(1);
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Node,
         index: 0
       });
@@ -210,16 +239,15 @@ describe('TemplateParser', () => {
         '>Click</button></div>'
       ]));
       
-      expect(result.bindings).toHaveLength(4);
-      expect(result.bindings[0]).toEqual({ type: BindingType.Node, index: 0 });
-      expect(result.bindings[1]).toEqual({ type: BindingType.Node, index: 1 });
-      expect(result.bindings[2]).toEqual({ 
+      expect(result.bindings).toHaveLength(3);
+      expectBinding(result.bindings[0], { type: BindingType.Node, index: 0 });
+      expectBinding(result.bindings[1], { type: BindingType.Node, index: 1 });
+      expectBinding(result.bindings[2], { 
         type: BindingType.Event, 
         name: 'click', 
         index: 2,
         modifiers: undefined
       });
-      expect(result.bindings[3]).toEqual({ type: BindingType.Node, index: 3 });
     });
 
     it('ignores expressions inside html comments', () => {
@@ -243,7 +271,7 @@ describe('TemplateParser', () => {
       expect(result.html).toContain('<mui-icon-button');
       expect(result.html).toContain('label=""');
       expect(result.html).toContain('?disabled=');
-      expect(result.html.trim()).toEndWith('-->');
+      expect(result.html.trim().endsWith('-->')).toBe(true);
     });
   });
 
@@ -260,24 +288,46 @@ describe('TemplateParser', () => {
         '</div>'
       ]));
       
-      expect(result.bindings).toHaveLength(6);
-      expect(result.bindings[1]).toEqual({ 
+      expect(result.bindings).toHaveLength(7);
+      expectBinding(result.bindings[0], {
+        type: BindingType.Node,
+        index: 0,
+      });
+      expectBinding(result.bindings[1], { 
         type: BindingType.Event, 
         name: 'click', 
         index: 1,
         modifiers: undefined
       });
-      expect(result.bindings[3]).toEqual({ 
+      expectBinding(result.bindings[2], {
+        type: BindingType.Node,
+        index: 2,
+      });
+      expectBinding(result.bindings[3], { 
         type: BindingType.Property, 
         name: '.value', 
         index: 3,
-        modifiers: undefined
+        modifiers: undefined,
+        strings: ['', ''],
+        partIndex: 0,
+        groupStart: 3,
       });
-      expect(result.bindings[5]).toEqual({ 
+      expectBinding(result.bindings[4], {
+        type: BindingType.Node,
+        index: 4,
+      });
+      expectBinding(result.bindings[5], { 
         type: BindingType.Boolean, 
         name: '?hidden', 
         index: 5,
-        modifiers: undefined
+        modifiers: undefined,
+        strings: ['', ''],
+        partIndex: 0,
+        groupStart: 5,
+      });
+      expectBinding(result.bindings[6], {
+        type: BindingType.Node,
+        index: 6,
       });
     });
   });
@@ -286,7 +336,7 @@ describe('TemplateParser', () => {
     it('should parse repeated pipe modifiers', () => {
       const result = parser.parse(createTemplateStrings(['<button @mousedown|prevent|stop=', '>Drag</button>']));
 
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Event,
         name: 'mousedown',
         index: 0,
@@ -297,12 +347,57 @@ describe('TemplateParser', () => {
     it('should parse comma and pipe modifiers together', () => {
       const result = parser.parse(createTemplateStrings(['<input @keydown|key:Enter,prevent|stop=', '>']));
 
-      expect(result.bindings[0]).toEqual({
+      expectBinding(result.bindings[0], {
         type: BindingType.Event,
         name: 'keydown',
         index: 0,
         modifiers: ['key:Enter', 'prevent', 'stop']
       });
+    });
+  });
+
+  describe('Multipart Attributes', () => {
+    it('captures strings metadata for multi-expression quoted attributes', () => {
+      const result = parser.parse(createTemplateStrings([
+        '<div class="btn ',
+        ' size-',
+        '"></div>',
+      ]));
+
+      expect(result.bindings).toHaveLength(2);
+      expectBinding(result.bindings[0], {
+        type: BindingType.Attribute,
+        name: 'class',
+        index: 0,
+        groupStart: 0,
+        partIndex: 0,
+        strings: ['btn ', ' size-', ''],
+      });
+      expectBinding(result.bindings[1], {
+        type: BindingType.Attribute,
+        name: 'class',
+        index: 1,
+        groupStart: 0,
+        partIndex: 1,
+      });
+      expect(result.html).toBe('<div class="binding:0"></div>');
+    });
+  });
+
+  describe('Directive Parsing', () => {
+    it('recognizes registered structural directives as directive bindings', () => {
+      const result = parser.parse(createTemplateStrings(['<div #if=', '>Shown</div>']));
+
+      expect(result.bindings).toHaveLength(1);
+      expectBinding(result.bindings[0], {
+        type: BindingType.Directive,
+        name: '#if',
+        index: 0,
+        strings: ['', ''],
+        partIndex: 0,
+        groupStart: 0,
+      });
+      expect(result.html).toBe('<div #if="binding:0">Shown</div>');
     });
   });
 });

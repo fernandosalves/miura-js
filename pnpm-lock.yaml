@@ -8,9 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@miurajs/miura':
+        specifier: ^2.4.0
+        version: 2.4.4(encoding@0.1.13)
       '@storybook/web-components':
         specifier: 8.6.18
         version: 8.6.18(lit@3.3.2)(storybook@8.6.18)
+      acorn-walk:
+        specifier: ^8.3.5
+        version: 8.3.5
     devDependencies:
       '@playwright/test':
         specifier: ^1.53.0
@@ -49,29 +55,29 @@ importers:
   packages/miura:
     dependencies:
       '@miurajs/miura-data-flow':
-        specifier: workspace:*
-        version: link:../miura-data-flow
+        specifier: ^0.1.5
+        version: 0.1.5(encoding@0.1.13)(graphql@16.13.1)
       '@miurajs/miura-debugger':
-        specifier: workspace:*
-        version: link:../miura-debugger
+        specifier: ^0.2.2
+        version: 0.2.2
       '@miurajs/miura-element':
-        specifier: workspace:*
-        version: link:../miura-element
+        specifier: ^0.3.1
+        version: 0.3.1
       '@miurajs/miura-framework':
-        specifier: workspace:*
-        version: link:../miura-framework
+        specifier: ^0.1.35
+        version: 0.1.35(encoding@0.1.13)(graphql@16.13.1)
       '@miurajs/miura-render':
-        specifier: workspace:*
-        version: link:../miura-render
+        specifier: ^0.2.20
+        version: 0.2.20
       '@miurajs/miura-router':
-        specifier: workspace:*
-        version: link:../miura-router
+        specifier: ^0.1.7
+        version: 0.1.7
       '@miurajs/miura-security':
-        specifier: workspace:*
-        version: link:../miura-security
+        specifier: ^1.0.2
+        version: 1.0.2
       '@miurajs/miura-ui':
-        specifier: workspace:*
-        version: link:../miura-ui
+        specifier: ^0.2.4
+        version: 0.2.4
     devDependencies:
       typescript:
         specifier: ^5.4.5
@@ -86,8 +92,8 @@ importers:
   packages/miura-data-flow:
     dependencies:
       '@miurajs/miura-debugger':
-        specifier: workspace:*
-        version: link:../miura-debugger
+        specifier: ^0.2.2
+        version: 0.2.2
     devDependencies:
       typescript:
         specifier: ^5.0.0
@@ -115,8 +121,8 @@ importers:
   packages/miura-element:
     dependencies:
       '@miurajs/miura-render':
-        specifier: workspace:*
-        version: link:../miura-render
+        specifier: ^0.2.20
+        version: 0.2.20
     devDependencies:
       typescript:
         specifier: ^5.0.0
@@ -128,23 +134,17 @@ importers:
   packages/miura-framework:
     dependencies:
       '@miurajs/miura-data-flow':
-        specifier: workspace:*
-        version: link:../miura-data-flow
+        specifier: ^0.1.5
+        version: 0.1.5(encoding@0.1.13)(graphql@16.13.1)
       '@miurajs/miura-debugger':
-        specifier: workspace:*
-        version: link:../miura-debugger
+        specifier: ^0.2.2
+        version: 0.2.2
       '@miurajs/miura-element':
-        specifier: workspace:*
-        version: link:../miura-element
-      '@miurajs/miura-render':
-        specifier: workspace:*
-        version: link:../miura-render
+        specifier: ^0.3.1
+        version: 0.3.1
       '@miurajs/miura-router':
-        specifier: workspace:*
-        version: link:../miura-router
-      '@miurajs/miura-ui':
-        specifier: workspace:*
-        version: link:../miura-ui
+        specifier: ^0.1.7
+        version: 0.1.7
     devDependencies:
       typescript:
         specifier: ^5.4.5
@@ -159,8 +159,8 @@ importers:
   packages/miura-render:
     dependencies:
       '@miurajs/miura-debugger':
-        specifier: workspace:*
-        version: link:../miura-debugger
+        specifier: ^0.2.2
+        version: 0.2.2
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6
@@ -181,8 +181,8 @@ importers:
   packages/miura-router:
     dependencies:
       '@miurajs/miura-debugger':
-        specifier: workspace:*
-        version: link:../miura-debugger
+        specifier: ^0.2.2
+        version: 0.2.2
     devDependencies:
       typescript:
         specifier: ^5.4.5
@@ -203,8 +203,11 @@ importers:
   packages/miura-ui:
     dependencies:
       '@miurajs/miura-element':
-        specifier: ^0.0.1
-        version: 0.0.1
+        specifier: ^0.2.2
+        version: 0.2.9
+      lucide:
+        specifier: ^1.7.0
+        version: 1.8.0
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6
@@ -882,8 +885,35 @@ packages:
       '@types/react': '>=16'
       react: '>=16'
 
-  '@miurajs/miura-element@0.0.1':
-    resolution: {integrity: sha512-H/ZDt57k+xTb4crCxgeCt9CNp8G9Kiz4z2U5PSBbvYDP/cX3XJm12jcB4fzJwQ6V2n4Xp/5nPuBNGqqqImLCiw==}
+  '@miurajs/miura-data-flow@0.1.5':
+    resolution: {integrity: sha512-QrZ0htrI5DwY/ueM1pt47d4MV/lWrh7oFLxXuSk4rCvRhdxgjLC1cQaM43IZTVnz5T8hw06DpwLQvu2g92cgGg==}
+
+  '@miurajs/miura-debugger@0.2.2':
+    resolution: {integrity: sha512-2b3fGM7DEO9ur3jRnPo1w8oHET6XyiH947b6R9AMmyODJD3PCFVNN5zTcyN5vhziRV4MWOOnof7UAapNfkJf7Q==}
+
+  '@miurajs/miura-element@0.2.9':
+    resolution: {integrity: sha512-buwFf+6tBxBGFPhGtAHX5KwYPcWgLHFOStgRpU8TCbzz0Y0rNSb2/Ag+vNKcBMza9NE+jCvHlt1cp4PdecYXFQ==}
+
+  '@miurajs/miura-element@0.3.1':
+    resolution: {integrity: sha512-oWDsBFJ5C+7Y3Iz+q0XRjz/QvWebjj/rR9CHAdsHnWYXLHq5rYqjDVI67v7EY6oDlByIJRDUDiOYu4aD1/CocQ==}
+
+  '@miurajs/miura-framework@0.1.35':
+    resolution: {integrity: sha512-74GJ0R0KlyCX0C4LorA4S35xgUriOwohQzm4FuPF6JiQFmoI1YN5u/MRv6yFMgc2+BJIKYT2DEcUiwcNjlwIdg==}
+
+  '@miurajs/miura-render@0.2.20':
+    resolution: {integrity: sha512-hHglFGgEFJJLSP7a7o0030ndCk8wUSKz3bpo8L7YuB+OlrZZ/CkS9DvH80use9Zp+7hjMkBdMadbQVwv9yPdOg==}
+
+  '@miurajs/miura-router@0.1.7':
+    resolution: {integrity: sha512-bJXp3tzMbh4oUFdk34wUbIaDKDG/krAFq0MWwpgKpuyk0zoLQ1z92S0TKhtoPW5Gk72+GT13TRezKSKdgi2FXg==}
+
+  '@miurajs/miura-security@1.0.2':
+    resolution: {integrity: sha512-OP7GnnLdGg8IsGFkv1ZiBpi2+aoKGbbtorD6EXQjtulUYLvZbGifQW+nkM6ErSTTeSdaX4c1HAh1OhVdzkGZzw==}
+
+  '@miurajs/miura-ui@0.2.4':
+    resolution: {integrity: sha512-pwu+crFz61eUylxkm+xdimCds2jsVDbrM1W5qXx21sbzwlYNlh2rOOnvixaVJH2HDEeSVNpJ4SwfgnG/M77b0Q==}
+
+  '@miurajs/miura@2.4.4':
+    resolution: {integrity: sha512-TogrsKFGZH88D90dHRiVAbS5u6pc/s/iPvIG/VWGwroDBGQ3XXEeAQvgEi0jpFDq0Np6XZa43snQOtZyX4dfgg==}
 
   '@napi-rs/wasm-runtime@0.2.4':
     resolution: {integrity: sha512-9zESzOO5aDByvhIAsOy9TbpZ0Ur2AJbUI7UT73kcUTS2mxAMHOBaa1st/jAymNoCtvrit99kkzT1FZuXVcgfIQ==}
@@ -2926,6 +2956,9 @@ packages:
   lru-cache@6.0.0:
     resolution: {integrity: sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==}
     engines: {node: '>=10'}
+
+  lucide@1.8.0:
+    resolution: {integrity: sha512-JjV/QnadgFLj1Pyu9IKl0lknrolFEzo04B64QcYLLeRzZl/iEHpdbSrRRKbyXcv45SZNv+WGjIUCT33e7xHO6Q==}
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -5181,9 +5214,67 @@ snapshots:
       '@types/react': 19.2.14
       react: 19.2.4
 
-  '@miurajs/miura-element@0.0.1':
+  '@miurajs/miura-data-flow@0.1.5(encoding@0.1.13)(graphql@16.13.1)':
     dependencies:
-      '@miurajs/miura-render': link:packages/miura-render
+      '@miurajs/miura-debugger': 0.2.2
+    optionalDependencies:
+      '@aws-sdk/client-s3': 3.1005.0
+      graphql-request: 6.1.0(encoding@0.1.13)(graphql@16.13.1)
+    transitivePeerDependencies:
+      - aws-crt
+      - encoding
+      - graphql
+
+  '@miurajs/miura-debugger@0.2.2': {}
+
+  '@miurajs/miura-element@0.2.9':
+    dependencies:
+      '@miurajs/miura-render': 0.2.20
+
+  '@miurajs/miura-element@0.3.1':
+    dependencies:
+      '@miurajs/miura-render': 0.2.20
+
+  '@miurajs/miura-framework@0.1.35(encoding@0.1.13)(graphql@16.13.1)':
+    dependencies:
+      '@miurajs/miura-data-flow': 0.1.5(encoding@0.1.13)(graphql@16.13.1)
+      '@miurajs/miura-debugger': 0.2.2
+      '@miurajs/miura-element': 0.3.1
+      '@miurajs/miura-router': 0.1.7
+    transitivePeerDependencies:
+      - aws-crt
+      - encoding
+      - graphql
+
+  '@miurajs/miura-render@0.2.20':
+    dependencies:
+      '@miurajs/miura-debugger': 0.2.2
+
+  '@miurajs/miura-router@0.1.7':
+    dependencies:
+      '@miurajs/miura-debugger': 0.2.2
+
+  '@miurajs/miura-security@1.0.2': {}
+
+  '@miurajs/miura-ui@0.2.4':
+    dependencies:
+      '@miurajs/miura-element': 0.2.9
+      lucide: 1.8.0
+
+  '@miurajs/miura@2.4.4(encoding@0.1.13)':
+    dependencies:
+      '@miurajs/miura-data-flow': 0.1.5(encoding@0.1.13)(graphql@16.13.1)
+      '@miurajs/miura-debugger': 0.2.2
+      '@miurajs/miura-element': 0.3.1
+      '@miurajs/miura-framework': 0.1.35(encoding@0.1.13)(graphql@16.13.1)
+      '@miurajs/miura-render': 0.2.20
+      '@miurajs/miura-router': 0.1.7
+      '@miurajs/miura-security': 1.0.2
+      '@miurajs/miura-ui': 0.2.4
+    transitivePeerDependencies:
+      - aws-crt
+      - encoding
+      - graphql
 
   '@napi-rs/wasm-runtime@0.2.4':
     dependencies:
@@ -7652,6 +7743,8 @@ snapshots:
   lru-cache@6.0.0:
     dependencies:
       yallist: 4.0.0
+
+  lucide@1.8.0: {}
 
   magic-string@0.30.21:
     dependencies:

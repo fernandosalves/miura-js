@@ -1,5 +1,4 @@
-import { MiuraElement } from '../miura-element';
-import { html } from '../../template/html';
+import { MiuraElement, html } from '../index.js';
 
 interface Todo {
     id: number;
@@ -116,4 +115,6 @@ export class TodoListElement extends MiuraElement {
     }
 }
 
-customElements.define('miura-todo-list', TodoListElement);
+if (!customElements.get('miura-todo-list')) {
+    customElements.define('miura-todo-list', TodoListElement);
+}

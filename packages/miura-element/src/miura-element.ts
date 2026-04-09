@@ -346,7 +346,7 @@ export class MiuraElement extends HTMLElement {
     constructor() {
         super();
         // Initialize update promise
-        this.updateComplete = new Promise(r => this.updateResolver = r);
+        this.resetUpdateCompletePromise();
         // Initialize reactive signal-backed properties (static properties)
         const ctor = this.constructor as typeof MiuraElement;
         if (ctor.properties) {
@@ -496,9 +496,11 @@ export class MiuraElement extends HTMLElement {
         // Batch updates using microtask for faster coalescing
         if (!this._updateScheduled) {
             this._updateScheduled = true;
+            this.resetUpdateCompletePromise();
+            const resolveUpdate = this.updateResolver;
             queueMicrotask(() => {
                 this._updateScheduled = false;
-                this.performUpdate();
+                void this.performUpdate(resolveUpdate);
             });
         }
     }
@@ -509,8 +511,9 @@ export class MiuraElement extends HTMLElement {
      * @protected
      * @returns {Promise<void>}
      */
-    protected async performUpdate(): Promise<void> {
+    protected async performUpdate(resolveUpdate?: (value: boolean) => void): Promise<void> {
         const previousUpdate = this._updatePromise;
+        let updateSucceeded = false;
         const currentUpdate = (async () => {
             if (previousUpdate) {
                 await previousUpdate;
@@ -569,6 +572,7 @@ export class MiuraElement extends HTMLElement {
                 // Track performance
                 this._performanceMetrics.renderTime = performance.now() - startTime;
                 this._performanceMetrics.lastRenderTime = Date.now();
+                updateSucceeded = true;
             } catch (error) {
                 this._hasError = true;
                 const handled = this.onError(error as Error);
@@ -586,7 +590,17 @@ export class MiuraElement extends HTMLElement {
             if (this._updatePromise === currentUpdate) {
                 this._updatePromise = null;
             }
+            resolveUpdate?.(updateSucceeded);
+            if (this.updateResolver === resolveUpdate) {
+                this.updateResolver = undefined;
+            }
         }
+    }
+
+    private resetUpdateCompletePromise(): void {
+        this.updateComplete = new Promise((resolve) => {
+            this.updateResolver = resolve;
+        });
     }
 
     /**

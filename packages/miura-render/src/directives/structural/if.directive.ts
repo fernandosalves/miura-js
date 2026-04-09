@@ -32,6 +32,7 @@ interface Branch {
 export class IfDirective extends StructuralDirective {
     private condition = false;
     private chain: Branch[] = [];
+    private static readonly OWNER_KEY = '__ifDirectiveOwner';
 
     mount(element: Element) {
         debugLog('if', 'Mounting if directive with chain support');
@@ -45,8 +46,10 @@ export class IfDirective extends StructuralDirective {
 
         parent.replaceChild(this.comment, element);
 
-        // Store reference on comment so ElseIfDirective can find us
-        (this.comment as any).__ifDirective = this;
+        // Store the chain owner on both placeholder and live element so
+        // siblings can still discover the chain after the active branch is shown.
+        (this.comment as any)[IfDirective.OWNER_KEY] = this;
+        (element as any)[IfDirective.OWNER_KEY] = this;
 
         // First branch is always the #if itself
         this.chain.push({
@@ -116,6 +119,9 @@ export class IfDirective extends StructuralDirective {
             directive,
             condition: false,
         };
+
+        (comment as any)[IfDirective.OWNER_KEY] = this;
+        (element as any)[IfDirective.OWNER_KEY] = this;
 
         // Insert before #else (if present), otherwise append
         const elseIdx = this.chain.findIndex(b => b.type === 'else');
@@ -206,17 +212,12 @@ export class ElseIfDirective extends StructuralDirective {
         // Scan backward to find the parent IfDirective's comment
         let prev: Node | null = element.previousSibling;
         while (prev) {
-            if (prev.nodeType === Node.COMMENT_NODE && (prev as any).__ifDirective) {
-                this.parentIf = (prev as any).__ifDirective;
+            const owner = (prev as any)[IfDirective['OWNER_KEY']];
+            if (owner) {
+                this.parentIf = owner;
                 break;
             }
-            // Also check if prev is a comment left by another elseif
-            // (in case of multiple elseif in a row)
-            if (prev.nodeType === Node.COMMENT_NODE && prev.nodeValue === 'elseif') {
-                // Keep scanning backward
-                prev = prev.previousSibling;
-                continue;
-            }
+
             // Skip whitespace text nodes
             if (prev.nodeType === Node.TEXT_NODE && prev.textContent?.trim() === '') {
                 prev = prev.previousSibling;

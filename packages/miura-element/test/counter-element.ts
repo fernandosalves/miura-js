@@ -1,5 +1,4 @@
-import { MiuraElement } from '../../core/src/element/miura-element';
-import { html } from '../../core/src/template/html';
+import { MiuraElement, html } from '../index.js';
 
 export class CounterElement extends MiuraElement {
     static properties = {
@@ -25,4 +24,6 @@ export class CounterElement extends MiuraElement {
     }
 }
 
-customElements.define('miura-counter', CounterElement);
+if (!customElements.get('miura-counter')) {
+    customElements.define('miura-counter', CounterElement);
+}
