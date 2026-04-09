@@ -17,6 +17,7 @@ import { BindBinding } from './bindings/bind-binding';
 import { SpreadBinding } from './bindings/spread-binding';
 import { AsyncBinding } from './bindings/async-binding';
 import { UtilityBinding, UtilityPartBinding } from './bindings/utility-binding';
+import { reportDiagnostic } from '@miurajs/miura-debugger';
 
 type SignalLike = { peek(): unknown; subscribe(fn: (v: unknown) => void): () => void };
 type MultipartBinding = AttributeBinding | UtilityBinding;
@@ -90,69 +91,92 @@ export class BindingManager {
         const attrBindingCache = new Map<number, MultipartBinding>();
 
         bindings.forEach(binding => {
-            if (binding.type === BindingType.Node) {
-                const [startMarker, endMarker] = this.findNodeMarkers(fragment, binding.index);
-                const markerHost =
-                    startMarker.parentElement ||
-                    endMarker.parentElement ||
-                    fragment.firstElementChild ||
-                    document.createElement('template');
+            try {
+                if (binding.type === BindingType.Node) {
+                    const [startMarker, endMarker] = this.findNodeMarkers(fragment, binding.index);
+                    const markerHost =
+                        startMarker.parentElement ||
+                        endMarker.parentElement ||
+                        fragment.firstElementChild ||
+                        document.createElement('template');
 
-                bindingInstances[binding.index] = new NodeBinding(
-                    markerHost,
-                    startMarker,
-                    endMarker,
-                    processor
-                );
-                return;
-            }
-
-            // Handle multi-part Attribute bindings
-            if (binding.type === BindingType.Attribute || binding.type === BindingType.Utility) {
-                const groupStart = binding.groupStart ?? binding.index;
-                let element: Element | null;
-
-                if (groupStart === binding.index) {
-                    // First part in the group — find element via marker
-                    element = this.findBindingElement(fragment, binding.index);
-                    if (element) elementCache.set(groupStart, element);
-                } else {
-                    // Subsequent part — reuse cached element
-                    element = elementCache.get(groupStart) || null;
+                    bindingInstances[binding.index] = new NodeBinding(
+                        markerHost,
+                        startMarker,
+                        endMarker,
+                        processor
+                    );
+                    return;
                 }
 
-                if (!element) return;
+                // Handle multi-part Attribute bindings
+                if (binding.type === BindingType.Attribute || binding.type === BindingType.Utility) {
+                    const groupStart = binding.groupStart ?? binding.index;
+                    let element: Element | null;
 
-                if (groupStart === binding.index) {
-                    const strings = binding.strings || ['', ''];
-                    if (binding.type === BindingType.Utility) {
-                        const utilityBinding = new UtilityBinding(element, binding.name || '', strings);
-                        attrBindingCache.set(groupStart, utilityBinding);
-                        bindingInstances[binding.index] = utilityBinding;
+                    if (groupStart === binding.index) {
+                        // First part in the group — find element via marker
+                        element = this.findBindingElement(fragment, binding.index);
+                        if (element) elementCache.set(groupStart, element);
                     } else {
-                        const attrBinding = new AttributeBinding(element, binding.name || '', strings);
-                        attrBindingCache.set(groupStart, attrBinding);
-                        bindingInstances[binding.index] = attrBinding;
+                        // Subsequent part — reuse cached element
+                        element = elementCache.get(groupStart) || null;
                     }
-                } else {
-                    const parent = attrBindingCache.get(groupStart);
-                    if (parent) {
+
+                    if (!element) return;
+
+                    if (groupStart === binding.index) {
+                        const strings = binding.strings || ['', ''];
                         if (binding.type === BindingType.Utility) {
-                            bindingInstances[binding.index] = new UtilityPartBinding(parent as UtilityBinding, binding.partIndex ?? 0);
+                            const utilityBinding = new UtilityBinding(element, binding.name || '', strings);
+                            attrBindingCache.set(groupStart, utilityBinding);
+                            bindingInstances[binding.index] = utilityBinding;
                         } else {
-                            bindingInstances[binding.index] = new AttributePartBinding(parent as AttributeBinding, binding.partIndex ?? 0);
+                            const attrBinding = new AttributeBinding(element, binding.name || '', strings);
+                            attrBindingCache.set(groupStart, attrBinding);
+                            bindingInstances[binding.index] = attrBinding;
+                        }
+                    } else {
+                        const parent = attrBindingCache.get(groupStart);
+                        if (parent) {
+                            if (binding.type === BindingType.Utility) {
+                                bindingInstances[binding.index] = new UtilityPartBinding(parent as UtilityBinding, binding.partIndex ?? 0);
+                            } else {
+                                bindingInstances[binding.index] = new AttributePartBinding(parent as AttributeBinding, binding.partIndex ?? 0);
+                            }
                         }
                     }
+                    return;
                 }
-                return;
-            }
-            // Non-attribute bindings — original logic
-            const element = this.findBindingElement(fragment, binding.index);
-            if (element) {
-                const bindingInstance = this.createBindingForType(element, binding, processor);
-                if (bindingInstance) {
-                    bindingInstances[binding.index] = bindingInstance;
+
+                // Non-attribute bindings — original logic
+                const element = this.findBindingElement(fragment, binding.index);
+                if (element) {
+                    const bindingInstance = this.createBindingForType(element, binding, processor);
+                    if (bindingInstance) {
+                        bindingInstances[binding.index] = bindingInstance;
+                    }
                 }
+            } catch (error) {
+                reportDiagnostic({
+                    subsystem: 'render',
+                    stage: 'binding',
+                    severity: 'error',
+                    message: `Failed to create ${binding.debugLabel ?? `binding ${binding.index}`}`,
+                    summary: error instanceof Error ? error.message : String(error),
+                    bindingIndex: binding.index,
+                    bindingLabel: binding.debugLabel ?? undefined,
+                    bindingKind: this.getBindingKind(binding.type),
+                    directiveName: binding.type === BindingType.Directive ? binding.name : undefined,
+                    elementTag: binding.name,
+                    error,
+                    internalDetails: {
+                        bindingIndex: binding.index,
+                        bindingName: binding.name,
+                        bindingType: binding.type,
+                    },
+                });
+                throw error;
             }
         });
 
@@ -223,6 +247,35 @@ export class BindingManager {
 
             default:
                 throw new Error(`Unsupported binding type: ${binding.type}`);
+        }
+    }
+
+    private static getBindingKind(type: BindingType): string {
+        switch (type) {
+            case BindingType.Node:
+                return 'text';
+            case BindingType.Property:
+                return 'property';
+            case BindingType.Boolean:
+                return 'boolean';
+            case BindingType.Event:
+                return 'event';
+            case BindingType.Directive:
+                return 'directive';
+            case BindingType.Bind:
+                return 'two-way binding';
+            case BindingType.Attribute:
+                return 'attribute';
+            case BindingType.Class:
+            case BindingType.ObjectClass:
+                return 'class';
+            case BindingType.Style:
+            case BindingType.ObjectStyle:
+                return 'style';
+            case BindingType.Utility:
+                return 'utility';
+            default:
+                return String(type);
         }
     }
 

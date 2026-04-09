@@ -1,3 +1,5 @@
+import type { ComponentDebugOptions } from '@miurajs/miura-debugger';
+import { setComponentDebugOptions } from '@miurajs/miura-debugger';
 import { MiuraElement } from "./miura-element";
 
 export interface ComponentOptions {
@@ -16,6 +18,8 @@ export interface StateOptions {
     default?: unknown;
 }
 
+export type ComponentDebugDecoratorOptions = ComponentDebugOptions;
+
 /**
  * Class decorator that registers the custom element
  * @example
@@ -31,6 +35,21 @@ export function component<T extends typeof MiuraElement>(options: ComponentOptio
         return target;
     };
 }
+
+/**
+ * Class decorator for component-specific debugger configuration.
+ */
+export function debug<T extends typeof MiuraElement>(options: ComponentDebugDecoratorOptions = {}) {
+    return function (target: T): T {
+        setComponentDebugOptions(target, options);
+        return target;
+    };
+}
+
+/**
+ * Compatibility alias for earlier debugger decorator naming.
+ */
+export const componentDebug = debug;
 
 /**
  * Property decorator for reactive properties that can be set via attributes

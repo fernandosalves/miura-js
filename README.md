@@ -173,7 +173,7 @@ The framework is structured as a monorepo with the following packages:
 | **`@miurajs/miura-ui`** | 70+ pre-built UI components (primitives, navigation, overlay, layout, typography) |
 | **`@miurajs/miura-router`** | Client-side router — hash/history/memory modes, guards, loaders, nested routes, layout outlets |
 | **`@miurajs/miura-security`** | Auth, AuthZ, CSP, input validation |
-| **`@miurajs/miura-debugger`** | Category/level logger for development |
+| **`@miurajs/miura-debugger`** | Diagnostics runtime with overlay, semantic error reporting, and component layers |
 | **`@miurajs/miura-i18n`** | Internationalization — `t()`, dot-notation keys, pluralization, interpolation, fallback locale |
 | **`@miurajs/miura-computing`** | Reactive Web Worker bridge — `WorkerBridge`, `expose()`, typed call/stream protocol |
 | **`@miurajs/miura-graphics`** | *(Coming Soon)* 2D/3D rendering and animations |

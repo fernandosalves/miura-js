@@ -5,6 +5,7 @@ The core component system for the miura framework. Provides the `MiuraElement` b
 ## Features
 
 - **Decorators** — `@component`, `@property`, `@state` for cleaner definitions
+- **Component Debug Options** — `static debug` or `@debug(...)` for layer labels, opt-outs, and richer dev overlays
 - **Reactive Properties** — Type-safe definitions with automatic type conversion and attribute reflection; each property is signal-backed
 - **Internal State** — `static state()` for private, non-reflected reactive state fields
 - **Computed Properties** — Derived values with dependency tracking and caching
@@ -65,9 +66,10 @@ class Counter extends MiuraElement {
 MiuraElement provides TypeScript decorators for cleaner component definitions:
 
 ```typescript
-import { MiuraElement, html, css, component, property, state } from '@miurajs/miura-element';
+import { MiuraElement, html, css, component, debug, property, state } from '@miurajs/miura-element';
 
 @component({ tag: 'user-card' })
+@debug({ label: 'UserCard', showRenderTime: true })
 export class UserCard extends MiuraElement {
   @property({ type: String, default: '' })
   name!: string;
@@ -98,6 +100,21 @@ export class UserCard extends MiuraElement {
 - Auto-registration with `@component`
 - `@property` for public props, `@state` for internal state
 - Type and property definition in one place
+
+For debugger-specific behavior, you can also use `static debug`:
+
+```typescript
+class BlogCard extends MiuraElement {
+  static debug = {
+    label: 'BlogCard',
+    color: '12, 145, 255',
+    report: true,
+    layers: true
+  };
+}
+```
+
+`componentDebug(...)` is still available as a compatibility alias, but `@debug(...)` is the preferred decorator name going forward.
 
 See [../../docs/miura-element/decorators.md](../../docs/miura-element/decorators.md) for full documentation and migration guide.
 
@@ -932,6 +949,37 @@ Props are applied as **properties** (not attributes) on the created element for 
 
 1. First source: `<script type="application/json">` child element (recommended for SSR)
 2. Second source: `data-props` attribute (JSON string)
+
+Inside a hydrated component, use `$islandProps()` to access the full serialized props object without manually re-parsing the script payload:
+
+```typescript
+class PostIsland extends MiuraElement {
+  props = this.$islandProps<{ slug: string; post: { title: string } }>();
+
+  template() {
+    return html`<h2>${this.props.post.title}</h2>`;
+  }
+}
+```
+
+When the server already sent data you want to keep using on the client, `$islandResource()` can start from that payload and optionally revalidate:
+
+```typescript
+class PostIsland extends MiuraElement {
+  props = this.$islandProps<{ slug: string; post: Post }>();
+
+  post = this.$islandResource(
+    () => this.props.post,
+    () => fetch(`/api/posts/${this.props.slug}`).then((r) => r.json()),
+    {
+      key: () => ['post', this.props.slug],
+      staleWhileRevalidate: true
+    }
+  );
+}
+```
+
+Set `revalidate: false` when the island payload should remain fully static on the client.
 
 ### Events
 

@@ -13,6 +13,7 @@
 - **📦 Dynamic Component Loading** - Components loaded on-demand
 - **🔌 Plugin System** - Extensible framework capabilities
 - **📊 Performance Telemetry** - Built-in performance monitoring
+- **🧭 Integrated Debug Runtime** - Optional overlay, diagnostics, and component layers in development
 - **🔄 App Lifecycle Management** - Birth, growth, and cleanup phases
 - **🚌 Event Bus with Priority Queues** - Advanced event management
 - **🌐 Global Framework Instance** - Accessible via `window.miura[AppName]`
@@ -50,7 +51,12 @@ class MyApp extends MiuraFramework {
     version: '1.0.0',
     environment: 'development' as const,
     debug: true,
-    performance: true
+    performance: true,
+    debugger: {
+      overlay: true,
+      layers: true,
+      performance: true
+    }
   };
   
   // Initial data lake data
@@ -101,6 +107,24 @@ customElements.define(MyApp.tagName, MyApp);
 // Use in HTML
 // <my-app></my-app>
 ```
+
+When `debug` is enabled and the environment is not production, `MiuraFramework` can enable the shared debugger runtime for the whole app. That gives you a draggable error overlay plus in-page component layers without adding separate bootstrap code.
+
+That means a framework config like this is enough for most projects:
+
+```typescript
+static config = {
+  environment: 'development' as const,
+  debug: true,
+  debugger: {
+    overlay: true,
+    layers: true,
+    performance: true
+  }
+};
+```
+
+Production builds should keep `environment: 'production'`, which prevents the framework from auto-enabling the debugger runtime.
 
 ### Advanced Configuration
 

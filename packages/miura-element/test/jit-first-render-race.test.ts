@@ -50,6 +50,7 @@ describe('MiuraElement JIT first render', () => {
       const element = document.createElement(tagName) as JitRaceElement;
       document.body.appendChild(element);
 
+      await element.updateComplete;
       await wait(40);
 
       const values = element.shadowRoot?.querySelectorAll('.value') ?? [];

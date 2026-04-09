@@ -1,5 +1,6 @@
 import { MiuraElement, html } from '@miurajs/miura-element';
 import { Store } from '@miurajs/miura-data-flow';
+import { enableMiuraDebugger, reportDiagnostic, reportTimelineEvent, reportWarning } from '@miurajs/miura-debugger';
 import { createRouter } from '@miurajs/miura-router';
 import type {
     RouterInstance,
@@ -144,6 +145,22 @@ export abstract class MiuraFramework extends MiuraElement {
 
         try {
             const config = this.getConfig();
+            if (config.debug && config.environment !== 'production' && config.debugger !== false) {
+                enableMiuraDebugger({
+                    overlay: true,
+                    layers: true,
+                    performance: config.performance,
+                    ...config.debugger,
+                });
+            }
+            reportTimelineEvent({
+                subsystem: 'framework',
+                stage: 'runtime',
+                message: `Framework initialization started for ${config.appName}`,
+                componentTag: this.localName,
+                componentClass: this.constructor.name,
+                element: this,
+            });
 
             // Start performance monitoring
             const initTimer = this.performance.startTimer('framework-initialization');
@@ -179,6 +196,18 @@ export abstract class MiuraFramework extends MiuraElement {
 
             // Emit ready event
             this.eventBus.emit('framework:ready', { config }, 10);
+            reportTimelineEvent({
+                subsystem: 'framework',
+                stage: 'runtime',
+                message: `Framework initialization completed for ${config.appName}`,
+                componentTag: this.localName,
+                componentClass: this.constructor.name,
+                element: this,
+                values: {
+                    components: this.componentRegistry.getAll().length,
+                    plugins: this.pluginManager.getAll().length,
+                },
+            });
 
             // Set up global instance
             this._setupGlobalInstance();
@@ -234,10 +263,41 @@ export abstract class MiuraFramework extends MiuraElement {
         for (const plugin of plugins) {
             try {
                 this.eventBus.emit('plugin:installing', { name: plugin.name }, 5);
+                reportTimelineEvent({
+                    subsystem: 'framework',
+                    stage: 'plugin',
+                    message: `Plugin install started: ${plugin.name}`,
+                    componentTag: this.localName,
+                    componentClass: this.constructor.name,
+                    pluginName: plugin.name,
+                    element: this,
+                });
                 await this.pluginManager.register(plugin);
                 this.eventBus.emit('plugin:installed', { name: plugin.name }, 5);
+                reportTimelineEvent({
+                    subsystem: 'framework',
+                    stage: 'plugin',
+                    message: `Plugin installed: ${plugin.name}`,
+                    componentTag: this.localName,
+                    componentClass: this.constructor.name,
+                    pluginName: plugin.name,
+                    element: this,
+                });
             } catch (error) {
                 this.eventBus.emit('plugin:install-failed', { name: plugin.name, error }, 1);
+                reportTimelineEvent({
+                    subsystem: 'framework',
+                    stage: 'plugin',
+                    severity: 'error',
+                    message: `Plugin install failed: ${plugin.name}`,
+                    componentTag: this.localName,
+                    componentClass: this.constructor.name,
+                    pluginName: plugin.name,
+                    element: this,
+                    values: {
+                        error: error instanceof Error ? error.message : String(error),
+                    },
+                });
                 this._handleError(`Failed to install plugin: ${plugin.name}`, error);
             }
         }
@@ -301,6 +361,13 @@ export abstract class MiuraFramework extends MiuraElement {
 
     protected navigate(to: string, options?: NavigationOptions) {
         if (!this.router) {
+            reportWarning({
+                subsystem: 'framework',
+                stage: 'navigation',
+                message: 'Router not initialized. Navigation request ignored.',
+                componentTag: this.localName,
+                componentClass: this.constructor.name,
+            });
             console.warn('Router not initialized. Navigation request ignored.');
             return Promise.resolve();
         }
@@ -309,6 +376,13 @@ export abstract class MiuraFramework extends MiuraElement {
 
     protected replaceRoute(to: string, options?: NavigationOptions) {
         if (!this.router) {
+            reportWarning({
+                subsystem: 'framework',
+                stage: 'navigation',
+                message: 'Router not initialized. Replace request ignored.',
+                componentTag: this.localName,
+                componentClass: this.constructor.name,
+            });
             console.warn('Router not initialized. Replace request ignored.');
             return Promise.resolve();
         }
@@ -338,6 +412,12 @@ export abstract class MiuraFramework extends MiuraElement {
         const renderZone = rootRecord.renderZone || '[data-router-zone="primary"]';
         const zoneElement = this._resolveRouteZone(renderZone);
         if (!zoneElement) {
+            reportWarning({
+                subsystem: 'framework',
+                stage: 'navigation',
+                message: `Router zone "${renderZone}" not found.`,
+                routePath: context.route.path,
+            });
             console.warn(`Router zone "${renderZone}" not found.`);
             return;
         }
@@ -356,6 +436,12 @@ export abstract class MiuraFramework extends MiuraElement {
             this._activeRouteElements.delete(routeKey);
             const component = this.componentRegistry.get(rootRecord.component);
             if (!component) {
+                reportWarning({
+                    subsystem: 'framework',
+                    stage: 'navigation',
+                    message: `Component ${rootRecord.component} not registered for route ${rootRecord.path}`,
+                    routePath: rootRecord.path,
+                });
                 console.warn(`Component ${rootRecord.component} not registered for route ${rootRecord.path}`);
                 return;
             }
@@ -378,6 +464,12 @@ export abstract class MiuraFramework extends MiuraElement {
 
             const outlet = this._findOutlet(parentEl, record.renderZone);
             if (!outlet) {
+                reportWarning({
+                    subsystem: 'framework',
+                    stage: 'navigation',
+                    message: `No router outlet found for child route "${record.path}"`,
+                    routePath: record.path,
+                });
                 console.warn(
                     `[miura-router] No <miura-router-outlet> found inside <${parentEl.tagName.toLowerCase()}> ` +
                     `for child route "${record.path}". Add <miura-router-outlet> to the layout template.`
@@ -396,6 +488,12 @@ export abstract class MiuraFramework extends MiuraElement {
         const renderZone = context.route.renderZone || '[data-router-zone="primary"]';
         const zoneElement = this._resolveRouteZone(renderZone);
         if (!zoneElement) {
+            reportWarning({
+                subsystem: 'framework',
+                stage: 'navigation',
+                message: `Router zone "${renderZone}" not found. Skipping route render.`,
+                routePath: context.route.path,
+            });
             console.warn(`Router zone "${renderZone}" not found. Skipping route render.`);
             return;
         }
@@ -409,6 +507,12 @@ export abstract class MiuraFramework extends MiuraElement {
 
         const component = this.componentRegistry.get(context.route.component);
         if (!component) {
+            reportWarning({
+                subsystem: 'framework',
+                stage: 'navigation',
+                message: `Component ${context.route.component} not registered for route ${context.route.path}`,
+                routePath: context.route.path,
+            });
             console.warn(`Component ${context.route.component} not registered for route ${context.route.path}`);
             return;
         }
@@ -517,6 +621,35 @@ export abstract class MiuraFramework extends MiuraElement {
         this._errorCount++;
 
         this.eventBus.emit('framework:error', { message, error, count: this._errorCount }, 1);
+        reportDiagnostic({
+            subsystem: 'framework',
+            stage: 'runtime',
+            severity: 'error',
+            message,
+            summary: error instanceof Error ? error.message : String(error),
+            componentTag: this.localName,
+            componentClass: this.constructor.name,
+            error,
+            valuesSnapshot: {
+                errorCount: this._errorCount,
+                maxErrors: this._maxErrors,
+                initialized: this._isInitialized,
+            },
+            element: this,
+        });
+        reportTimelineEvent({
+            subsystem: 'framework',
+            stage: 'runtime',
+            severity: 'error',
+            message,
+            componentTag: this.localName,
+            componentClass: this.constructor.name,
+            element: this,
+            values: {
+                error: error instanceof Error ? error.message : String(error),
+                count: this._errorCount,
+            },
+        });
 
         const config = this.getConfig();
         if (config.debug) {

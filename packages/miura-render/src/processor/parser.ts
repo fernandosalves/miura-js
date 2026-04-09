@@ -458,13 +458,13 @@ export class TemplateParser {
 
         switch (type) {
             case BindingType.Event:
-                return `event ${name ?? '(unknown)'} near "${snippet}"`;
+                return `event handler ${name ?? '(unknown)'} near "${snippet}"`;
             case BindingType.Property:
-                return `property ${name ?? '(unknown)'} near "${snippet}"`;
+                return `property binding ${name ?? '(unknown)'} near "${snippet}"`;
             case BindingType.Boolean:
-                return `boolean ${name ?? '(unknown)'} near "${snippet}"`;
+                return `boolean binding ${name ?? '(unknown)'} near "${snippet}"`;
             case BindingType.Attribute:
-                return `attribute ${name ?? '(unknown)'} near "${snippet}"`;
+                return `attribute expression ${name ?? '(unknown)'} near "${snippet}"`;
             case BindingType.Class:
             case BindingType.ObjectClass:
                 return `class binding near "${snippet}"`;
@@ -476,7 +476,9 @@ export class TemplateParser {
             case BindingType.Utility:
                 return `utility ${name ?? '(unknown)'} near "${snippet}"`;
             case BindingType.Node:
-                return `node binding #${index} near "${snippet}"`;
+                return `text expression near "${snippet}"`;
+            case BindingType.Directive:
+                return `directive ${name ?? '(unknown)'} near "${snippet}"`;
             default:
                 return `${type} ${name ?? ''}`.trim();
         }

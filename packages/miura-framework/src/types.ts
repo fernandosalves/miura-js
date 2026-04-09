@@ -1,5 +1,6 @@
 import type { MiuraElement } from '@miurajs/miura-element';
 import type { Store } from '@miurajs/miura-data-flow';
+import type { MiuraDebuggerOptions } from '@miurajs/miura-debugger';
 import type { RouteRecord, Router, RouterMode } from '@miurajs/miura-router';
 
 // Forward declaration for framework plugin typing
@@ -18,6 +19,7 @@ export interface FrameworkConfig {
     ui: UIConfig;
     telemetry: TelemetryConfig;
     globalState?: Record<string, any>;
+    debugger?: MiuraDebuggerOptions | false;
 }
 
 export interface DataStoreConfig {

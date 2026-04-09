@@ -1,7 +1,9 @@
 import { PropertyValues } from './property-values';
 import { consumeContext, provideContext, type ContextKey } from './context.js';
+import { findIslandHost, readIslandProps, type MiuraIsland } from './miura-island.js';
 import { PropertyDeclarations, createProperties, createStateProperties, SIGNAL_KEY_PREFIX } from './properties';
 import type { RouteSignalLike, RouterBridgeLike } from './router-bridge.js';
+import { getComponentDebugOptions, registerDebugLayer, reportDiagnostic, reportTimelineEvent, unregisterDebugLayer } from '@miurajs/miura-debugger';
 import { signal, computed, Signal, ReadonlySignal } from './signals.js';
 import { shared, type SharedKey } from './shared.js';
 import { createForm, Form, FormOptions } from './form.js';
@@ -23,6 +25,22 @@ function _readPropValue(instance: any, prop: string): unknown {
     const raw = instance[prop];
     return (raw && typeof raw === 'function' && raw.__isSignal) ? raw.peek() : raw;
 }
+
+type DebugResourceRegistration = {
+    kind: 'resource' | 'route-resource' | 'island-resource';
+    label: string;
+    resource: Resource<unknown>;
+};
+
+type DebugFormRegistration = {
+    label: string;
+    form: Form<Record<string, any>>;
+};
+
+type DebugRouteRegistration = {
+    label: string;
+    signal: RouteSignalLike<unknown>;
+};
 
 /**
  * Base class for miura custom elements.
@@ -66,6 +84,22 @@ export class MiuraElement extends HTMLElement {
      * @type {PropertyDeclarations}
      */
     static properties: PropertyDeclarations = {};
+
+    /**
+     * Optional component-specific debugger configuration.
+     * Used by the dev overlay and component layer visualizations.
+     */
+    static debug?: {
+        disabled?: boolean;
+        report?: boolean;
+        overlay?: boolean;
+        layers?: boolean;
+        performance?: boolean;
+        label?: string;
+        color?: string;
+        showName?: boolean;
+        showRenderTime?: boolean;
+    };
 
     /**
      * Defines computed properties for the element.
@@ -179,6 +213,16 @@ export class MiuraElement extends HTMLElement {
     private _propSignalUnsubs: (() => void)[] = [];
     /** Reconnect-safe subscription factories for bridge helpers and other external signals */
     private _connectionSetups: Array<() => (() => void) | void> = [];
+    /** Debug registrations for framework-aware inspector panels. */
+    private _debugResources: DebugResourceRegistration[] = [];
+    /** @private */
+    private _debugForms: DebugFormRegistration[] = [];
+    /** @private */
+    private _debugRouteSignals: DebugRouteRegistration[] = [];
+    /** Latest resolved island props for this component when hydrated inside a <miura-island>. */
+    private _islandPropsValue: Record<string, unknown> = {};
+    /** Lazy proxy so field initializers can keep a stable object reference before connection. */
+    private _islandPropsProxy: Record<string, unknown> | null = null;
 
     /**
      * Memory optimization: WeakMap for property storage
@@ -425,10 +469,12 @@ export class MiuraElement extends HTMLElement {
         });
         this.initializeObservers();
         this._subscribePropertySignals();
+        this._resolveIslandProps();
         this._setupConnectionSubscriptions();
         if (this._pendingUpdate) {
             this.requestUpdate();  // Single render on connect
         }
+        this._reportDebugLayer('idle');
     }
 
     /**
@@ -454,6 +500,9 @@ export class MiuraElement extends HTMLElement {
         // Clear caches to free memory
         this._computedCache.clear();
         this._changedProperties.clear();
+        this._debugResources = [];
+        this._debugForms = [];
+        this._debugRouteSignals = [];
 
         // Remove slot listeners
         this._slotListeners.forEach((listener, name) => {
@@ -488,6 +537,7 @@ export class MiuraElement extends HTMLElement {
         this._templateStrings = null;
 
         this.cleanupObservers();
+        unregisterDebugLayer(this);
     }
 
     /**
@@ -544,6 +594,17 @@ export class MiuraElement extends HTMLElement {
 
             const startTime = performance.now();
             this._performanceMetrics.updateCount++;
+            reportTimelineEvent({
+                subsystem: 'element',
+                stage: 'update',
+                message: `Update started for ${this.localName || this.constructor.name}`,
+                componentTag: this.localName || undefined,
+                componentClass: this.constructor.name,
+                element: this,
+                values: {
+                    updateCount: this._performanceMetrics.updateCount,
+                },
+            });
 
             try {
                 // Get all changed properties and clear the map
@@ -576,6 +637,7 @@ export class MiuraElement extends HTMLElement {
                 this._hasRendered = true;
 
                 this.updated(changedProperties);
+                this._reportDebugLayer('updated');
 
                 if (isFirstRender && !this._hasCalledFirstUpdated) {
                     this._hasCalledFirstUpdated = true;
@@ -590,9 +652,35 @@ export class MiuraElement extends HTMLElement {
                 // Track performance
                 this._performanceMetrics.renderTime = performance.now() - startTime;
                 this._performanceMetrics.lastRenderTime = Date.now();
+                reportTimelineEvent({
+                    subsystem: 'element',
+                    stage: 'render',
+                    message: `Render completed for ${this.localName || this.constructor.name}`,
+                    componentTag: this.localName || undefined,
+                    componentClass: this.constructor.name,
+                    element: this,
+                    values: {
+                        renderTime: this._performanceMetrics.renderTime,
+                        updateCount: this._performanceMetrics.updateCount,
+                    },
+                });
                 updateSucceeded = true;
             } catch (error) {
                 this._hasError = true;
+                this._reportElementDiagnostic(error as Error);
+                this._reportDebugLayer('error', error as Error);
+                reportTimelineEvent({
+                    subsystem: 'element',
+                    stage: 'update',
+                    severity: 'error',
+                    message: `Update failed for ${this.localName || this.constructor.name}`,
+                    componentTag: this.localName || undefined,
+                    componentClass: this.constructor.name,
+                    element: this,
+                    values: {
+                        error: error instanceof Error ? error.message : String(error),
+                    },
+                });
                 const handled = this.onError(error as Error);
                 if (!handled) {
                     console.error(`Error updating ${this.constructor.name}:`, error);
@@ -953,6 +1041,109 @@ export class MiuraElement extends HTMLElement {
     }
 
     /**
+     * Access the nearest enclosing <miura-island> wrapper, if this component was hydrated as an island.
+     */
+    protected $island(): MiuraIsland | null {
+        return findIslandHost(this);
+    }
+
+    /**
+     * Access the props that were serialized into the nearest enclosing <miura-island>.
+     * Returns a stable proxy so it can be assigned during field initialization.
+     */
+    protected $islandProps<T extends Record<string, any> = Record<string, any>>(): T {
+        if (!this._islandPropsProxy) {
+            this._islandPropsProxy = new Proxy({}, {
+                get: (_target, property) => this._islandPropsValue[property as string],
+                has: (_target, property) => property in this._islandPropsValue,
+                ownKeys: () => Reflect.ownKeys(this._islandPropsValue),
+                getOwnPropertyDescriptor: (_target, property) => {
+                    if (property in this._islandPropsValue) {
+                        return {
+                            enumerable: true,
+                            configurable: true,
+                            value: this._islandPropsValue[property as string],
+                        };
+                    }
+                    return undefined;
+                },
+            });
+        }
+
+        return this._islandPropsProxy as T;
+    }
+
+    /**
+     * Create a resource that starts from island-provided data and can optionally revalidate on the client.
+     */
+    protected $islandResource<T>(
+        hydrate: () => T | undefined,
+        loader: () => Promise<T> | T,
+        options?: Omit<ResourceOptions, 'key'> & {
+            key?: ResourceKey | (() => ResourceKey);
+            revalidate?: boolean;
+        },
+    ): Resource<T> {
+        const resolvedKey = typeof options?.key === 'function' ? undefined : options?.key;
+        const wrappedLoader = async () => {
+            reportTimelineEvent({
+                subsystem: 'island',
+                stage: 'hydration',
+                message: 'Island resource refresh started',
+                componentTag: this.localName || undefined,
+                componentClass: this.constructor.name,
+                element: this,
+            });
+            try {
+                const value = await loader();
+                reportTimelineEvent({
+                    subsystem: 'island',
+                    stage: 'hydration',
+                    message: 'Island resource refresh resolved',
+                    componentTag: this.localName || undefined,
+                    componentClass: this.constructor.name,
+                    element: this,
+                });
+                return value;
+            } catch (error) {
+                reportTimelineEvent({
+                    subsystem: 'island',
+                    stage: 'hydration',
+                    severity: 'error',
+                    message: 'Island resource refresh failed',
+                    componentTag: this.localName || undefined,
+                    componentClass: this.constructor.name,
+                    element: this,
+                    values: { error: error instanceof Error ? error.message : String(error) },
+                });
+                throw error;
+            }
+        };
+        const resource = createResource(wrappedLoader, () => this.requestUpdate(), { ...options, auto: false, key: resolvedKey });
+        this._registerDebugResource('island-resource', resource as Resource<unknown>, 'island-resource');
+
+        this._connectionSetups.push(() => {
+            this._resolveIslandProps();
+            if (typeof options?.key === 'function') {
+                resource.rekey(options.key());
+            }
+            const hydratedValue = hydrate();
+            if (hydratedValue !== undefined) {
+                resource.hydrate(hydratedValue);
+                if (options?.revalidate === false) {
+                    return;
+                }
+            } else if (options?.auto === false) {
+                return;
+            }
+
+            void resource.refresh().catch(() => undefined);
+        });
+
+        return resource;
+    }
+
+    /**
      * Provide a tree-scoped value to descendant components.
      * Descendants can retrieve it with `$inject()`.
      */
@@ -972,21 +1163,27 @@ export class MiuraElement extends HTMLElement {
      * Access the current route context as a signal-like value.
      */
     protected $route<TRoute = unknown>(router: RouterBridgeLike) {
-        return router.currentSignal as RouteSignalLike<TRoute | undefined>;
+        const signal = router.currentSignal as RouteSignalLike<TRoute | undefined>;
+        this._registerDebugRouteSignal(signal as RouteSignalLike<unknown>, 'route.current');
+        return signal;
     }
 
     /**
      * Derive a reactive value from the current route context.
      */
     protected $routeSelect<T>(router: RouterBridgeLike, selector: (context: unknown) => T) {
-        return router.select(selector);
+        const signal = router.select(selector);
+        this._registerDebugRouteSignal(signal as RouteSignalLike<unknown>, 'route.select');
+        return signal;
     }
 
     /**
      * Access route loader data by key as a signal-like value.
      */
     protected $routeData<T = unknown>(router: RouterBridgeLike, key: string, fallback?: T) {
-        return router.dataSignal<T>(key, fallback);
+        const signal = router.dataSignal<T>(key, fallback);
+        this._registerDebugRouteSignal(signal as RouteSignalLike<unknown>, `route.data:${key}`);
+        return signal;
     }
 
     /**
@@ -1006,7 +1203,46 @@ export class MiuraElement extends HTMLElement {
         const selected = router.select(selector);
         const currentKey = selected.peek();
         const resource = createResource(
-            () => loader(selected.peek()),
+            async () => {
+                const selectedKey = selected.peek();
+                reportTimelineEvent({
+                    subsystem: 'router',
+                    stage: 'loader',
+                    message: 'Route resource refresh started',
+                    componentTag: this.localName || undefined,
+                    componentClass: this.constructor.name,
+                    element: this,
+                    values: { key: selectedKey },
+                });
+                try {
+                    const value = await loader(selectedKey);
+                    reportTimelineEvent({
+                        subsystem: 'router',
+                        stage: 'loader',
+                        message: 'Route resource refresh resolved',
+                        componentTag: this.localName || undefined,
+                        componentClass: this.constructor.name,
+                        element: this,
+                        values: { key: selectedKey },
+                    });
+                    return value;
+                } catch (error) {
+                    reportTimelineEvent({
+                        subsystem: 'router',
+                        stage: 'loader',
+                        severity: 'error',
+                        message: 'Route resource refresh failed',
+                        componentTag: this.localName || undefined,
+                        componentClass: this.constructor.name,
+                        element: this,
+                        values: {
+                            key: selectedKey,
+                            error: error instanceof Error ? error.message : String(error),
+                        },
+                    });
+                    throw error;
+                }
+            },
             () => this.requestUpdate(),
             {
                 ...options,
@@ -1014,6 +1250,8 @@ export class MiuraElement extends HTMLElement {
                 key: this._resolveRouteResourceKey(currentKey, options?.key),
             },
         );
+        this._registerDebugRouteSignal(selected as RouteSignalLike<unknown>, 'route.resource:key');
+        this._registerDebugResource('route-resource', resource as Resource<unknown>, 'route-resource');
         const equals = options?.equals ?? Object.is;
         const skip = options?.skip ?? (() => false);
         let hasValue = false;
@@ -1095,7 +1333,43 @@ export class MiuraElement extends HTMLElement {
         loader: () => Promise<T> | T,
         options?: ResourceOptions
     ): Resource<T> {
-        return createResource(loader, () => this.requestUpdate(), options);
+        const wrappedLoader = async () => {
+            reportTimelineEvent({
+                subsystem: 'element',
+                stage: 'loader',
+                message: 'Resource refresh started',
+                componentTag: this.localName || undefined,
+                componentClass: this.constructor.name,
+                element: this,
+            });
+            try {
+                const value = await loader();
+                reportTimelineEvent({
+                    subsystem: 'element',
+                    stage: 'loader',
+                    message: 'Resource refresh resolved',
+                    componentTag: this.localName || undefined,
+                    componentClass: this.constructor.name,
+                    element: this,
+                });
+                return value;
+            } catch (error) {
+                reportTimelineEvent({
+                    subsystem: 'element',
+                    stage: 'loader',
+                    severity: 'error',
+                    message: 'Resource refresh failed',
+                    componentTag: this.localName || undefined,
+                    componentClass: this.constructor.name,
+                    element: this,
+                    values: { error: error instanceof Error ? error.message : String(error) },
+                });
+                throw error;
+            }
+        };
+        const resource = createResource(wrappedLoader, () => this.requestUpdate(), options);
+        this._registerDebugResource('resource', resource as Resource<unknown>, 'resource');
+        return resource;
     }
 
     /**
@@ -1106,7 +1380,69 @@ export class MiuraElement extends HTMLElement {
         initialValues: T,
         options?: FormOptions<T>
     ): Form<T> {
-        return createForm(initialValues, () => this.requestUpdate(), options);
+        const form = createForm(initialValues, () => this.requestUpdate(), options);
+        const originalSubmit = form.submit.bind(form);
+        form.submit = (async <R>(handler: (values: Readonly<T>, form: Form<T>) => Promise<R> | R): Promise<R> => {
+            reportTimelineEvent({
+                subsystem: 'element',
+                stage: 'runtime',
+                message: 'Form submit started',
+                componentTag: this.localName || undefined,
+                componentClass: this.constructor.name,
+                element: this,
+                values: { values: form.values },
+            });
+            try {
+                const result = await originalSubmit(handler);
+                reportTimelineEvent({
+                    subsystem: 'element',
+                    stage: 'runtime',
+                    message: 'Form submit resolved',
+                    componentTag: this.localName || undefined,
+                    componentClass: this.constructor.name,
+                    element: this,
+                });
+                return result;
+            } catch (error) {
+                reportTimelineEvent({
+                    subsystem: 'element',
+                    stage: 'runtime',
+                    severity: 'error',
+                    message: 'Form submit failed',
+                    componentTag: this.localName || undefined,
+                    componentClass: this.constructor.name,
+                    element: this,
+                    values: { error: error instanceof Error ? error.message : String(error) },
+                });
+                throw error;
+            }
+        }) as Form<T>['submit'];
+
+        const originalValidateAsync = form.validateAsync.bind(form);
+        form.validateAsync = (async (): Promise<boolean> => {
+            reportTimelineEvent({
+                subsystem: 'element',
+                stage: 'runtime',
+                message: 'Async form validation started',
+                componentTag: this.localName || undefined,
+                componentClass: this.constructor.name,
+                element: this,
+            });
+            const valid = await originalValidateAsync();
+            reportTimelineEvent({
+                subsystem: 'element',
+                stage: 'runtime',
+                message: valid ? 'Async form validation passed' : 'Async form validation failed',
+                severity: valid ? 'info' : 'warning',
+                componentTag: this.localName || undefined,
+                componentClass: this.constructor.name,
+                element: this,
+                values: { errors: form.errors },
+            });
+            return valid;
+        }) as Form<T>['validateAsync'];
+        this._registerDebugForm(form as Form<Record<string, any>>);
+        return form;
     }
 
     // ── Slot Utilities ──────────────────────────────────────
@@ -1240,6 +1576,169 @@ export class MiuraElement extends HTMLElement {
                 this._propSignalUnsubs.push(unsub);
             }
         }
+    }
+
+    private _resolveIslandProps(): void {
+        this._islandPropsValue = readIslandProps<Record<string, unknown>>(this) ?? {};
+    }
+
+    private _registerDebugResource(kind: DebugResourceRegistration['kind'], resource: Resource<unknown>, label?: string): void {
+        const existing = this._debugResources.find((entry) => entry.resource === resource);
+        if (existing) {
+            existing.kind = kind;
+            existing.label = label ?? existing.label;
+            return;
+        }
+
+        this._debugResources.push({
+            kind,
+            label: label ?? `${kind}-${this._debugResources.length + 1}`,
+            resource,
+        });
+    }
+
+    private _registerDebugForm(form: Form<Record<string, any>>, label?: string): void {
+        const existing = this._debugForms.find((entry) => entry.form === form);
+        if (existing) {
+            existing.label = label ?? existing.label;
+            return;
+        }
+
+        this._debugForms.push({
+            label: label ?? `form-${this._debugForms.length + 1}`,
+            form,
+        });
+    }
+
+    private _registerDebugRouteSignal(signal: RouteSignalLike<unknown>, label: string): void {
+        const existing = this._debugRouteSignals.find((entry) => entry.signal === signal);
+        if (existing) {
+            existing.label = label;
+            return;
+        }
+
+        this._debugRouteSignals.push({ label, signal });
+    }
+
+    private _getComponentDebugOptions() {
+        const ctor = this.constructor as typeof MiuraElement & { debug?: Record<string, unknown> };
+        return {
+            ...getComponentDebugOptions(ctor),
+            ...(ctor.debug ?? {}),
+        };
+    }
+
+    private _createDebugValuesSnapshot(): Record<string, unknown> {
+        const ctor = this.constructor as typeof MiuraElement;
+        const propKeys = Object.keys(ctor.properties || {});
+        const stateKeys = typeof ctor.state === 'function'
+            ? Object.keys(ctor.state() || {})
+            : [];
+        const computedKeys = ctor.__computedDefinitions
+            ? Array.from(ctor.__computedDefinitions.keys())
+            : [];
+        const keys = Array.from(new Set([...propKeys, ...stateKeys, ...computedKeys]));
+
+        return Object.fromEntries(
+            keys.map((key) => [key, (this as any)[key]])
+        );
+    }
+
+    private _createDebugResourceSnapshot(): Array<Record<string, unknown>> {
+        return this._debugResources.map(({ kind, label, resource }) => ({
+            kind,
+            label,
+            key: resource.key,
+            state: resource.state,
+            loading: resource.loading,
+            refreshing: resource.refreshing,
+            hasValue: resource.value !== undefined,
+            value: resource.value,
+            error: resource.error,
+        }));
+    }
+
+    private _createDebugFormSnapshot(): Array<Record<string, unknown>> {
+        return this._debugForms.map(({ label, form }) => ({
+            label,
+            values: form.values,
+            errors: form.errors,
+            visibleErrors: form.visibleErrors,
+            dirty: form.dirty,
+            valid: form.valid,
+            validating: form.validating,
+            submitting: form.submitting,
+            submitSucceeded: form.submitSucceeded,
+            submitError: form.submitError,
+            touched: Array.from(form.touched),
+        }));
+    }
+
+    private _createDebugRouteSnapshot(): Array<Record<string, unknown>> {
+        return this._debugRouteSignals.map(({ label, signal }) => ({
+            label,
+            value: signal.peek(),
+        }));
+    }
+
+    private _reportDebugLayer(status: 'idle' | 'updated' | 'error', error?: Error): void {
+        const options = this._getComponentDebugOptions();
+        if (options.disabled || options.layers === false) {
+            unregisterDebugLayer(this);
+            return;
+        }
+
+        const ctor = this.constructor as typeof MiuraElement;
+        const label = options.label || this.localName || ctor.tagName || ctor.name;
+        registerDebugLayer({
+            id: `${this.localName || this.constructor.name}-${this._performanceMetrics.updateCount}`,
+            label,
+            element: this,
+            status,
+            renderTime: options.performance === false ? undefined : this._performanceMetrics.renderTime,
+            updateCount: this._performanceMetrics.updateCount,
+            errorMessage: error?.message,
+            color: options.color,
+            showName: options.showName,
+            showRenderTime: options.showRenderTime ?? options.performance,
+            componentTag: this.localName || ctor.tagName,
+            componentClass: ctor.name,
+            valuesSnapshot: this._createDebugValuesSnapshot(),
+            resources: this._createDebugResourceSnapshot(),
+            forms: this._createDebugFormSnapshot(),
+            routes: this._createDebugRouteSnapshot(),
+            metrics: {
+                renderTime: this._performanceMetrics.renderTime,
+                updateCount: this._performanceMetrics.updateCount,
+                lastRenderTime: this._performanceMetrics.lastRenderTime,
+            },
+        });
+    }
+
+    private _reportElementDiagnostic(error: Error): void {
+        const options = this._getComponentDebugOptions();
+        if (options.disabled || options.report === false) {
+            return;
+        }
+
+        const ctor = this.constructor as typeof MiuraElement;
+        const changedProperties = Object.fromEntries(
+            Array.from(this._changedProperties.entries()).map(([key]) => [String(key), (this as any)[key]])
+        );
+
+        reportDiagnostic({
+            subsystem: 'element',
+            stage: 'update',
+            severity: 'error',
+            message: `Failed to update ${options.label ?? ctor.tagName ?? this.localName ?? ctor.name}`,
+            summary: error.message,
+            componentTag: options.label ?? ctor.tagName ?? this.localName ?? undefined,
+            componentClass: ctor.name,
+            valuesSnapshot: changedProperties,
+            stack: error.stack,
+            error,
+            element: this,
+        });
     }
 
     /**

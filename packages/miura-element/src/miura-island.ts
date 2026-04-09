@@ -54,6 +54,8 @@ export class MiuraIsland extends HTMLElement {
 
     private _hydrated = false;
     private _io: IntersectionObserver | null = null;
+    private _propsCache: Record<string, unknown> | null = null;
+    private _hydratedElement: Element | null = null;
 
     connectedCallback(): void {
         const strategy = (this.getAttribute('hydrate') ?? 'load').toLowerCase();
@@ -79,6 +81,17 @@ export class MiuraIsland extends HTMLElement {
         this._hydrate();
     }
 
+    get props(): Record<string, unknown> {
+        if (!this._propsCache) {
+            this._propsCache = this._readProps();
+        }
+        return this._propsCache;
+    }
+
+    get hydratedElement(): Element | null {
+        return this._hydratedElement;
+    }
+
     // ── Private ───────────────────────────────────────────────────────────────
 
     private _hydrate(): void {
@@ -91,10 +104,15 @@ export class MiuraIsland extends HTMLElement {
             return;
         }
 
-        const props = this._readProps();
+        const props = this.props;
         const el = document.createElement(tag);
+        (el as any).__miuraIsland = this;
+        (el as any).__miuraIslandProps = props;
 
         for (const [key, value] of Object.entries(props)) {
+            if (_shouldPreserveExistingValue((el as any)[key])) {
+                continue;
+            }
             (el as any)[key] = value;
         }
 
@@ -106,6 +124,8 @@ export class MiuraIsland extends HTMLElement {
         } else {
             this.appendChild(el);
         }
+
+        this._hydratedElement = el;
 
         this.setAttribute('data-hydrated', '');
         this.dispatchEvent(
@@ -161,6 +181,57 @@ export class MiuraIsland extends HTMLElement {
             setTimeout(() => this._hydrate(), 100);
         }
     }
+}
+
+export function findIslandHost(node: Node | null): MiuraIsland | null {
+    let current: Node | null = node;
+
+    while (current) {
+        if (current instanceof MiuraIsland) {
+            return current;
+        }
+
+        if (current.parentNode instanceof ShadowRoot) {
+            current = current.parentNode.host;
+            continue;
+        }
+
+        if (current.parentNode) {
+            current = current.parentNode;
+            continue;
+        }
+
+        const root = current.getRootNode?.();
+        current = root instanceof ShadowRoot ? root.host : null;
+    }
+
+    return null;
+}
+
+export function readIslandProps<T extends Record<string, any> = Record<string, any>>(node: Node | null): T | undefined {
+    const directProps = (node as any)?.__miuraIslandProps;
+    if (directProps && typeof directProps === 'object') {
+        return directProps as T;
+    }
+
+    return findIslandHost(node)?.props as T | undefined;
+}
+
+function _shouldPreserveExistingValue(value: unknown): boolean {
+    if (typeof value === 'function' && (value as any).__isSignal) {
+        return true;
+    }
+
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
+
+    const candidate = value as Record<string, unknown>;
+    return (
+        typeof candidate.refresh === 'function' ||
+        typeof candidate.submit === 'function' ||
+        typeof candidate.field === 'function'
+    );
 }
 
 // ── Auto-register ─────────────────────────────────────────────────────────────

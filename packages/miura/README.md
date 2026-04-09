@@ -16,6 +16,8 @@ This package bundles and exports all the core modules, making it easy to get sta
 - tree-scoped dependency injection with `$provide()` and `$inject()`
 - router bridge helpers with `$route()`, `$routeSelect()`, and `$routeData()`
 - route-driven async state with `$routeResource()`
+- island hydration helpers with `$islandProps()` and `$islandResource()`
+- integrated debugger runtime with framework-level dev overlays and component layers
 - signals and shared reactive primitives
 
 ## Example
@@ -74,5 +76,8 @@ For lightweight cross-component state, `$shared(key, initial)` gives multiple co
 For parent-to-descendant dependencies, use `createContextKey(...)` with `$provide()` and `$inject()` instead of reaching for shared global keys. Context stays tree-scoped, and the nearest provider wins. When descendants should react to changes, provide a signal or another reactive primitive as the context value.
 
 Route-driven resources now bridge cleanly with router loaders too: `$routeResource()` can derive route-based cache keys automatically and hydrate from route data before revalidating.
+Islands can do the same on the server/client boundary with `$islandProps()` and `$islandResource()`, so server payloads can hydrate directly into component state before optional client revalidation.
+
+When you build on `MiuraFramework`, the debugger can be enabled centrally from `static config.debugger` during development. Individual components can then refine their own debug presentation with `static debug` or `@debug(...)`, for example to rename a layer label or opt out of reporting in a noisy internal helper component. The debugger runtime logger is exported here as `debugLogger` so it stays distinct from the component decorator.
 
 See [@miurajs/miura-element](/Users/fernandoalves/Desktop/_dev/miura-js/packages/miura-element/README.md) for the component API and [docs](/Users/fernandoalves/Desktop/_dev/miura-js/docs/README.md) for the broader framework documentation.

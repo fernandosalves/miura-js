@@ -9,6 +9,7 @@ import type {
     RouteLoaderConfig,
     RouteLoaderState,
 } from './types.js';
+import { reportDiagnostic, reportTimelineEvent } from '@miurajs/miura-debugger';
 import { createDerivedRouteSignal, createRouteDataSignal, createRouteSignal } from './route-signals.js';
 
 import {
@@ -160,6 +161,17 @@ export class MiuraRouter implements RouterInstance {
         options: InternalNavigationOptions,
     ): Promise<NavigationResult> {
         try {
+            reportTimelineEvent({
+                subsystem: 'router',
+                stage: 'navigation',
+                message: `Navigation started for ${location.fullPath}`,
+                routePath: location.pathname,
+                values: {
+                    fullPath: location.fullPath,
+                    replace: options.replace ?? false,
+                    redirectedFrom: options.redirectedFrom,
+                },
+            });
             const match = matchRoute(location.pathname, this.compiledRoutes);
 
             if (!match) {
@@ -226,6 +238,13 @@ export class MiuraRouter implements RouterInstance {
                 });
             }
             if (guardResult === false) {
+                reportTimelineEvent({
+                    subsystem: 'router',
+                    stage: 'navigation',
+                    severity: 'warning',
+                    message: `Navigation blocked for ${location.fullPath}`,
+                    routePath: location.pathname,
+                });
                 this.emit('router:blocked', { to: renderContext, from: this.current });
                 return { ok: false, reason: 'blocked' };
             }
@@ -254,9 +273,44 @@ export class MiuraRouter implements RouterInstance {
 
             this.commitLocation(location, options);
 
+            reportTimelineEvent({
+                subsystem: 'router',
+                stage: 'navigation',
+                message: `Navigation completed for ${location.fullPath}`,
+                routePath: location.pathname,
+                values: {
+                    route: this.current?.route.path,
+                    loaderStatus: renderContext.loaders.status,
+                },
+            });
+
             return { ok: true, context: this.current };
         } catch (error) {
+            reportDiagnostic({
+                subsystem: 'router',
+                stage: 'navigation',
+                severity: 'error',
+                message: `Router navigation failed for ${location.fullPath}`,
+                summary: error instanceof Error ? error.message : String(error),
+                routePath: location.pathname,
+                error,
+                valuesSnapshot: {
+                    pathname: location.pathname,
+                    search: location.search,
+                    hash: location.hash,
+                },
+            });
             this.emit('router:error', { error, location });
+            reportTimelineEvent({
+                subsystem: 'router',
+                stage: 'navigation',
+                severity: 'error',
+                message: `Navigation failed for ${location.fullPath}`,
+                routePath: location.pathname,
+                values: {
+                    error: error instanceof Error ? error.message : String(error),
+                },
+            });
             return { ok: false, reason: 'error', error: error as Error };
         }
     }
@@ -298,6 +352,12 @@ export class MiuraRouter implements RouterInstance {
             };
 
             try {
+                reportTimelineEvent({
+                    subsystem: 'router',
+                    stage: 'loader',
+                    message: `Route loader started: ${descriptor.key}`,
+                    routePath: context.route.path,
+                });
                 const result = await descriptor.load(context);
                 state.entries[descriptor.key] = {
                     ...state.entries[descriptor.key],
@@ -310,6 +370,12 @@ export class MiuraRouter implements RouterInstance {
                 } else if (result && typeof result === 'object') {
                     Object.assign(state.data, result);
                 }
+                reportTimelineEvent({
+                    subsystem: 'router',
+                    stage: 'loader',
+                    message: `Route loader resolved: ${descriptor.key}`,
+                    routePath: context.route.path,
+                });
             } catch (error) {
                 state.entries[descriptor.key] = {
                     ...state.entries[descriptor.key],
@@ -320,8 +386,29 @@ export class MiuraRouter implements RouterInstance {
                 state.status = 'rejected';
 
                 if (!descriptor.optional) {
+                    reportTimelineEvent({
+                        subsystem: 'router',
+                        stage: 'loader',
+                        severity: 'error',
+                        message: `Route loader failed: ${descriptor.key}`,
+                        routePath: context.route.path,
+                        values: {
+                            error: error instanceof Error ? error.message : String(error),
+                            optional: !!descriptor.optional,
+                        },
+                    });
                     throw error;
                 }
+                reportTimelineEvent({
+                    subsystem: 'router',
+                    stage: 'loader',
+                    severity: 'warning',
+                    message: `Optional route loader failed: ${descriptor.key}`,
+                    routePath: context.route.path,
+                    values: {
+                        error: error instanceof Error ? error.message : String(error),
+                    },
+                });
             }
         }
 

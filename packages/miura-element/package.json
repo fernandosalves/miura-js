@@ -39,6 +39,7 @@
     },
     "homepage": "https://github.com/fernandosalves/miura-js#readme",
     "dependencies": {
+        "@miurajs/miura-debugger": "^0.2.2",
         "@miurajs/miura-render": "^0.2.20"
     },
     "devDependencies": {
