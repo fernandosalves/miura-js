@@ -42,6 +42,12 @@ type DebugRouteRegistration = {
     signal: RouteSignalLike<unknown>;
 };
 
+type MiuraSourceError = Error & {
+    miuraSourceElement?: HTMLElement | null;
+    miuraComponentTag?: string;
+    miuraComponentClass?: string;
+};
+
 /**
  * Base class for miura custom elements.
  * Provides reactive properties, template rendering, and lifecycle management.
@@ -593,6 +599,7 @@ export class MiuraElement extends HTMLElement {
             }
 
             const startTime = performance.now();
+            let changedProperties = new Map<PropertyKey, unknown>();
             this._performanceMetrics.updateCount++;
             reportTimelineEvent({
                 subsystem: 'element',
@@ -608,7 +615,7 @@ export class MiuraElement extends HTMLElement {
 
             try {
                 // Get all changed properties and clear the map
-                const changedProperties = new Map(this._changedProperties);
+                changedProperties = new Map(this._changedProperties);
                 this._changedProperties.clear();
 
                 // Allow subclass to skip update
@@ -666,8 +673,9 @@ export class MiuraElement extends HTMLElement {
                 });
                 updateSucceeded = true;
             } catch (error) {
+                this._annotateErrorSource(error);
                 this._hasError = true;
-                this._reportElementDiagnostic(error as Error);
+                this._reportElementDiagnostic(error as Error, changedProperties);
                 this._reportDebugLayer('error', error as Error);
                 reportTimelineEvent({
                     subsystem: 'element',
@@ -681,10 +689,8 @@ export class MiuraElement extends HTMLElement {
                         error: error instanceof Error ? error.message : String(error),
                     },
                 });
-                const handled = this.onError(error as Error);
-                if (!handled) {
-                    console.error(`Error updating ${this.constructor.name}:`, error);
-                }
+                console.error(`Error updating ${this.constructor.name}:`, error);
+                this.onError(error as Error);
             }
         })();
 
@@ -1715,30 +1721,67 @@ export class MiuraElement extends HTMLElement {
         });
     }
 
-    private _reportElementDiagnostic(error: Error): void {
+    private _reportElementDiagnostic(error: Error, changedPropertiesMap?: Map<PropertyKey, unknown>): void {
         const options = this._getComponentDebugOptions();
         if (options.disabled || options.report === false) {
             return;
         }
 
         const ctor = this.constructor as typeof MiuraElement;
+        const source = this._resolveDiagnosticSource(error);
         const changedProperties = Object.fromEntries(
-            Array.from(this._changedProperties.entries()).map(([key]) => [String(key), (this as any)[key]])
+            Array.from((changedPropertiesMap ?? this._changedProperties).entries()).map(([key]) => [String(key), (this as any)[key]])
         );
+        const hasChangedProperties = Object.keys(changedProperties).length > 0;
 
         reportDiagnostic({
             subsystem: 'element',
             stage: 'update',
             severity: 'error',
-            message: `Failed to update ${options.label ?? ctor.tagName ?? this.localName ?? ctor.name}`,
+            message: `Failed to update ${options.label ?? source.componentTag ?? ctor.tagName ?? this.localName ?? ctor.name}`,
             summary: error.message,
-            componentTag: options.label ?? ctor.tagName ?? this.localName ?? undefined,
-            componentClass: ctor.name,
-            valuesSnapshot: changedProperties,
+            componentTag: options.label ?? source.componentTag,
+            componentClass: source.componentClass,
+            valuesSnapshot: hasChangedProperties ? changedProperties : undefined,
             stack: error.stack,
             error,
-            element: this,
+            element: source.element,
         });
+    }
+
+    private _annotateErrorSource(error: unknown): void {
+        if (!(error instanceof Error)) {
+            return;
+        }
+
+        const sourceError = error as MiuraSourceError;
+        if (!sourceError.miuraSourceElement) {
+            sourceError.miuraSourceElement = this;
+        }
+
+        if (!sourceError.miuraComponentTag) {
+            const ctor = this.constructor as typeof MiuraElement;
+            sourceError.miuraComponentTag = this.localName || ctor.tagName || ctor.name;
+        }
+
+        if (!sourceError.miuraComponentClass) {
+            sourceError.miuraComponentClass = this.constructor.name;
+        }
+    }
+
+    private _resolveDiagnosticSource(error: Error): {
+        element: HTMLElement;
+        componentTag: string;
+        componentClass: string;
+    } {
+        const ctor = this.constructor as typeof MiuraElement;
+        const sourceError = error as MiuraSourceError;
+
+        return {
+            element: sourceError.miuraSourceElement ?? this,
+            componentTag: sourceError.miuraComponentTag ?? this.localName ?? ctor.tagName ?? ctor.name,
+            componentClass: sourceError.miuraComponentClass ?? ctor.name,
+        };
     }
 
     /**

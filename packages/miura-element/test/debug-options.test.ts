@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearDebugLayers, clearDiagnostics, clearTimelineEvents, getDebugLayers, getDiagnostics, getTimelineEvents } from '@miurajs/miura-debugger';
 import { componentDebug, debug } from '../src/decorators.js';
 import { MiuraElement } from '../src/miura-element.js';
@@ -154,5 +154,123 @@ describe('component debug options', () => {
         expect(messages).toContain('Async form validation started');
         expect(messages).toContain('Form submit started');
         expect(messages).toContain('Form submit resolved');
+    });
+
+    it('reports the exact failing child component in nested error scenarios', async () => {
+        const childTag = 'debug-nested-crash-child';
+        const parentTag = 'debug-nested-crash-parent';
+
+        class NestedCrashChild extends MiuraElement {
+            static override properties = {
+                shouldThrow: { type: Boolean, default: true },
+            };
+
+            declare shouldThrow: boolean;
+
+            protected override onError(): boolean {
+                return true;
+            }
+
+            protected override template() {
+                if (this.shouldThrow) {
+                    throw new Error('child boom');
+                }
+                return html`<p>child ok</p>`;
+            }
+        }
+
+        class NestedCrashParent extends MiuraElement {
+            protected override template() {
+                return html`<debug-nested-crash-child></debug-nested-crash-child>`;
+            }
+        }
+
+        if (!customElements.get(childTag)) {
+            customElements.define(childTag, NestedCrashChild);
+        }
+        if (!customElements.get(parentTag)) {
+            customElements.define(parentTag, NestedCrashParent);
+        }
+
+        const parent = document.createElement(parentTag) as NestedCrashParent;
+        document.body.appendChild(parent);
+        await parent.updateComplete;
+
+        const child = parent.shadowRoot?.querySelector(childTag) as NestedCrashChild | null;
+        expect(child).not.toBeNull();
+        await child?.updateComplete;
+
+        const diagnostic = getDiagnostics()[0];
+        expect(diagnostic?.summary).toBe('child boom');
+        expect(diagnostic?.element).toBe(child);
+        expect(diagnostic?.componentTag).toBe(childTag);
+    });
+
+    it('captures changed values for element update errors', async () => {
+        const tagName = `debug-error-values-${crypto.randomUUID()}`;
+
+        class ErrorValuesElement extends MiuraElement {
+            static override properties = {
+                count: { type: Number, default: 0 },
+                shouldThrow: { type: Boolean, default: false },
+            };
+
+            declare count: number;
+            declare shouldThrow: boolean;
+
+            protected override onError(): boolean {
+                return true;
+            }
+
+            protected override template() {
+                if (this.shouldThrow) {
+                    throw new Error(`boom ${this.count}`);
+                }
+                return html`<p>${this.count}</p>`;
+            }
+        }
+
+        customElements.define(tagName, ErrorValuesElement);
+        const element = document.createElement(tagName) as ErrorValuesElement;
+        document.body.appendChild(element);
+        await element.updateComplete;
+
+        element.count = 1;
+        element.shouldThrow = true;
+        await element.updateComplete;
+
+        const diagnostic = getDiagnostics()[0];
+        expect(diagnostic?.valuesSnapshot).toMatchObject({
+            count: 1,
+            shouldThrow: true,
+        });
+    });
+
+    it('logs handled element errors to the console', async () => {
+        const tagName = `debug-console-error-${crypto.randomUUID()}`;
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        class ConsoleErrorElement extends MiuraElement {
+            protected override onError(): boolean {
+                return true;
+            }
+
+            protected override template() {
+                throw new Error('console boom');
+            }
+        }
+
+        customElements.define(tagName, ConsoleErrorElement);
+
+        try {
+            const element = document.createElement(tagName) as ConsoleErrorElement;
+            document.body.appendChild(element);
+            await element.updateComplete;
+
+            expect(consoleSpy).toHaveBeenCalled();
+            expect(consoleSpy.mock.calls[0]?.[0]).toContain('Error updating ConsoleErrorElement:');
+        } finally {
+            consoleSpy.mockRestore();
+        }
     });
 });

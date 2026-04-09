@@ -130,6 +130,182 @@ describe('miura debugger runtime', () => {
         expect(bodyText).toContain('Render completed for blog-card');
     });
 
+    it('shows a runtime panel when only timeline events exist', () => {
+        enableMiuraDebugger({ overlay: true, layers: false, performance: false, openOnTimeline: true });
+
+        reportTimelineEvent({
+            subsystem: 'router',
+            stage: 'navigation',
+            message: 'Navigation completed for /settings',
+            routePath: '/settings',
+        });
+
+        const overlay = document.querySelector('miura-dev-overlay') as HTMLElement | null;
+        const panel = overlay?.shadowRoot?.querySelector('.panel') as HTMLElement | null;
+        const bodyText = overlay?.shadowRoot?.querySelector('.body')?.textContent ?? '';
+
+        expect(panel?.classList.contains('hidden')).toBe(false);
+        expect(bodyText).toContain('Miura debugger timeline');
+        expect(bodyText).toContain('Navigation completed for /settings');
+    });
+
+    it('keeps the panel closed for timeline-only events when openOnTimeline is disabled', () => {
+        enableMiuraDebugger({ overlay: true, layers: false, performance: false, openOnTimeline: false });
+
+        reportTimelineEvent({
+            subsystem: 'router',
+            stage: 'navigation',
+            message: 'Navigation completed for /settings',
+            routePath: '/settings',
+        });
+
+        const overlay = document.querySelector('miura-dev-overlay') as HTMLElement | null;
+        const panel = overlay?.shadowRoot?.querySelector('.panel') as HTMLElement | null;
+
+        expect(panel?.classList.contains('hidden')).toBe(true);
+    });
+
+    it('reopens the panel when a new timeline event arrives after dismiss', () => {
+        enableMiuraDebugger({ overlay: true, layers: false, performance: false, openOnTimeline: true });
+
+        reportTimelineEvent({
+            subsystem: 'router',
+            stage: 'navigation',
+            message: 'Navigation completed for /settings',
+            routePath: '/settings',
+        });
+
+        const overlay = document.querySelector('miura-dev-overlay') as HTMLElement | null;
+        const panel = overlay?.shadowRoot?.querySelector('.panel') as HTMLElement | null;
+        const closeButton = overlay?.shadowRoot?.querySelector('[data-action="close"]') as HTMLButtonElement | null;
+
+        expect(panel?.classList.contains('hidden')).toBe(false);
+
+        closeButton?.click();
+        expect(panel?.classList.contains('hidden')).toBe(true);
+
+        reportTimelineEvent({
+            subsystem: 'element',
+            stage: 'render',
+            message: 'Render completed for blog-card',
+        });
+
+        expect(panel?.classList.contains('hidden')).toBe(false);
+    });
+
+    it('reopens the panel when a new error arrives after dismiss', () => {
+        enableMiuraDebugger({ overlay: true, layers: false, performance: false, openOnError: true });
+
+        reportDiagnostic({
+            subsystem: 'element',
+            stage: 'update',
+            severity: 'error',
+            message: 'Failed to update blog-card',
+        });
+
+        const overlay = document.querySelector('miura-dev-overlay') as HTMLElement | null;
+        const panel = overlay?.shadowRoot?.querySelector('.panel') as HTMLElement | null;
+        const closeButton = overlay?.shadowRoot?.querySelector('[data-action="close"]') as HTMLButtonElement | null;
+
+        expect(panel?.classList.contains('hidden')).toBe(false);
+
+        closeButton?.click();
+        expect(panel?.classList.contains('hidden')).toBe(true);
+
+        reportDiagnostic({
+            subsystem: 'element',
+            stage: 'update',
+            severity: 'error',
+            message: 'Another render failure',
+        });
+
+        expect(panel?.classList.contains('hidden')).toBe(false);
+    });
+
+    it('does not start dragging when clicking a header control button', () => {
+        enableMiuraDebugger({ overlay: true, layers: false, performance: false, openOnError: true });
+
+        reportDiagnostic({
+            subsystem: 'element',
+            stage: 'update',
+            severity: 'error',
+            message: 'Failed to update blog-card',
+        });
+
+        const overlay = document.querySelector('miura-dev-overlay') as HTMLElement | null;
+        const panel = overlay?.shadowRoot?.querySelector('.panel') as HTMLElement | null;
+        const closeButton = overlay?.shadowRoot?.querySelector('[data-action="close"]') as HTMLButtonElement | null;
+
+        expect(panel?.classList.contains('hidden')).toBe(false);
+
+        const pointerDown = new Event('pointerdown', { bubbles: true, composed: true }) as Event & { pointerId: number };
+        pointerDown.pointerId = 1;
+        const pointerUp = new Event('pointerup', { bubbles: true, composed: true }) as Event & { pointerId: number };
+        pointerUp.pointerId = 1;
+
+        closeButton?.dispatchEvent(pointerDown);
+        closeButton?.dispatchEvent(pointerUp);
+        closeButton?.click();
+
+        expect(panel?.classList.contains('hidden')).toBe(true);
+    });
+
+    it('removes visual overlays when the panel is closed', () => {
+        enableMiuraDebugger({ overlay: true, layers: true, performance: true, openOnError: true });
+
+        const element = document.createElement('div');
+        document.body.appendChild(element);
+        Object.defineProperty(element, 'getBoundingClientRect', {
+            configurable: true,
+            value: () => ({
+                left: 16,
+                top: 24,
+                width: 100,
+                height: 40,
+                right: 116,
+                bottom: 64,
+                x: 16,
+                y: 24,
+                toJSON: () => ({}),
+            }),
+        });
+
+        registerDebugLayer({
+            id: 'overlay-demo-1',
+            label: 'OverlayDemo',
+            element,
+            status: 'error',
+            componentTag: 'overlay-demo',
+            renderTime: 1.2,
+            updateCount: 1,
+        });
+
+        reportDiagnostic({
+            subsystem: 'element',
+            stage: 'update',
+            severity: 'error',
+            message: 'Failed to update overlay-demo',
+            componentTag: 'overlay-demo',
+            element,
+        });
+
+        const overlay = document.querySelector('miura-dev-overlay') as HTMLElement | null;
+        const panel = overlay?.shadowRoot?.querySelector('.panel') as HTMLElement | null;
+        const layerRoot = overlay?.shadowRoot?.querySelector('.layer-root') as HTMLElement | null;
+        const focusRoot = overlay?.shadowRoot?.querySelector('.focus-root') as HTMLElement | null;
+        const closeButton = overlay?.shadowRoot?.querySelector('[data-action="close"]') as HTMLButtonElement | null;
+
+        expect(panel?.classList.contains('hidden')).toBe(false);
+        expect(layerRoot?.innerHTML).toContain('layer-box');
+        expect(focusRoot?.innerHTML).toContain('focus-box');
+
+        closeButton?.click();
+
+        expect(panel?.classList.contains('hidden')).toBe(true);
+        expect(layerRoot?.innerHTML).toBe('');
+        expect(focusRoot?.innerHTML).toBe('');
+    });
+
     it('renders click-through layer highlights so the story remains interactive', () => {
         enableMiuraDebugger({ overlay: true, layers: true, performance: true });
 

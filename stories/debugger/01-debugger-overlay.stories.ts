@@ -150,8 +150,11 @@ class DebuggerOverlayDemo extends MiuraElement {
 
 const meta: Meta = {
   title: 'Miura/Debugger/01. Overlay And Layers',
-  tags: [],
+  tags: ['!autodocs'],
   parameters: {
+    miuraDebugger: {
+      enabled: true,
+    },
     docs: {
       disable: true,
     },
@@ -164,6 +167,8 @@ const meta: Meta = {
       overlay: true,
       layers: true,
       performance: true,
+      openOnError: true,
+      openOnTimeline: false,
     });
     return document.createElement(overlayTag);
   },

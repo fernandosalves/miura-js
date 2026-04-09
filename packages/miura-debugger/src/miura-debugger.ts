@@ -58,6 +58,8 @@ export interface MiuraDebuggerOptions {
     overlay?: boolean;
     layers?: boolean;
     performance?: boolean;
+    openOnError?: boolean;
+    openOnTimeline?: boolean;
     maxDiagnostics?: number;
     maxTimelineEvents?: number;
 }
@@ -146,6 +148,8 @@ const DEFAULT_OPTIONS: Required<MiuraDebuggerOptions> = {
     overlay: true,
     layers: false,
     performance: false,
+    openOnError: true,
+    openOnTimeline: false,
     maxDiagnostics: 20,
     maxTimelineEvents: 80,
 };
@@ -519,6 +523,9 @@ class MiuraDevOverlayElement extends HTMLElement {
     private dragOffset = { x: 0, y: 0 };
     private panelPosition = { x: 24, y: 24 };
     private controlsAttached = false;
+    private dismissed = false;
+    private lastDiagnosticId: string | null = null;
+    private lastTimelineId: string | null = null;
     private readonly controlClickHandler = (event: Event) => {
         const target = event.target as HTMLElement | null;
         const action = target?.closest('[data-action]')?.getAttribute('data-action');
@@ -541,6 +548,16 @@ class MiuraDevOverlayElement extends HTMLElement {
 
         if (action === 'clear') {
             clearDiagnostics();
+            return;
+        }
+
+        if (action === 'close') {
+            this.dismissed = true;
+            cancelAnimationFrame(this.rafId);
+            this.rafId = 0;
+            this.renderFocusHighlight(null);
+            this.renderLayerHighlights();
+            this.render();
         }
     };
 
@@ -554,6 +571,11 @@ class MiuraDevOverlayElement extends HTMLElement {
         }
 
         this.diagnosticsUnsub = subscribeDiagnostics((items) => {
+            const nextId = items[0]?.id ?? null;
+            if (nextId && nextId !== this.lastDiagnosticId && debuggerOptions.openOnError) {
+                this.dismissed = false;
+            }
+            this.lastDiagnosticId = nextId;
             this.activeIndex = Math.min(this.activeIndex, Math.max(items.length - 1, 0));
             this.render();
         });
@@ -564,6 +586,11 @@ class MiuraDevOverlayElement extends HTMLElement {
         });
 
         this.timelineUnsub = subscribeTimeline((events) => {
+            const nextId = events[0]?.id ?? null;
+            if (nextId && nextId !== this.lastTimelineId && debuggerOptions.openOnTimeline) {
+                this.dismissed = false;
+            }
+            this.lastTimelineId = nextId;
             this.timelineSnapshots = events;
             this.render();
         });
@@ -607,6 +634,7 @@ class MiuraDevOverlayElement extends HTMLElement {
                     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
                     pointer-events: auto;
                     backdrop-filter: blur(18px);
+                    z-index: 30;
                 }
                 .hidden { display: none; }
                 .header {
@@ -706,11 +734,13 @@ class MiuraDevOverlayElement extends HTMLElement {
                     position: fixed;
                     inset: 0;
                     pointer-events: none;
+                    z-index: 10;
                 }
                 .focus-root {
                     position: fixed;
                     inset: 0;
                     pointer-events: none;
+                    z-index: 20;
                 }
                 .focus-box {
                     position: fixed;
@@ -740,7 +770,6 @@ class MiuraDevOverlayElement extends HTMLElement {
                     border-radius: 8px;
                     box-sizing: border-box;
                     pointer-events: none;
-                    animation: miura-layer-pulse 1.6s ease-in-out infinite;
                 }
                 .layer-box.error {
                     border-color: rgba(255, 95, 95, 0.95);
@@ -759,20 +788,6 @@ class MiuraDevOverlayElement extends HTMLElement {
                     white-space: nowrap;
                     pointer-events: none;
                 }
-                @keyframes miura-layer-pulse {
-                    0% {
-                        opacity: 0.28;
-                        transform: scale(0.998);
-                    }
-                    50% {
-                        opacity: 0.82;
-                        transform: scale(1);
-                    }
-                    100% {
-                        opacity: 0.28;
-                        transform: scale(0.998);
-                    }
-                }
             </style>
             <div class="panel hidden" part="panel">
                 <div class="header" part="header">
@@ -782,6 +797,7 @@ class MiuraDevOverlayElement extends HTMLElement {
                     <div class="controls">
                         <button type="button" data-action="prev">Prev</button>
                         <button type="button" data-action="next">Next</button>
+                        <button type="button" data-action="close">Close</button>
                         <button type="button" data-action="clear">Clear</button>
                     </div>
                 </div>
@@ -798,6 +814,10 @@ class MiuraDevOverlayElement extends HTMLElement {
         if (!header || !panel) return;
 
         header.addEventListener('pointerdown', (event) => {
+            const target = event.target as HTMLElement | null;
+            if (target?.closest('.controls, button')) {
+                return;
+            }
             this.dragPointerId = event.pointerId;
             this.dragOffset = {
                 x: event.clientX - this.panelPosition.x,
@@ -829,11 +849,17 @@ class MiuraDevOverlayElement extends HTMLElement {
         if (!panel || !body) return;
 
         const items = getDiagnostics();
+        const hasTimeline = this.timelineSnapshots.length > 0;
+        const shouldShowForError = debuggerOptions.openOnError && items.length > 0;
+        const shouldShowForTimeline = debuggerOptions.openOnTimeline && items.length === 0 && hasTimeline;
 
-        if (items.length === 0) {
+        if ((!shouldShowForError && !shouldShowForTimeline) || this.dismissed) {
             panel.classList.add('hidden');
-            body.innerHTML = '';
+            if (!shouldShowForError && !shouldShowForTimeline) {
+                body.innerHTML = '';
+            }
             this.renderFocusHighlight(null);
+            this.renderLayerHighlights();
             return;
         }
 
@@ -843,8 +869,16 @@ class MiuraDevOverlayElement extends HTMLElement {
         const item = items[this.activeIndex] ?? items[0] ?? null;
 
         if (!item) {
-            panel.classList.add('hidden');
-            body.innerHTML = '';
+            body.innerHTML = `
+                <div class="section">
+                    <div class="subtle">debugger / runtime timeline</div>
+                    <p class="message">Miura debugger timeline</p>
+                    <div class="subtle">
+                        This view stays open while runtime events accumulate, even when there is no active error.
+                    </div>
+                </div>
+                ${this.renderTimelineSection(null, 12)}
+            `;
             this.renderFocusHighlight(null);
             return;
         }
@@ -855,6 +889,7 @@ class MiuraDevOverlayElement extends HTMLElement {
                 <div class="subtle">${entry.detail}</div>
             </div>
         `).join('');
+        const contextRows = renderContextRows(item);
 
         body.innerHTML = `
             <div class="section">
@@ -862,21 +897,19 @@ class MiuraDevOverlayElement extends HTMLElement {
                 <p class="message">${escapeHtml(item.message)}</p>
                 ${item.summary ? `<div class="subtle">${escapeHtml(item.summary)}</div>` : ''}
             </div>
-            <div class="section">
-                <p class="section-title">Context</p>
-                ${row('Component', item.componentTag ?? item.componentClass ?? 'Unknown component')}
-                ${row('Binding', item.bindingLabel ?? item.bindingKind ?? 'n/a')}
-                ${row('Property', item.propertyName ?? 'n/a')}
-                ${row('Route', item.routePath ?? 'n/a')}
-                ${row('Plugin', item.pluginName ?? 'n/a')}
-            </div>
+            ${contextRows ? `
+                <div class="section">
+                    <p class="section-title">Context</p>
+                    ${contextRows}
+                </div>
+            ` : ''}
             ${item.templateFragment ? `
                 <div class="section">
                     <p class="section-title">Template Fragment</p>
                     <pre>${escapeHtml(item.templateFragment)}</pre>
                 </div>
             ` : ''}
-            ${item.valuesSnapshot ? `
+            ${hasRenderableValues(item.valuesSnapshot) ? `
                 <div class="section">
                     <p class="section-title">Values</p>
                     <pre>${escapeHtml(JSON.stringify(item.valuesSnapshot, null, 2))}</pre>
@@ -912,10 +945,10 @@ class MiuraDevOverlayElement extends HTMLElement {
         return this.renderLayerDetailsSection(layer);
     }
 
-    private renderTimelineSection(element?: HTMLElement | null): string {
+    private renderTimelineSection(element?: HTMLElement | null, limit = 8): string {
         const items = this.timelineSnapshots
             .filter((event) => !element || event.element === element)
-            .slice(0, 8);
+            .slice(0, limit);
 
         if (items.length === 0) {
             return '';
@@ -1016,6 +1049,11 @@ class MiuraDevOverlayElement extends HTMLElement {
             return;
         }
 
+        if (this.dismissed || !item) {
+            root.innerHTML = '';
+            return;
+        }
+
         const element = item?.element;
         if (!element?.isConnected) {
             root.innerHTML = '';
@@ -1041,7 +1079,7 @@ class MiuraDevOverlayElement extends HTMLElement {
         const root = this.shadow.querySelector('.layer-root') as HTMLElement | null;
         if (!root) return;
 
-        if (!debuggerOptions.layers || debuggerOptions.disabled) {
+        if (!debuggerOptions.layers || debuggerOptions.disabled || this.dismissed) {
             root.innerHTML = '';
             return;
         }
@@ -1070,6 +1108,12 @@ class MiuraDevOverlayElement extends HTMLElement {
         root.innerHTML = items;
         if (this.rafId === 0 && debuggerOptions.layers) {
             const loop = () => {
+                if (this.dismissed || debuggerOptions.disabled || !debuggerOptions.layers) {
+                    this.rafId = 0;
+                    root.innerHTML = '';
+                    this.renderFocusHighlight(null);
+                    return;
+                }
                 this.rafId = requestAnimationFrame(loop);
                 this.renderLayerHighlights();
                 this.renderFocusHighlight(getDiagnostics()[this.activeIndex] ?? getDiagnostics()[0] ?? null);
@@ -1104,6 +1148,36 @@ function escapeHtml(value: string): string {
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#39;');
+}
+
+function hasRenderableValues(value: Record<string, unknown> | undefined): boolean {
+    return !!value && Object.keys(value).length > 0;
+}
+
+function renderContextRows(item: MiuraDiagnostic): string {
+    const rows: string[] = [];
+
+    if (item.componentTag ?? item.componentClass) {
+        rows.push(row('Component', item.componentTag ?? item.componentClass ?? 'Unknown component'));
+    }
+
+    if (item.bindingLabel ?? item.bindingKind) {
+        rows.push(row('Binding', item.bindingLabel ?? item.bindingKind ?? 'n/a'));
+    }
+
+    if (item.propertyName) {
+        rows.push(row('Property', item.propertyName));
+    }
+
+    if (item.routePath) {
+        rows.push(row('Route', item.routePath));
+    }
+
+    if (item.pluginName) {
+        rows.push(row('Plugin', item.pluginName));
+    }
+
+    return rows.join('');
 }
 
 function ensureOverlayElement(): HTMLElement | null {

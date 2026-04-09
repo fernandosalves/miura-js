@@ -176,8 +176,8 @@ class DebuggerTimelineDemo extends MiuraElement {
           <h2>Debugger timeline playground</h2>
           <p>
             This story exercises resource refreshes, async form validation and submission, and
-            in-memory router navigation. Open the debugger overlay and click the component layer to
-            inspect the timeline panel as events accumulate.
+            in-memory router navigation. The debugger panel should stay visible as runtime events
+            accumulate, even without an active error.
           </p>
         </div>
 
@@ -219,8 +219,11 @@ class DebuggerTimelineDemo extends MiuraElement {
 
 const meta: Meta = {
   title: 'Miura/Debugger/02. Timeline Playground',
-  tags: [],
+  tags: ['!autodocs'],
   parameters: {
+    miuraDebugger: {
+      enabled: true,
+    },
     docs: {
       disable: true,
     },
@@ -233,6 +236,8 @@ const meta: Meta = {
       overlay: true,
       layers: true,
       performance: true,
+      openOnError: true,
+      openOnTimeline: true,
     });
     return document.createElement(timelineTag);
   },
