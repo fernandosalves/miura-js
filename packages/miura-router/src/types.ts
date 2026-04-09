@@ -1,3 +1,5 @@
+import type { RouteSignal } from './route-signals.js';
+
 export type RouterMode = 'hash' | 'history' | 'memory';
 
 /**
@@ -128,9 +130,12 @@ export type NavigationResult = NavigationSuccess | NavigationFailure;
 export interface Router {
     readonly current?: RouteContext;
     readonly previous?: RouteContext | null;
+    readonly currentSignal: RouteSignal<RouteContext | undefined>;
     start(): Promise<void>;
     stop(): void;
     destroy(): void;
+    select<T>(selector: (context: RouteContext | undefined) => T): RouteSignal<T>;
+    dataSignal<T = unknown>(key: string, fallback?: T): RouteSignal<T | undefined>;
     navigate(target: string, options?: NavigationOptions): Promise<NavigationResult>;
     replace(target: string, options?: NavigationOptions): Promise<NavigationResult>;
     back(): void;

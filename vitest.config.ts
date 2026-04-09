@@ -9,6 +9,7 @@ export default defineConfig({
       '@miurajs/miura-debugger': resolve(__dirname, 'packages/miura-debugger/index.ts'),
       '@miurajs/miura-render': resolve(__dirname, 'packages/miura-render/index.ts'),
       '@miurajs/miura-element': resolve(__dirname, 'packages/miura-element/index.ts'),
+      '@miurajs/miura-router': resolve(__dirname, 'packages/miura-router/index.ts'),
     },
   },
   test: {

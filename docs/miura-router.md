@@ -151,6 +151,17 @@ interface RouteContext {
 }
 ```
 
+## Reactive Signals
+
+The router also exposes signal-like route state:
+
+```typescript
+const pathname = router.select((context) => context?.pathname ?? '/');
+const profile = router.dataSignal('profile');
+```
+
+Use this when components or app services need to react to route context or loader data without manually passing everything through the render callback.
+
 ---
 
 ## Router API

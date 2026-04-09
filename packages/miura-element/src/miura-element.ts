@@ -1,5 +1,6 @@
 import { PropertyValues } from './property-values';
 import { PropertyDeclarations, createProperties, createStateProperties, SIGNAL_KEY_PREFIX } from './properties';
+import type { RouteSignalLike, RouterBridgeLike } from './router-bridge.js';
 import { signal, computed, Signal, ReadonlySignal } from './signals.js';
 import { shared, type SharedKey } from './shared.js';
 import { createForm, Form, FormOptions } from './form.js';
@@ -945,6 +946,27 @@ export class MiuraElement extends HTMLElement {
      */
     protected $shared<T>(key: SharedKey, initial: T): Signal<T> {
         return shared(key, initial);
+    }
+
+    /**
+     * Access the current route context as a signal-like value.
+     */
+    protected $route<TRoute = unknown>(router: RouterBridgeLike) {
+        return router.currentSignal as RouteSignalLike<TRoute | undefined>;
+    }
+
+    /**
+     * Derive a reactive value from the current route context.
+     */
+    protected $routeSelect<T>(router: RouterBridgeLike, selector: (context: unknown) => T) {
+        return router.select(selector);
+    }
+
+    /**
+     * Access route loader data by key as a signal-like value.
+     */
+    protected $routeData<T = unknown>(router: RouterBridgeLike, key: string, fallback?: T) {
+        return router.dataSignal<T>(key, fallback);
     }
 
     /**

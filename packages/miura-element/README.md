@@ -16,6 +16,7 @@ The core component system for the miura framework. Provides the `MiuraElement` b
 - **AOT / JIT Compiler** — `static compiler = 'AOT'` to opt a component into the zero-DOM-query render path
 - **Standalone Signals** — `$signal()` and `$computed()` for use outside components
 - **Shared Signals** — `$shared(key, initial)` for lightweight app-wide reactive state
+- **Router Bridge** — `$route()`, `$routeSelect()`, and `$routeData()` for reactive route context in components
 - **Slot Utilities** — `querySlotted()` and `onSlotChange()` for managing distributed content
 - **Decorators** — `@component`, `@property`, `@computed` for concise definitions
 - **Islands Architecture** — `<miura-island>` wrapper for partial hydration with `load`, `visible`, and `idle` strategies
@@ -366,6 +367,27 @@ You can also pass array keys directly:
 ```typescript
 this.theme = this.$shared(['blog-editor', 'theme'], 'light');
 ```
+
+### Router Bridge
+
+Use the router bridge helpers when a component should react to route context or loader data directly.
+
+```typescript
+class ProfilePage extends MiuraElement {
+  route = this.$route(router);
+  pathname = this.$routeSelect(router, (context) => context?.pathname ?? '/');
+  profile = this.$routeData(router, 'profile');
+
+  template() {
+    return html`
+      <p>${this.pathname}</p>
+      <h2>${this.profile()?.name ?? 'Loading...'}</h2>
+    `;
+  }
+}
+```
+
+These helpers wrap the router's reactive route signals so components can consume route state without manually threading `context.data` through props.
 
 ### Styles
 

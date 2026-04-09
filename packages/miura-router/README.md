@@ -11,6 +11,7 @@ Modern, declarative routing for miura applications. Built for Web Components, th
 - **Runtime param validation**: optional Zod / Valibot / ArkType schema on any route.
 - **Event-driven**: emits lifecycle events through the framework EventBus.
 - **Performance hooks**: timing integration via `PerformanceMonitor`.
+- **Reactive route signals**: consume current route context and loader data as signal-like values.
 
 ## 🚦 Quick Start
 
@@ -74,6 +75,13 @@ const routes = [
 ```
 
 Access loader results inside the render callback (or components via `routeContext`) through `context.data`.
+
+You can also read loader data reactively from the router itself:
+
+```ts
+const profile = router.dataSignal('profile');
+const permissions = router.dataSignal('permissions', []);
+```
 
 For richer route state, you can also use named loaders:
 
@@ -175,6 +183,9 @@ import { RouterOutlet } from '@miurajs/miura-router';
 | `router.forward()` | Go forward in history |
 | `router.current` | Current `RouteContext` |
 | `router.previous` | Previous `RouteContext` |
+| `router.currentSignal` | Signal-like current route context |
+| `router.select(fn)` | Derive a reactive value from the current route context |
+| `router.dataSignal(key, fallback?)` | Reactive access to loader data by key |
 | `router.start()` | Start listening to navigation events |
 | `router.stop()` | Stop listening (keeps state) |
 | `router.destroy()` | Full teardown |
@@ -185,6 +196,23 @@ import { RouterOutlet } from '@miurajs/miura-router';
 const result = await router.navigate('/dashboard');
 if (!result.ok) console.log('blocked:', result.reason);
 ```
+
+## 🔄 Reactive Route State
+
+The router exposes signal-like state so components can respond to navigation and loader data without extra wiring.
+
+```ts
+const pathname = router.select((context) => context?.pathname ?? '/');
+const profile = router.dataSignal('profile');
+```
+
+These values support:
+
+- calling with no args to read the current value
+- `.peek()` for direct reads
+- `.subscribe(fn)` for updates
+
+That makes them easy to pass into reactive templates or compose with other app primitives.
 
 ## 🔷 Type-Safe Route Params
 

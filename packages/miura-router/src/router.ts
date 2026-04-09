@@ -9,6 +9,7 @@ import type {
     RouteLoaderConfig,
     RouteLoaderState,
 } from './types.js';
+import { createDerivedRouteSignal, createRouteDataSignal, createRouteSignal } from './route-signals.js';
 
 import {
     compileRoutes,
@@ -57,6 +58,7 @@ export class MiuraRouter implements RouterInstance {
 
     current?: RouteContext;
     previous?: RouteContext | null;
+    readonly currentSignal = createRouteSignal<RouteContext | undefined>(undefined);
 
     constructor(private readonly options: RouterOptions) {
         this.mode = options.mode || 'hash';
@@ -84,6 +86,15 @@ export class MiuraRouter implements RouterInstance {
         this.listeners = [];
         this.current = undefined;
         this.previous = null;
+        this.currentSignal(undefined);
+    }
+
+    select<T>(selector: (context: RouteContext | undefined) => T) {
+        return createDerivedRouteSignal(this.currentSignal, selector);
+    }
+
+    dataSignal<T = unknown>(key: string, fallback?: T) {
+        return createRouteDataSignal<T>(this.currentSignal, key, fallback);
     }
 
     async navigate(target: string, options: NavigationOptions = {}): Promise<NavigationResult> {
@@ -235,6 +246,7 @@ export class MiuraRouter implements RouterInstance {
 
             this.previous = this.current ?? null;
             this.current = { ...renderContext };
+            this.currentSignal(this.current);
 
             if (!options.silent) {
                 this.emit('router:navigated', { to: renderContext, from: this.previous });

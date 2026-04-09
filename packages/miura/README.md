@@ -13,6 +13,7 @@ This package bundles and exports all the core modules, making it easy to get sta
 - component-scoped async resources with `$resource()`
 - component-scoped form state with `$form()`
 - lightweight shared state with `$shared()`
+- router bridge helpers with `$route()`, `$routeSelect()`, and `$routeData()`
 - signals and shared reactive primitives
 
 ## Example
