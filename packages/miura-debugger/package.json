@@ -1,6 +1,6 @@
 {
   "name": "@miurajs/miura-debugger",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -11,7 +11,9 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
@@ -33,9 +35,6 @@
     "url": "https://github.com/fernandosalves/miura-js/issues"
   },
   "homepage": "https://github.com/fernandosalves/miura-js#readme",
-  "dependencies": {
-  
-  },
   "devDependencies": {
     "typescript": "^5.0.0",
     "vitest": "^1.0.0"

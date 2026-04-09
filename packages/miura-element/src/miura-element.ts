@@ -770,7 +770,8 @@ export class MiuraElement extends HTMLElement {
                 }
             } else {
                 // Generated code handles all non-Node, non-Directive bindings
-                compiled.update(this._aotRefs, template.values);
+                const values: unknown[] = template.values == null ? [] : template.values;
+                compiled.update((this._aotRefs ?? []) as unknown[], values);
 
                 // NodeBindings handle complex node content
                 if (this._aotNodeBindings) {

@@ -76,8 +76,8 @@ function setPathValue<T extends Record<string, any>>(target: T, path: string, va
     let sourceCursor: Record<string, any> | undefined = target;
 
     for (let index = 0; index < segments.length - 1; index++) {
-        const segment = segments[index];
-        const sourceValue = sourceCursor?.[segment];
+        const segment = segments[index] as string;
+        const sourceValue: any = sourceCursor?.[segment];
         const next = Array.isArray(sourceValue)
             ? [...sourceValue]
             : sourceValue && typeof sourceValue === 'object'
@@ -150,7 +150,7 @@ class FormController<T extends Record<string, any>> implements Form<T> {
         const errors = this.errors;
         for (const key of Object.keys(errors)) {
             if (this.shouldShowError(key)) {
-                visibleErrors[key] = errors[key];
+                (visibleErrors as Record<string, string>)[key] = errors[key] as string;
             }
         }
         return visibleErrors;

@@ -10,7 +10,7 @@ export function sharedKey(...parts: readonly SharedKeyPart[]): string {
 }
 
 function normalizeSharedKey(key: SharedKey): string {
-    return Array.isArray(key) ? sharedKey(...key) : key;
+    return Array.isArray(key) ? sharedKey(...key) : String(key);
 }
 
 export function createSharedNamespace(namespace: string) {

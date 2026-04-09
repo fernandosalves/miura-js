@@ -491,8 +491,9 @@ export function subscribeTimeline(listener: TimelineListener): () => void {
 }
 
 export function setComponentDebugOptions(target: Function, options: ComponentDebugOptions): void {
-    (target as Record<PropertyKey, unknown>)[COMPONENT_DEBUG_OPTIONS] = {
-        ...((target as Record<PropertyKey, unknown>)[COMPONENT_DEBUG_OPTIONS] as ComponentDebugOptions | undefined),
+    const host = target as unknown as Record<PropertyKey, unknown>;
+    host[COMPONENT_DEBUG_OPTIONS] = {
+        ...(host[COMPONENT_DEBUG_OPTIONS] as ComponentDebugOptions | undefined),
         ...options,
     };
 }
@@ -506,7 +507,7 @@ export function getComponentDebugOptions(target: object | Function | null | unde
         ? target
         : (target as { constructor?: Function }).constructor;
 
-    const value = source ? (source as Record<PropertyKey, unknown>)[COMPONENT_DEBUG_OPTIONS] : undefined;
+    const value = source ? (source as unknown as Record<PropertyKey, unknown>)[COMPONENT_DEBUG_OPTIONS] : undefined;
     return (value && typeof value === 'object' ? value : {}) as ComponentDebugOptions;
 }
 

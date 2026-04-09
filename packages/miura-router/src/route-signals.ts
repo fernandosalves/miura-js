@@ -7,7 +7,7 @@ export interface RouteSignal<T> {
     readonly __isSignal: true;
 }
 
-interface WritableRouteSignal<T> extends RouteSignal<T> {
+export interface WritableRouteSignal<T> extends RouteSignal<T> {
     (value: T): void;
 }
 
@@ -37,7 +37,7 @@ export function createRouteSignal<T>(initial: T): WritableRouteSignal<T> {
     signal.peek = () => value;
     (signal as any).__isSignal = true;
 
-    return signal as WritableRouteSignal<T>;
+    return signal as unknown as WritableRouteSignal<T>;
 }
 
 export function createDerivedRouteSignal<TSource, TResult>(

@@ -1,6 +1,6 @@
 {
   "name": "@miurajs/miura-data-flow",
-  "version": "0.1.5",
+  "version": "0.3.0",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -44,7 +44,7 @@
     "dev": "vitest watch"
   },
   "dependencies": {
-    "@miurajs/miura-debugger": "^0.2.2"
+    "@miurajs/miura-debugger": "^0.3.0"
   },
   "optionalDependencies": {
     "@aws-sdk/client-s3": "^3.1005.0",

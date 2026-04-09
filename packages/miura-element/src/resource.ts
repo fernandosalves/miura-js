@@ -56,7 +56,7 @@ export function resourceKey(...parts: readonly ResourceKeyPart[]): string {
 }
 
 function normalizeResourceKey(key: ResourceKey): string {
-    return Array.isArray(key) ? resourceKey(...key) : key;
+    return Array.isArray(key) ? resourceKey(...key) : String(key);
 }
 
 function createCacheEntry<T>(): CacheEntry<T> {

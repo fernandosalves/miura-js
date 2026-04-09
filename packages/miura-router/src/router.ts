@@ -10,6 +10,7 @@ import type {
     RouteLoaderState,
 } from './types.js';
 import { reportDiagnostic, reportTimelineEvent } from '@miurajs/miura-debugger';
+import type { WritableRouteSignal } from './route-signals.js';
 import { createDerivedRouteSignal, createRouteDataSignal, createRouteSignal } from './route-signals.js';
 
 import {
@@ -59,7 +60,7 @@ export class MiuraRouter implements RouterInstance {
 
     current?: RouteContext;
     previous?: RouteContext | null;
-    readonly currentSignal = createRouteSignal<RouteContext | undefined>(undefined);
+    readonly currentSignal: WritableRouteSignal<RouteContext | undefined> = createRouteSignal<RouteContext | undefined>(undefined);
 
     constructor(private readonly options: RouterOptions) {
         this.mode = options.mode || 'hash';
