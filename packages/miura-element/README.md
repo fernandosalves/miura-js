@@ -176,7 +176,9 @@ class UserCard extends MiuraElement {
 | `value` / `data` | Latest resolved value |
 | `error` | Latest rejection value |
 | `promise` | The current in-flight promise, if any |
+| `key` | Normalized cache key when the resource participates in shared caching |
 | `refresh()` | Re-run the loader and update the component |
+| `invalidate()` | Clear the local or keyed cached state so the next refresh starts fresh |
 | `view()` | Render a template for each resource state |
 
 Pass `{ auto: false }` if you want to create the resource without starting the first request immediately:
@@ -191,6 +193,26 @@ class SearchResults extends MiuraElement {
   }
 }
 ```
+
+For reusable async state, pass a `key`. Keyed resources share cached state across components, dedupe in-flight loads, and can be invalidated explicitly:
+
+```typescript
+class ProfileCard extends MiuraElement {
+  declare userId: string;
+
+  profile = this.$resource(
+    () => fetch(`/api/users/${this.userId}`).then((r) => r.json()),
+    { key: ['profile', this.userId] }
+  );
+
+  refreshProfile = () => {
+    this.profile.invalidate();
+    void this.profile.refresh();
+  };
+}
+```
+
+Miura also exposes `resourceKey(...)`, `invalidateResource(...)`, `hasResourceCache(...)`, and `clearResourceCache()` for app-level cache control.
 
 ### Form State
 

@@ -60,6 +60,8 @@ class AppSignupForm extends MiuraElement {
 
 Async validation is also supported through `validateAsync`, and is automatically respected by `submit()` / `handleSubmit()`. Automatic modes are opt-in through `validateAsyncOn: 'blur' | 'change'`.
 
+Resources can also participate in shared async caching through `key`, which gives you cache reuse, in-flight dedupe, and explicit invalidation with helpers like `resourceKey(...)` and `invalidateResource(...)`.
+
 Forms also keep submit outcome state through `submitError`, `submitResult`, and `submitSucceeded`, which helps keep success/error UI close to the form primitive instead of in separate component state.
 
 Server-side field validation can also be mapped back into the form with `setErrors()`.
