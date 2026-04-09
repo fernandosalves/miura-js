@@ -273,10 +273,10 @@ In addition to the default JIT rendering path, `miura-render` ships a `TemplateC
 ```
 Template string → TemplateParser → ParsedTemplate (HTML + TemplateBinding[])
                                           ↓
-                               CodeFactory.generateRenderFunction()
-                               CodeFactory.generateUpdateFunction()
+                                CodeFactory.generateRenderFunction()
+                                CodeFactory.generateUpdateFunction()
                                           ↓
-                               CompiledTemplate { render, update, nodeBindingIndices, directiveBindingInfos }
+                                CompiledTemplate { render, update, nodeBindingIndices, directiveBindingInfos }
 ```
 
 **First render** — `compiled.render(values)` clones the template, walks it once with `TreeWalker` to build a `refs[]` array (element/comment node refs indexed by binding marker), applies initial values, returns `{ fragment, refs }`.
@@ -323,6 +323,25 @@ const styles = css`
 ```
 
 Returns a `CSSResult` that can be applied to a shadow root via `adoptedStyleSheets` or a `<style>` element.
+
+## Troubleshooting & Diagnostics
+
+Miura provides detailed, searchable diagnostics to help you identify and fix binding issues quickly. All framework errors include a searchable index like `[binding:INDEX]` and descriptive context.
+
+### Common Diagnostic Errors
+
+| Error Message | Searchable Label | What Happened? | Solution |
+| :--- | :--- | :--- | :--- |
+| `Could not find marker comments (<!--binding:x-->)` | `[binding:9] text expression inside <textarea>` | The standard comment markers for `${...}` were swallowed as raw text by the browser (common in `textarea`, `style`, or `script`). | Use property binding `.value=${...}` instead of child interpolation, or rely on Miura's **Auto-Promotion** upgrade. |
+| `Could not find element for [label]` | `[binding:0] event @click near "<button"` | The framework found the instruction in the template but the actual HTML element is missing from the DOM or was deleted. | Ensure the element is present at the time of update and hasn't been manually removed from the DOM. |
+| `Could not find marker comments (<!--binding:x-->)` | `[binding:1] text expression near "<table>"` | A browser "hoisting" event occurred. Interpolation directly inside `<table>` or `<select>` is moved outside by the browser's parser. | Move the expression inside a valid child tag like `<tbody>`, `<tr>`, or `<td>`. |
+| `Could not find marker comments (<!--binding:x-->)` | `[binding:2] directive #if near "<div>"` | A structural directive lost its boundary markers during a complex partial update. | Check for manual DOM manipulations that might have deleted the `<!--binding:x-->` comments. |
+
+### How to Debug
+
+1. **Check the DevTools Console**: Look for the specific `[binding:X]` index mentioned in the error.
+2. **Inspect the DOM**: Search for `<!--binding:X-->` in the Elements panel. If it's missing or inside a literal text node, you've found the issue.
+3. **Use the Miura Debugger**: If enabled, the draggable overlay provides a visual timeline and raw context for every failed update.
 
 ## License
 

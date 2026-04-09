@@ -124,6 +124,11 @@ export class TemplateParser {
         let attrNameStart = -1;
         let attrValueContentStart = -1;
         let openQuotePos = -1;
+        
+        // Tag tracking for auto-promotion (e.g. textarea interpolation)
+        let currentTagName = '';
+        let tagNameStart = -1;
+        let lastTagOpenHtmlPos = -1; 
 
         // Multi-part attribute tracking
         let attrCtx: AttrContext | null = null;
@@ -189,16 +194,32 @@ export class TemplateParser {
                             if (str[j + 1] === '!' && str[j + 2] === '-' && str[j + 3] === '-') {
                                 state = ParserState.COMMENT;
                                 j += 3;
+                            } else if (str[j + 1] === '/') {
+                                // Closing tag — reset tag name tracking
+                                currentTagName = '';
+                                state = ParserState.TAG;
                             } else {
                                 state = ParserState.TAG;
+                                tagNameStart = j + 1;
+                                lastTagOpenHtmlPos = html.length + (j - htmlStart);
                             }
                         }
                         break;
 
                     case ParserState.TAG:
                         if (ch === '>') {
+                            if (tagNameStart !== -1) {
+                                // Extract tag name if we just started a tag
+                                const tagStr = str.substring(tagNameStart, j);
+                                const match = tagStr.match(/^[a-zA-Z0-9-]+/);
+                                if (match) {
+                                    currentTagName = match[0].toLowerCase();
+                                }
+                                tagNameStart = -1;
+                            }
                             state = ParserState.TEXT;
                         } else if (ch === '/' && str[j + 1] === '>') {
+                            currentTagName = '';
                             state = ParserState.TEXT;
                             j++;
                         } else if (!/[\s/]/.test(ch) && ch !== '=' && ch !== '"' && ch !== "'") {
@@ -214,6 +235,14 @@ export class TemplateParser {
                         } else if (ch === '>' || /\s/.test(ch)) {
                             lastAttrName = str.substring(attrNameStart, j);
                             state = ch === '>' ? ParserState.TEXT : ParserState.TAG;
+                            if (ch === '>') {
+                                if (tagNameStart !== -1) {
+                                    const tagStr = str.substring(tagNameStart, j);
+                                    const match = tagStr.match(/^[a-zA-Z0-9-]+/);
+                                    if (match) currentTagName = match[0].toLowerCase();
+                                    tagNameStart = -1;
+                                }
+                            }
                         }
                         break;
 
@@ -299,7 +328,7 @@ export class TemplateParser {
                             index: i,
                             partIndex: 0,
                             groupStart: i,
-                            debugLabel: this.buildBindingDebugLabel(prefix === '%' ? BindingType.Utility : BindingType.Attribute, lastAttrName, str, i),
+                            debugLabel: this.buildBindingDebugLabel(prefix === '%' ? BindingType.Utility : BindingType.Attribute, lastAttrName, str, i, currentTagName),
                         });
                     } else {
                         // Subsequent expression in same attribute
@@ -342,7 +371,7 @@ export class TemplateParser {
                         strings: ['', ''],
                         partIndex: 0,
                         groupStart: i,
-                        debugLabel: this.buildBindingDebugLabel(type, lastAttrName, str, i),
+                        debugLabel: this.buildBindingDebugLabel(type, lastAttrName, str, i, currentTagName),
                     });
 
                     // Emit HTML: up to the = sign, replace with marker
@@ -354,15 +383,48 @@ export class TemplateParser {
                     state = ParserState.TAG;
 
                 } else {
-                    // Expression in text content — NodeBinding
-                    html += str.substring(htmlStart);
-                    html += `<!--binding:${i}--><!--/binding:${i}-->`;
+                    // TEXT expression — check for Auto-Promotion
+                    const autoPromoteTags: Record<string, string> = {
+                        'textarea': '.value',
+                        'style': '.textContent',
+                        'title': '.textContent'
+                    };
 
-                    bindings.push({
-                        type: BindingType.Node,
-                        index: i,
-                        debugLabel: this.buildBindingDebugLabel(BindingType.Node, undefined, str, i),
-                    });
+                    if (autoPromoteTags[currentTagName]) {
+                        const propertyName = autoPromoteTags[currentTagName];
+                        // Promotion: Convert text interpolation inside raw-text tags to a property binding
+                        // on the element itself (e.g. <textarea> -> .value, <style> -> .textContent)
+                        
+                        // 1. Emit the HTML up to the expression
+                        html += str.substring(htmlStart);
+                        
+                        // 2. We need to patch the opening tag.
+                        if (lastTagOpenHtmlPos !== -1) {
+                            const tagEndPos = html.indexOf('>', lastTagOpenHtmlPos);
+                            if (tagEndPos !== -1) {
+                                // Insert the marker attribute
+                                const markerAttr = ` ${propertyName}="${TemplateParser.BINDING_MARKER}${i}"`;
+                                html = html.slice(0, tagEndPos) + markerAttr + html.slice(tagEndPos);
+                            }
+                        }
+
+                        bindings.push({
+                            type: BindingType.Property,
+                            name: propertyName,
+                            index: i,
+                            debugLabel: `[binding:${i}] text expression promoted to ${propertyName} for <${currentTagName}>`,
+                        });
+                    } else {
+                        // Standard NodeBinding
+                        html += str.substring(htmlStart);
+                        html += `<!--binding:${i}--><!--/binding:${i}-->`;
+
+                        bindings.push({
+                            type: BindingType.Node,
+                            index: i,
+                            debugLabel: this.buildBindingDebugLabel(BindingType.Node, undefined, str, i, currentTagName),
+                        });
+                    }
                 }
             } else {
                 // Last string part — just emit remaining HTML
@@ -452,35 +514,45 @@ export class TemplateParser {
         }
     }
 
-    private buildBindingDebugLabel(type: BindingType, name: string | undefined, source: string, index: number): string {
+    private buildBindingDebugLabel(type: BindingType, name: string | undefined, source: string, index: number, currentTagName?: string): string {
         const compact = source.replace(/\s+/g, ' ').trim();
-        const snippet = compact.length > 120 ? `${compact.slice(Math.max(0, compact.length - 120))}...` : compact;
+        const snippet = compact.length > 60 ? `...${compact.slice(Math.max(0, compact.length - 60))}` : compact;
+        const prefix = `[binding:${index}]`;
+        const tagContext = currentTagName ? ` inside <${currentTagName}>` : '';
+        
+        let suffix = '';
+        if (currentTagName && type === BindingType.Node) {
+            const hoistedTags = ['table', 'thead', 'tbody', 'tfoot', 'tr', 'select', 'colgroup'];
+            if (hoistedTags.includes(currentTagName)) {
+                suffix = ` (Warning: expressions inside <${currentTagName}> may be hoisted by the browser. Move them inside a child tag or use a directive.)`;
+            }
+        }
 
         switch (type) {
             case BindingType.Event:
-                return `event handler ${name ?? '(unknown)'} near "${snippet}"`;
+                return `${prefix} event handler ${name ?? '(unknown)'}${tagContext} near "${snippet}"${suffix}`;
             case BindingType.Property:
-                return `property binding ${name ?? '(unknown)'} near "${snippet}"`;
+                return `${prefix} property binding ${name ?? '(unknown)'}${tagContext} near "${snippet}"${suffix}`;
             case BindingType.Boolean:
-                return `boolean binding ${name ?? '(unknown)'} near "${snippet}"`;
+                return `${prefix} boolean binding ${name ?? '(unknown)'}${tagContext} near "${snippet}"${suffix}`;
             case BindingType.Attribute:
-                return `attribute expression ${name ?? '(unknown)'} near "${snippet}"`;
+                return `${prefix} attribute expression ${name ?? '(unknown)'}${tagContext} near "${snippet}"${suffix}`;
             case BindingType.Class:
             case BindingType.ObjectClass:
-                return `class binding near "${snippet}"`;
+                return `${prefix} class binding${tagContext} near "${snippet}"${suffix}`;
             case BindingType.Style:
             case BindingType.ObjectStyle:
-                return `style binding near "${snippet}"`;
+                return `${prefix} style binding${tagContext} near "${snippet}"${suffix}`;
             case BindingType.Bind:
-                return `two-way bind ${name ?? '(unknown)'} near "${snippet}"`;
+                return `${prefix} two-way bind ${name ?? '(unknown)'}${tagContext} near "${snippet}"${suffix}`;
             case BindingType.Utility:
-                return `utility ${name ?? '(unknown)'} near "${snippet}"`;
+                return `${prefix} utility ${name ?? '(unknown)'}${tagContext} near "${snippet}"${suffix}`;
             case BindingType.Node:
-                return `text expression near "${snippet}"`;
+                return `${prefix} text expression${tagContext} near "${snippet}"${suffix}`;
             case BindingType.Directive:
-                return `directive ${name ?? '(unknown)'} near "${snippet}"`;
+                return `${prefix} directive ${name ?? '(unknown)'}${tagContext} near "${snippet}"${suffix}`;
             default:
-                return `${type} ${name ?? ''}`.trim();
+                return `${prefix} ${type} ${name ?? ''}${tagContext}${suffix}`.trim();
         }
     }
 

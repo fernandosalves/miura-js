@@ -154,7 +154,7 @@ export class BindingManager {
                 // Non-attribute bindings — original logic
                 const element = this.findBindingElement(fragment, binding.index, binding.debugLabel);
                 if (!element) {
-                    throw new Error(`Could not find element for ${binding.debugLabel ?? `binding:${binding.index}`}`);
+                    throw new Error(`Could not find element for ${binding.debugLabel ?? `binding:${binding.index}`}. The element was likely removed from the DOM manually or by a directive.`);
                 }
                 const bindingInstance = this.createBindingForType(element, binding, processor);
                 if (bindingInstance) {
@@ -345,7 +345,7 @@ export class BindingManager {
                 element,
                 parentHTML: element.parentElement?.innerHTML
             });
-            throw new Error(`Could not find markers for ${label ?? `binding:${index}`}`);
+            throw new Error(`Could not find marker comments (<!--binding:x-->) for ${label ?? `binding:${index}`}. The marker nodes were likely removed or corrupted by manual DOM manipulation.`);
         }
 
         return [startMarker, endMarker];
@@ -387,7 +387,7 @@ export class BindingManager {
                     .map(node => node.nodeType === Node.ELEMENT_NODE ? (node as Element).outerHTML : node.textContent)
                     .join('')
             });
-            throw new Error(`Could not find node markers for ${label ?? `binding:${index}`}`);
+            throw new Error(`Could not find marker comments (<!--binding:x-->) for ${label ?? `binding:${index}`}. The marker nodes were likely removed or swallowed by the browser (see Diagnostic Catalog in README).`);
         }
 
         return [startMarker, endMarker];
