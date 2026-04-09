@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { MiuraElement, clearResourceCache, hasResourceCache, html, resourceKey, type Resource } from '../index.js';
+import { MiuraElement, clearResourceCache, hasResourceCache, html, invalidateResourceNamespace, resourceKey, type Resource } from '../index.js';
 
 const waitForMicrotask = async () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -343,5 +343,71 @@ describe('MiuraElement $resource', () => {
 
         expect(element.user.refreshing).toBe(false);
         expect(element.user.value).toBe('second');
+    });
+
+    it('skips keyed refreshes while cached data is still fresh', async () => {
+        const tagName = 'miura-resource-stale-time';
+        let loadCount = 0;
+
+        class StaleTimeElement extends MiuraElement {
+            user = this.$resource(() => {
+                loadCount++;
+                return `value-${loadCount}`;
+            }, { auto: false, key: ['fresh-profile', 1], staleTime: 1000 });
+
+            protected override template() {
+                return html`<p class="value">${this.user.value ?? 'empty'}</p>`;
+            }
+        }
+
+        if (!customElements.get(tagName)) customElements.define(tagName, StaleTimeElement);
+
+        const element = document.createElement(tagName) as StaleTimeElement;
+        document.body.appendChild(element);
+        await element.updateComplete;
+
+        await element.user.refresh();
+        await element.user.refresh();
+
+        expect(loadCount).toBe(1);
+        expect(element.user.value).toBe('value-1');
+
+        await element.user.refresh({ force: true });
+        expect(loadCount).toBe(2);
+        expect(element.user.value).toBe('value-2');
+    });
+
+    it('invalidates cached resources by namespace', async () => {
+        const tagA = 'miura-resource-namespace-a';
+        const tagB = 'miura-resource-namespace-b';
+
+        class NamespaceA extends MiuraElement {
+            user = this.$resource(() => 'a', { key: ['posts', 1], auto: false });
+            protected override template() { return html`<p>${this.user.value ?? ''}</p>`; }
+        }
+
+        class NamespaceB extends MiuraElement {
+            user = this.$resource(() => 'b', { key: ['profile', 1], auto: false });
+            protected override template() { return html`<p>${this.user.value ?? ''}</p>`; }
+        }
+
+        if (!customElements.get(tagA)) customElements.define(tagA, NamespaceA);
+        if (!customElements.get(tagB)) customElements.define(tagB, NamespaceB);
+
+        const a = document.createElement(tagA) as NamespaceA;
+        const b = document.createElement(tagB) as NamespaceB;
+        document.body.append(a, b);
+        await Promise.all([a.updateComplete, b.updateComplete]);
+
+        await a.user.refresh();
+        await b.user.refresh();
+
+        expect(hasResourceCache(['posts', 1])).toBe(true);
+        expect(hasResourceCache(['profile', 1])).toBe(true);
+
+        invalidateResourceNamespace('posts');
+
+        expect(hasResourceCache(['posts', 1])).toBe(false);
+        expect(hasResourceCache(['profile', 1])).toBe(true);
     });
 });

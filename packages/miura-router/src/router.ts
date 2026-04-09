@@ -94,7 +94,9 @@ export class MiuraRouter implements RouterInstance {
         return createDerivedRouteSignal(this.currentSignal, selector);
     }
 
-    dataSignal<T = unknown>(key: string, fallback?: T) {
+    dataSignal<T = unknown>(): ReturnType<typeof createRouteDataSignal<T>>;
+    dataSignal<T = unknown>(key: string, fallback?: T): ReturnType<typeof createRouteDataSignal<T>>;
+    dataSignal<T = unknown>(key?: string, fallback?: T) {
         return createRouteDataSignal<T>(this.currentSignal, key, fallback);
     }
 

@@ -1,6 +1,7 @@
 import type { TemplateResult } from '@miurajs/miura-render';
 
-export type FormErrors<T extends Record<string, any>> = Partial<Record<keyof T, string>>;
+export type FormPath<T extends Record<string, any>> = Extract<keyof T, string> | `${Extract<keyof T, string>}.${string}`;
+export type FormErrors<T extends Record<string, any>> = Partial<Record<FormPath<T> | string, string>>;
 export type AsyncValidationMode = 'manual' | 'blur' | 'change';
 
 export interface FormViewOptions<T extends Record<string, any>, R extends TemplateResult> {
@@ -42,17 +43,17 @@ export interface Form<T extends Record<string, any>> {
     readonly submitError: unknown;
     readonly submitResult: unknown;
     readonly submitSucceeded: boolean;
-    readonly touched: ReadonlySet<keyof T>;
-    field<K extends keyof T>(name: K): FormField<T[K]>;
-    get<K extends keyof T>(name: K): T[K];
-    set<K extends keyof T>(name: K, value: T[K]): void;
+    readonly touched: ReadonlySet<string>;
+    field<K extends FormPath<T> | string>(name: K): FormField<any>;
+    get<K extends FormPath<T> | string>(name: K): any;
+    set<K extends FormPath<T> | string>(name: K, value: any): void;
     patch(values: Partial<T>): void;
     reset(values?: T): void;
-    touch<K extends keyof T>(name: K): void;
+    touch<K extends FormPath<T> | string>(name: K): void;
     touchAll(): void;
-    isTouched<K extends keyof T>(name: K): boolean;
-    isDirty<K extends keyof T>(name: K): boolean;
-    shouldShowError<K extends keyof T>(name: K): boolean;
+    isTouched<K extends FormPath<T> | string>(name: K): boolean;
+    isDirty<K extends FormPath<T> | string>(name: K): boolean;
+    shouldShowError<K extends FormPath<T> | string>(name: K): boolean;
     validate(): boolean;
     validateAsync(): Promise<boolean>;
     clearSubmitState(): void;
@@ -64,12 +65,52 @@ export interface Form<T extends Record<string, any>> {
     handleSubmit<R>(handler: (values: Readonly<T>, form: Form<T>) => Promise<R> | R): (event?: Event) => Promise<R>;
 }
 
+function getPathValue(target: Record<string, any>, path: string): any {
+    return path.split('.').reduce<any>((current, segment) => current?.[segment], target);
+}
+
+function setPathValue<T extends Record<string, any>>(target: T, path: string, value: any): T {
+    const segments = path.split('.');
+    const clone: Record<string, any> = Array.isArray(target) ? [...target] : { ...target };
+    let cursor: Record<string, any> = clone;
+    let sourceCursor: Record<string, any> | undefined = target;
+
+    for (let index = 0; index < segments.length - 1; index++) {
+        const segment = segments[index];
+        const sourceValue = sourceCursor?.[segment];
+        const next = Array.isArray(sourceValue)
+            ? [...sourceValue]
+            : sourceValue && typeof sourceValue === 'object'
+                ? { ...sourceValue }
+                : {};
+        cursor[segment] = next;
+        cursor = next;
+        sourceCursor = sourceValue;
+    }
+
+    cursor[segments[segments.length - 1]] = value;
+    return clone as T;
+}
+
+function collectPaths(target: Record<string, any>, prefix = ''): string[] {
+    const paths: string[] = [];
+    for (const [key, value] of Object.entries(target)) {
+        const path = prefix ? `${prefix}.${key}` : key;
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+            paths.push(...collectPaths(value as Record<string, any>, path));
+            continue;
+        }
+        paths.push(path);
+    }
+    return paths;
+}
+
 class FormController<T extends Record<string, any>> implements Form<T> {
     private _values: T;
     private _initialValues: T;
     private _syncErrors: FormErrors<T> = {};
     private _asyncErrors: FormErrors<T> = {};
-    private _touched = new Set<keyof T>();
+    private _touched = new Set<string>();
     private _validating = false;
     private _submitting = false;
     private _submitError: unknown = undefined;
@@ -107,7 +148,7 @@ class FormController<T extends Record<string, any>> implements Form<T> {
     get visibleErrors(): Readonly<FormErrors<T>> {
         const visibleErrors: FormErrors<T> = {};
         const errors = this.errors;
-        for (const key of Object.keys(errors) as Array<keyof T>) {
+        for (const key of Object.keys(errors)) {
             if (this.shouldShowError(key)) {
                 visibleErrors[key] = errors[key];
             }
@@ -116,9 +157,8 @@ class FormController<T extends Record<string, any>> implements Form<T> {
     }
 
     get dirty(): boolean {
-        return Object.keys(this._values).some((key) => {
-            const field = key as keyof T;
-            return this._values[field] !== this._initialValues[field];
+        return collectPaths(this._values as Record<string, any>).some((path) => {
+            return getPathValue(this._values, path) !== getPathValue(this._initialValues, path);
         });
     }
 
@@ -146,14 +186,14 @@ class FormController<T extends Record<string, any>> implements Form<T> {
         return this._submitError === undefined && this._submitResult !== undefined;
     }
 
-    get touched(): ReadonlySet<keyof T> {
+    get touched(): ReadonlySet<string> {
         return this._touched;
     }
 
-    field<K extends keyof T>(name: K): FormField<T[K]> {
+    field<K extends FormPath<T> | string>(name: K): FormField<any> {
         return {
-            value: this._values[name],
-            set: (value: T[K]) => {
+            value: this.get(name),
+            set: (value: any) => {
                 this.set(name, value);
             },
             touch: () => {
@@ -162,22 +202,23 @@ class FormController<T extends Record<string, any>> implements Form<T> {
             isTouched: this.isTouched(name),
             isDirty: this.isDirty(name),
             showError: this.shouldShowError(name),
-            error: this.errors[name]
+            error: this.errors[String(name)]
         };
     }
 
-    get<K extends keyof T>(name: K): T[K] {
-        return this._values[name];
+    get<K extends FormPath<T> | string>(name: K): any {
+        return getPathValue(this._values, String(name));
     }
 
-    set<K extends keyof T>(name: K, value: T[K]): void {
-        const nextValues = { ...this._values, [name]: value };
+    set<K extends FormPath<T> | string>(name: K, value: any): void {
+        const path = String(name);
+        const nextValues = setPathValue(this._values, path, value);
         this._values = nextValues;
         this._submitError = undefined;
         this._submitResult = undefined;
 
         if (this.options.touchOnChange !== false) {
-            this._touched = new Set(this._touched).add(name);
+            this._touched = new Set(this._touched).add(path);
         }
 
         this.invalidateAsyncValidation();
@@ -192,7 +233,7 @@ class FormController<T extends Record<string, any>> implements Form<T> {
 
         if (this.options.touchOnChange !== false) {
             const touched = new Set(this._touched);
-            for (const key of Object.keys(values) as Array<keyof T>) {
+            for (const key of collectPaths(values as Record<string, any>)) {
                 touched.add(key);
             }
             this._touched = touched;
@@ -222,12 +263,13 @@ class FormController<T extends Record<string, any>> implements Form<T> {
         this.onChange();
     }
 
-    touch<K extends keyof T>(name: K): void {
-        if (this._touched.has(name)) {
+    touch<K extends FormPath<T> | string>(name: K): void {
+        const path = String(name);
+        if (this._touched.has(path)) {
             return;
         }
 
-        this._touched = new Set(this._touched).add(name);
+        this._touched = new Set(this._touched).add(path);
         if (this.options.validateAsyncOn === 'blur' && this.options.validateAsync) {
             void this.validateAsync();
         }
@@ -238,7 +280,7 @@ class FormController<T extends Record<string, any>> implements Form<T> {
         const nextTouched = new Set(this._touched);
         let changed = false;
 
-        for (const key of Object.keys(this._values) as Array<keyof T>) {
+        for (const key of collectPaths(this._values as Record<string, any>)) {
             if (!nextTouched.has(key)) {
                 nextTouched.add(key);
                 changed = true;
@@ -253,16 +295,18 @@ class FormController<T extends Record<string, any>> implements Form<T> {
         this.onChange();
     }
 
-    isTouched<K extends keyof T>(name: K): boolean {
-        return this._touched.has(name);
+    isTouched<K extends FormPath<T> | string>(name: K): boolean {
+        return this._touched.has(String(name));
     }
 
-    isDirty<K extends keyof T>(name: K): boolean {
-        return this._values[name] !== this._initialValues[name];
+    isDirty<K extends FormPath<T> | string>(name: K): boolean {
+        const path = String(name);
+        return getPathValue(this._values, path) !== getPathValue(this._initialValues, path);
     }
 
-    shouldShowError<K extends keyof T>(name: K): boolean {
-        return this.isTouched(name) && this.errors[name] !== undefined;
+    shouldShowError<K extends FormPath<T> | string>(name: K): boolean {
+        const path = String(name);
+        return this.isTouched(path) && this.errors[path] !== undefined;
     }
 
     validate(): boolean {
@@ -314,7 +358,7 @@ class FormController<T extends Record<string, any>> implements Form<T> {
 
         if (options.touch) {
             const touched = new Set(this._touched);
-            for (const key of Object.keys(this._syncErrors) as Array<keyof T>) {
+            for (const key of Object.keys(this._syncErrors)) {
                 touched.add(key);
             }
             this._touched = touched;

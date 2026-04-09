@@ -8,5 +8,6 @@ export interface RouteSignalLike<T> {
 export interface RouterBridgeLike {
     readonly currentSignal: RouteSignalLike<unknown>;
     select<T>(selector: (context: unknown) => T): RouteSignalLike<T>;
+    dataSignal<T = unknown>(): RouteSignalLike<T | undefined>;
     dataSignal<T = unknown>(key: string, fallback?: T): RouteSignalLike<T | undefined>;
 }

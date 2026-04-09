@@ -1186,9 +1186,13 @@ export class MiuraElement extends HTMLElement {
     /**
      * Access route loader data by key as a signal-like value.
      */
-    protected $routeData<T = unknown>(router: RouterBridgeLike, key: string, fallback?: T) {
-        const signal = router.dataSignal<T>(key, fallback);
-        this._registerDebugRouteSignal(signal as RouteSignalLike<unknown>, `route.data:${key}`);
+    protected $routeData<T = unknown>(router: RouterBridgeLike): RouteSignalLike<T | undefined>;
+    protected $routeData<T = unknown>(router: RouterBridgeLike, key: string, fallback?: T): RouteSignalLike<T | undefined>;
+    protected $routeData<T = unknown>(router: RouterBridgeLike, key?: string, fallback?: T) {
+        const signal = key === undefined
+            ? router.dataSignal<T>()
+            : router.dataSignal<T>(key, fallback);
+        this._registerDebugRouteSignal(signal as RouteSignalLike<unknown>, key ? `route.data:${key}` : 'route.data');
         return signal;
     }
 
@@ -1203,7 +1207,7 @@ export class MiuraElement extends HTMLElement {
             skip?: (key: TKey) => boolean;
             equals?: (previous: TKey, next: TKey) => boolean;
             key?: ResourceKey | ((key: TKey) => ResourceKey);
-            hydrateFromRouteData?: string | ((context: unknown) => T | undefined);
+            hydrateFromRouteData?: true | string | ((context: unknown) => T | undefined);
         },
     ): Resource<T> {
         const selected = router.select(selector);
@@ -1310,7 +1314,7 @@ export class MiuraElement extends HTMLElement {
     private _hydrateRouteResource<T>(
         router: RouterBridgeLike,
         resource: Resource<T>,
-        hydrateFromRouteData?: string | ((context: unknown) => T | undefined),
+        hydrateFromRouteData?: true | string | ((context: unknown) => T | undefined),
     ): void {
         if (!hydrateFromRouteData) {
             return;
@@ -1323,6 +1327,11 @@ export class MiuraElement extends HTMLElement {
 
         const hydratedValue = typeof hydrateFromRouteData === 'function'
             ? hydrateFromRouteData(context)
+            : hydrateFromRouteData === true
+                ? (() => {
+                    const data = router.dataSignal<Record<string, unknown>>().peek();
+                    return data && Object.keys(data).length > 0 ? (data as T) : undefined;
+                })()
             : router.dataSignal<T>(hydrateFromRouteData).peek();
 
         if (hydratedValue !== undefined) {

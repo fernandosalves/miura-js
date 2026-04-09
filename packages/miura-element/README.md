@@ -231,7 +231,23 @@ class ProfileCard extends MiuraElement {
 }
 ```
 
-Miura also exposes `resourceKey(...)`, `invalidateResource(...)`, `hasResourceCache(...)`, and `clearResourceCache()` for app-level cache control.
+Miura also exposes `resourceKey(...)`, `invalidateResource(...)`, `invalidateResourceNamespace(...)`, `hasResourceCache(...)`, and `clearResourceCache()` for app-level cache control.
+
+You can also tune shared cache behavior with:
+
+- `staleTime` to reuse fresh resolved data without refetching immediately
+- `cacheTime` to describe how long a keyed cache entry should stay around after it becomes inactive
+
+```typescript
+profile = this.$resource(
+  () => fetch(`/api/users/${this.userId}`).then((r) => r.json()),
+  {
+    key: ['profile', this.userId],
+    staleTime: 30_000,
+    cacheTime: 5 * 60_000
+  }
+);
+```
 
 Pass `{ staleWhileRevalidate: true }` if you want a resolved value to stay visible while a refresh is in flight:
 
@@ -297,6 +313,24 @@ class ProfileForm extends MiuraElement {
       </form>
     `;
   }
+}
+```
+
+Nested field paths are supported too:
+
+```typescript
+form = this.$form({
+  profile: {
+    name: '',
+    meta: { featured: false }
+  }
+});
+
+template() {
+  return html`
+    <input &value=${this.form.field('profile.name')}>
+    <input type="checkbox" &checked=${this.form.field('profile.meta.featured')}>
+  `;
 }
 ```
 
@@ -504,6 +538,26 @@ class ProfilePage extends MiuraElement {
 ```
 
 `$routeResource()` derives a stable cache key from the selected route value by default, so route-driven resources can reuse cached data naturally across navigation. You can override that with `key`, seed the resource from route loader data with `hydrateFromRouteData`, and keep stale data visible during refreshes with `staleWhileRevalidate`.
+
+`$routeData()` can also return the full loader data object when you omit the key:
+
+```typescript
+routeData = this.$routeData<{ profile?: Profile; permissions?: string[] }>(router);
+```
+
+And `hydrateFromRouteData: true` will hydrate a route resource from the whole route data payload:
+
+```typescript
+profile = this.$routeResource(
+  router,
+  (context) => context?.params.id,
+  (id) => fetch(`/api/users/${id}`).then((r) => r.json()),
+  {
+    hydrateFromRouteData: true,
+    staleWhileRevalidate: true
+  }
+);
+```
 
 ### Styles
 

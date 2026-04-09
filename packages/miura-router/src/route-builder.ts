@@ -3,6 +3,7 @@ import type {
     NavigationOptions,
     NavigationResult,
     ParamsSchema,
+    RouteDataRecord,
 } from './types.js';
 
 // ── Typed route builder ────────────────────────────────────────────────────────
@@ -21,9 +22,12 @@ export interface NavigableRouter {
  * Pass `record` to the `routes` array of `createRouter`, then use
  * `buildPath()` / `navigate()` elsewhere for fully-typed navigation.
  */
-export interface TypedRoute<TParams extends Record<string, string> = Record<string, string>> {
+export interface TypedRoute<
+    TParams extends Record<string, string> = Record<string, string>,
+    TData extends RouteDataRecord = RouteDataRecord
+> {
     /** Raw RouteRecord — add this to `createRouter({ routes })`. */
-    readonly record: RouteRecord<TParams>;
+    readonly record: RouteRecord<TParams, TData>;
 
     /**
      * Substitute `:param` segments in the route path with the supplied values.
@@ -69,13 +73,16 @@ export interface TypedRoute<TParams extends Record<string, string> = Record<stri
  * userRoute.buildPath({ id: '42' }); // → '/users/42'
  * ```
  */
-export function defineRoute<TParams extends Record<string, string> = Record<string, string>>(
-    config: Omit<RouteRecord<TParams>, 'paramsSchema'>,
+export function defineRoute<
+    TParams extends Record<string, string> = Record<string, string>,
+    TData extends RouteDataRecord = RouteDataRecord
+>(
+    config: Omit<RouteRecord<TParams, TData>, 'paramsSchema' | '__dataType'>,
     schema?: ParamsSchema<TParams>,
-): TypedRoute<TParams> {
-    const record: RouteRecord<TParams> = schema
-        ? { ...(config as RouteRecord<TParams>), paramsSchema: schema }
-        : (config as RouteRecord<TParams>);
+): TypedRoute<TParams, TData> {
+    const record: RouteRecord<TParams, TData> = schema
+        ? { ...(config as RouteRecord<TParams, TData>), paramsSchema: schema }
+        : (config as RouteRecord<TParams, TData>);
 
     return {
         record,

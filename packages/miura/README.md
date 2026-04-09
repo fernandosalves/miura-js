@@ -62,20 +62,22 @@ class AppSignupForm extends MiuraElement {
 
 Async validation is also supported through `validateAsync`, and is automatically respected by `submit()` / `handleSubmit()`. Automatic modes are opt-in through `validateAsyncOn: 'blur' | 'change'`.
 
-Resources can also participate in shared async caching through `key`, which gives you cache reuse, in-flight dedupe, and explicit invalidation with helpers like `resourceKey(...)` and `invalidateResource(...)`.
-They also support `staleWhileRevalidate`, so cached data can remain visible while refreshes run in the background.
+Resources can also participate in shared async caching through `key`, which gives you cache reuse, in-flight dedupe, and explicit invalidation with helpers like `resourceKey(...)`, `invalidateResource(...)`, and `invalidateResourceNamespace(...)`.
+They also support `staleWhileRevalidate`, plus `staleTime` / `cacheTime` cache policy control.
 
 Forms also keep submit outcome state through `submitError`, `submitResult`, and `submitSucceeded`, which helps keep success/error UI close to the form primitive instead of in separate component state.
 
 Server-side field validation can also be mapped back into the form with `setErrors()`.
 For submit flows, `failSubmit()` can capture the submit error and field errors together.
 `view()` can render submit-state UI declaratively from the form itself.
+Nested field paths like `profile.name` and `profile.meta.featured` are supported too.
 
 For lightweight cross-component state, `$shared(key, initial)` gives multiple components the same signal instance without requiring a full store setup. Use namespaced keys like `blog-editor:theme`, `sharedKey(...)`, or `createSharedNamespace(...)` to avoid collisions.
 
 For parent-to-descendant dependencies, use `createContextKey(...)` with `$provide()` and `$inject()` instead of reaching for shared global keys. Context stays tree-scoped, and the nearest provider wins. When descendants should react to changes, provide a signal or another reactive primitive as the context value.
 
 Route-driven resources now bridge cleanly with router loaders too: `$routeResource()` can derive route-based cache keys automatically and hydrate from route data before revalidating.
+`$routeData()` can also return the full loader data object when you omit the key, and `hydrateFromRouteData: true` lets a route resource hydrate from that full payload directly.
 Islands can do the same on the server/client boundary with `$islandProps()` and `$islandResource()`, so server payloads can hydrate directly into component state before optional client revalidation.
 
 When you build on `MiuraFramework`, the debugger can be enabled centrally from `static config.debugger` during development. Individual components can then refine their own debug presentation with `static debug` or `@debug(...)`, for example to rename a layer label or opt out of reporting in a noisy internal helper component. The debugger runtime logger is exported here as `debugLogger` so it stays distinct from the component decorator.

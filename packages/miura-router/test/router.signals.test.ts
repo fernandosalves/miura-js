@@ -84,4 +84,26 @@ describe('MiuraRouter route signals', () => {
 
         router.destroy();
     });
+
+    it('dataSignal() can expose the full loader data object', async () => {
+        const router = createRouter({
+            routes,
+            mode: 'memory',
+            render: () => undefined,
+        });
+
+        const dataSignal = router.dataSignal<{ profile?: { id: string; label: string }; permissions?: string[] }>();
+
+        await router.start();
+        expect(dataSignal()).toEqual({});
+
+        await router.navigate('/profile/3');
+
+        expect(dataSignal()).toEqual({
+            profile: { id: '3', label: 'User 3' },
+            permissions: ['user:3'],
+        });
+
+        router.destroy();
+    });
 });

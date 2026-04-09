@@ -91,6 +91,54 @@ describe('MiuraElement router bridge helpers', () => {
         router.destroy();
     });
 
+    it('can expose the full route loader data object as a signal', async () => {
+        const tagName = 'miura-router-data-object';
+
+        const router = createRouter({
+            mode: 'memory',
+            routes: [
+                { path: '/', component: 'app-home' },
+                {
+                    path: '/profile/:id',
+                    component: 'app-profile',
+                    loaders: [
+                        ({ params }) => ({ profile: { id: params.id, name: `User ${params.id}` } }),
+                        ({ params }) => ({ permissions: [`profile:${params.id}`] }),
+                    ],
+                },
+            ],
+            render: () => undefined,
+        });
+
+        class RouteDataObjectElement extends MiuraElement {
+            data = this.$routeData<{ profile?: { id: string; name: string }; permissions?: string[] }>(router);
+
+            protected override template() {
+                return html`<p class="status">ready</p>`;
+            }
+        }
+
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, RouteDataObjectElement);
+        }
+
+        await router.start();
+        const element = document.createElement(tagName) as RouteDataObjectElement;
+        document.body.appendChild(element);
+        await element.updateComplete;
+
+        expect(element.data.peek()).toEqual({});
+
+        await router.navigate('/profile/5');
+        await waitFor(() => element.data.peek()?.profile?.name === 'User 5');
+
+        expect(element.data.peek()).toEqual({
+            profile: { id: '5', name: 'User 5' },
+            permissions: ['profile:5'],
+        });
+        router.destroy();
+    });
+
     it('can create route-driven resources that refresh when params change', async () => {
         const tagName = 'miura-route-resource-element';
         let loadCount = 0;
@@ -222,6 +270,66 @@ describe('MiuraElement router bridge helpers', () => {
         resolvers.shift()?.({ slug: 'intro', title: 'Fetched intro' });
         await waitFor(() => element.shadowRoot?.querySelector('.title')?.textContent === 'Fetched intro');
         expect(element.post.refreshing).toBe(false);
+
+        router.destroy();
+    });
+
+    it('can hydrate route resources from the full route data object', async () => {
+        const tagName = 'miura-route-resource-full-hydration';
+        let loadCount = 0;
+        const resolvers: Array<(value: { profile: { id: string | undefined; name: string } }) => void> = [];
+
+        const router = createRouter({
+            mode: 'memory',
+            routes: [
+                { path: '/', component: 'app-home' },
+                {
+                    path: '/profile/:id',
+                    component: 'app-profile',
+                    loaders: [
+                        ({ params }) => ({ profile: { id: params.id, name: `Loader ${params.id}` } }),
+                    ],
+                },
+            ],
+            render: () => undefined,
+        });
+
+        class FullHydrationElement extends MiuraElement {
+            profile = this.$routeResource(
+                router,
+                (context) => (context as RouteRenderContext | undefined)?.params.id,
+                (id) => new Promise<{ profile: { id: string | undefined; name: string } }>((resolve) => {
+                    loadCount++;
+                    resolvers.push(resolve);
+                }),
+                {
+                    skip: (id) => !id,
+                    hydrateFromRouteData: true,
+                    staleWhileRevalidate: true,
+                },
+            );
+
+            protected override template() {
+                return html`<p class="name">${this.profile.value?.profile?.name ?? 'none'}</p>`;
+            }
+        }
+
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, FullHydrationElement);
+        }
+
+        await router.start();
+        const element = document.createElement(tagName) as FullHydrationElement;
+        document.body.appendChild(element);
+        await element.updateComplete;
+
+        await router.navigate('/profile/8');
+        await waitFor(() => element.shadowRoot?.querySelector('.name')?.textContent === 'Loader 8');
+
+        expect(loadCount).toBe(1);
+
+        resolvers.shift()?.({ profile: { id: '8', name: 'Fetched 8' } });
+        await waitFor(() => element.shadowRoot?.querySelector('.name')?.textContent === 'Fetched 8');
 
         router.destroy();
     });

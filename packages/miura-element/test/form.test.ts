@@ -260,6 +260,60 @@ describe('MiuraElement $form', () => {
         expect(element.shadowRoot?.querySelector('.error')?.textContent).toBe('');
     });
 
+    it('supports nested form paths for get, set, touch, and binding', async () => {
+        const tagName = 'miura-form-nested-paths';
+
+        class NestedPathFormElement extends MiuraElement {
+            form: Form<{ profile: { name: string; meta: { featured: boolean } } }>;
+
+            constructor() {
+                super();
+                this.form = this.$form({
+                    profile: {
+                        name: 'Draft',
+                        meta: { featured: false },
+                    },
+                });
+            }
+
+            protected override template() {
+                return html`
+                    <input class="name" &value=${this.form.field('profile.name')}>
+                    <input class="featured" type="checkbox" &checked=${this.form.field('profile.meta.featured')}>
+                    <p class="summary">
+                        ${this.form.get('profile.name')}:${String(this.form.get('profile.meta.featured'))}
+                    </p>
+                `;
+            }
+        }
+
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, NestedPathFormElement);
+        }
+
+        const element = document.createElement(tagName) as NestedPathFormElement;
+        document.body.appendChild(element);
+        await element.updateComplete;
+
+        const nameInput = element.shadowRoot?.querySelector('.name') as HTMLInputElement;
+        const featuredInput = element.shadowRoot?.querySelector('.featured') as HTMLInputElement;
+
+        expect(nameInput.value).toBe('Draft');
+        expect(featuredInput.checked).toBe(false);
+
+        nameInput.value = 'Published';
+        nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+        featuredInput.checked = true;
+        featuredInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+        expect(element.form.get('profile.name')).toBe('Published');
+        expect(element.form.get('profile.meta.featured')).toBe(true);
+        await waitFor(() => element.form.get('profile.name') === 'Published' && element.form.get('profile.meta.featured') === true);
+        await waitFor(() => (element.shadowRoot?.querySelector('.summary')?.textContent ?? '').includes('Published:true'));
+        expect(element.form.isTouched('profile.name')).toBe(true);
+        expect(element.form.isDirty('profile.meta.featured')).toBe(true);
+    });
+
     it('supports native form submission through handleSubmit', async () => {
         const tagName = 'miura-form-submit-handler';
 

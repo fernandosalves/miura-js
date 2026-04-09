@@ -20,7 +20,7 @@ export interface Resource<T> {
     readonly error?: unknown;
     readonly promise?: Promise<T> | null;
     readonly key?: string;
-    refresh(): Promise<T>;
+    refresh(options?: { force?: boolean }): Promise<T>;
     invalidate(): void;
     hydrate(value: T): void;
     rekey(key?: ResourceKey): void;
@@ -31,6 +31,8 @@ export interface ResourceOptions {
     auto?: boolean;
     key?: ResourceKey;
     staleWhileRevalidate?: boolean;
+    staleTime?: number;
+    cacheTime?: number;
 }
 
 type CacheEntry<T> = {
@@ -41,6 +43,10 @@ type CacheEntry<T> = {
     promise: Promise<T> | null;
     generation: number;
     listeners: Set<() => void>;
+    updatedAt: number;
+    staleTime?: number;
+    cacheTime?: number;
+    gcTimer: ReturnType<typeof setTimeout> | null;
 };
 
 const resourceCache = new Map<string, CacheEntry<unknown>>();
@@ -62,6 +68,10 @@ function createCacheEntry<T>(): CacheEntry<T> {
         promise: null,
         generation: 0,
         listeners: new Set(),
+        updatedAt: 0,
+        staleTime: undefined,
+        cacheTime: undefined,
+        gcTimer: null,
     };
 }
 
@@ -80,12 +90,55 @@ function notifyEntry(entry: CacheEntry<unknown>): void {
     entry.listeners.forEach((listener) => listener());
 }
 
+function applyCachePolicy(entry: CacheEntry<unknown>, staleTime?: number, cacheTime?: number): void {
+    entry.staleTime = staleTime;
+    entry.cacheTime = cacheTime;
+}
+
+function clearGcTimer(entry: CacheEntry<unknown>): void {
+    if (entry.gcTimer) {
+        clearTimeout(entry.gcTimer);
+        entry.gcTimer = null;
+    }
+}
+
+function scheduleGc(key: string, entry: CacheEntry<unknown>): void {
+    clearGcTimer(entry);
+    if (!entry.cacheTime || entry.cacheTime <= 0 || entry.listeners.size > 0) {
+        return;
+    }
+
+    entry.gcTimer = setTimeout(() => {
+        if (entry.listeners.size === 0) {
+            resourceCache.delete(key);
+        }
+    }, entry.cacheTime);
+}
+
+function isEntryFresh(entry: CacheEntry<unknown>): boolean {
+    return !!entry.staleTime && entry.updatedAt > 0 && Date.now() - entry.updatedAt < entry.staleTime;
+}
+
 export function clearResourceCache(): void {
     resourceCache.clear();
 }
 
 export function invalidateResource(key: ResourceKey): void {
-    resourceCache.delete(normalizeResourceKey(key));
+    const normalized = normalizeResourceKey(key);
+    const entry = resourceCache.get(normalized);
+    if (entry) {
+        clearGcTimer(entry);
+    }
+    resourceCache.delete(normalized);
+}
+
+export function invalidateResourceNamespace(namespace: string): void {
+    for (const [key, entry] of resourceCache.entries()) {
+        if (key === namespace || key.startsWith(`${namespace}:`)) {
+            clearGcTimer(entry);
+            resourceCache.delete(key);
+        }
+    }
 }
 
 export function hasResourceCache(key: ResourceKey): boolean {
@@ -99,6 +152,7 @@ class ResourceController<T> implements Resource<T> {
     private _error?: unknown;
     private _promise: Promise<T> | null = null;
     private _generation = 0;
+    private _updatedAt = 0;
     private normalizedKey?: string;
     private cacheEntry?: CacheEntry<T>;
     private cacheListener?: () => void;
@@ -111,10 +165,12 @@ class ResourceController<T> implements Resource<T> {
         if (this.options.key !== undefined) {
             this.normalizedKey = normalizeResourceKey(this.options.key);
             this.cacheEntry = getCacheEntry<T>(this.normalizedKey);
+            applyCachePolicy(this.cacheEntry, this.options.staleTime, this.options.cacheTime);
             this.cacheListener = () => {
                 this.syncFromCache();
                 this.onChange();
             };
+            clearGcTimer(this.cacheEntry);
             this.cacheEntry.listeners.add(this.cacheListener);
             this.syncFromCache();
         }
@@ -156,17 +212,18 @@ class ResourceController<T> implements Resource<T> {
         return this.normalizedKey;
     }
 
-    async refresh(): Promise<T> {
+    async refresh(options: { force?: boolean } = {}): Promise<T> {
         if (this.cacheEntry) {
-            return this.refreshCacheEntry(this.cacheEntry);
+            return this.refreshCacheEntry(this.cacheEntry, options.force === true);
         }
 
-        return this.refreshLocal();
+        return this.refreshLocal(options.force === true);
     }
 
     invalidate(): void {
         if (this.cacheEntry && this.normalizedKey) {
             this.cacheEntry.listeners.delete(this.cacheListener!);
+            scheduleGc(this.normalizedKey, this.cacheEntry);
             invalidateResource(this.normalizedKey);
             this._state = 'idle';
             this._refreshing = false;
@@ -174,6 +231,7 @@ class ResourceController<T> implements Resource<T> {
             this._error = undefined;
             this._promise = null;
             const freshEntry = getCacheEntry<T>(this.normalizedKey);
+            applyCachePolicy(freshEntry, this.options.staleTime, this.options.cacheTime);
             freshEntry.listeners.add(this.cacheListener!);
             this.cacheEntry = freshEntry;
         } else {
@@ -194,6 +252,7 @@ class ResourceController<T> implements Resource<T> {
             this.cacheEntry.refreshing = false;
             this.cacheEntry.error = undefined;
             this.cacheEntry.promise = null;
+            this.cacheEntry.updatedAt = Date.now();
             notifyEntry(this.cacheEntry);
             return;
         }
@@ -203,12 +262,16 @@ class ResourceController<T> implements Resource<T> {
         this._refreshing = false;
         this._error = undefined;
         this._promise = null;
+        this._updatedAt = Date.now();
         this.onChange();
     }
 
     rekey(key?: ResourceKey): void {
         if (this.cacheEntry && this.cacheListener) {
             this.cacheEntry.listeners.delete(this.cacheListener);
+            if (this.normalizedKey) {
+                scheduleGc(this.normalizedKey, this.cacheEntry);
+            }
         }
 
         this.normalizedKey = key !== undefined ? normalizeResourceKey(key) : undefined;
@@ -217,10 +280,12 @@ class ResourceController<T> implements Resource<T> {
 
         if (this.normalizedKey !== undefined) {
             this.cacheEntry = getCacheEntry<T>(this.normalizedKey);
+            applyCachePolicy(this.cacheEntry, this.options.staleTime, this.options.cacheTime);
             this.cacheListener = () => {
                 this.syncFromCache();
                 this.onChange();
             };
+            clearGcTimer(this.cacheEntry);
             this.cacheEntry.listeners.add(this.cacheListener);
             this.syncFromCache();
         }
@@ -259,12 +324,18 @@ class ResourceController<T> implements Resource<T> {
         this._value = this.cacheEntry.value;
         this._error = this.cacheEntry.error;
         this._promise = this.cacheEntry.promise;
+        this._updatedAt = this.cacheEntry.updatedAt;
     }
 
-    private async refreshCacheEntry(entry: CacheEntry<T>): Promise<T> {
+    private async refreshCacheEntry(entry: CacheEntry<T>, force = false): Promise<T> {
         if (entry.promise) {
             this.syncFromCache();
             return entry.promise;
+        }
+
+        if (!force && entry.state === 'resolved' && entry.value !== undefined && isEntryFresh(entry)) {
+            this.syncFromCache();
+            return entry.value;
         }
 
         const generation = ++entry.generation;
@@ -285,6 +356,7 @@ class ResourceController<T> implements Resource<T> {
             entry.state = 'resolved';
             entry.refreshing = false;
             entry.promise = null;
+            entry.updatedAt = Date.now();
             notifyEntry(entry);
             return value;
         } catch (error) {
@@ -301,7 +373,13 @@ class ResourceController<T> implements Resource<T> {
         }
     }
 
-    private async refreshLocal(): Promise<T> {
+    private async refreshLocal(force = false): Promise<T> {
+        if (!force && this._state === 'resolved' && this._value !== undefined && this.options.staleTime && this._updatedAt > 0) {
+            if (Date.now() - this._updatedAt < this.options.staleTime) {
+                return this._value;
+            }
+        }
+
         const generation = ++this._generation;
         this._refreshing = this.shouldKeepValueWhileRefreshing();
         this._state = this._refreshing ? 'resolved' : 'pending';
@@ -321,6 +399,7 @@ class ResourceController<T> implements Resource<T> {
             this._state = 'resolved';
             this._refreshing = false;
             this._promise = null;
+            this._updatedAt = Date.now();
             this.onChange();
             return value;
         } catch (error) {

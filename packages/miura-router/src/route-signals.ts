@@ -70,10 +70,14 @@ export function createDerivedRouteSignal<TSource, TResult>(
 
 export function createRouteDataSignal<T = unknown>(
     source: RouteSignal<RouteContext | undefined>,
-    key: string,
+    key?: string,
     fallback?: T,
 ): RouteSignal<T | undefined> {
     return createDerivedRouteSignal(source, (context) => {
+        if (!key) {
+            return (context?.data as T | undefined) ?? fallback;
+        }
+
         const value = context?.data?.[key] as T | undefined;
         return value === undefined ? fallback : value;
     });

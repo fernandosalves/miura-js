@@ -7,7 +7,7 @@ Modern, declarative routing for miura applications. Built for Web Components, th
 - **Multiple navigation modes**: `hash`, `history`, or in-memory for tests.
 - **Guards & loaders**: resolve access/gate data before components render.
 - **Nested routes & redirects**: declarative tree definitions.
-- **Type-safe route params**: `defineRoute<TParams>()` with typed `buildPath()` and `navigate()`.
+- **Type-safe route params**: `defineRoute<TParams, TData>()` with typed params and loader data contracts.
 - **Runtime param validation**: optional Zod / Valibot / ArkType schema on any route.
 - **Event-driven**: emits lifecycle events through the framework EventBus.
 - **Performance hooks**: timing integration via `PerformanceMonitor`.
@@ -81,6 +81,7 @@ You can also read loader data reactively from the router itself:
 ```ts
 const profile = router.dataSignal('profile');
 const permissions = router.dataSignal('permissions', []);
+const allData = router.dataSignal<{ profile?: Profile; permissions?: string[] }>();
 ```
 
 For richer route state, you can also use named loaders:
@@ -185,6 +186,7 @@ import { RouterOutlet } from '@miurajs/miura-router';
 | `router.previous` | Previous `RouteContext` |
 | `router.currentSignal` | Signal-like current route context |
 | `router.select(fn)` | Derive a reactive value from the current route context |
+| `router.dataSignal()` | Reactive access to the full loader data object |
 | `router.dataSignal(key, fallback?)` | Reactive access to loader data by key |
 | `router.start()` | Start listening to navigation events |
 | `router.stop()` | Stop listening (keeps state) |
@@ -204,6 +206,7 @@ The router exposes signal-like state so components can respond to navigation and
 ```ts
 const pathname = router.select((context) => context?.pathname ?? '/');
 const profile = router.dataSignal('profile');
+const data = router.dataSignal<{ profile?: Profile }>();
 ```
 
 These values support:
@@ -214,9 +217,9 @@ These values support:
 
 That makes them easy to pass into reactive templates or compose with other app primitives.
 
-## 🔷 Type-Safe Route Params
+## 🔷 Type-Safe Route Params And Loader Data
 
-Use `defineRoute<TParams>()` to get typed `buildPath()` and `navigate()` helpers with compile-time safety on route params.
+Use `defineRoute<TParams, TData>()` to get typed `buildPath()` / `navigate()` helpers and to carry the expected loader data shape alongside the route definition.
 
 ```ts
 import { defineRoute, createRouter } from '@miurajs/miura-router';

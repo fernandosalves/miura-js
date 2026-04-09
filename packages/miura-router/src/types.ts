@@ -1,5 +1,7 @@
 import type { RouteSignal } from './route-signals.js';
 
+export type RouteDataRecord = Record<string, any>;
+
 export type RouterMode = 'hash' | 'history' | 'memory';
 
 /**
@@ -30,7 +32,10 @@ export interface RouteMeta extends Record<string, any> {
     title?: string | ((context: RouteRenderContext) => string | undefined | null);
 }
 
-export interface RouteRecord<TParams extends Record<string, string> = Record<string, string>> {
+export interface RouteRecord<
+    TParams extends Record<string, string> = Record<string, string>,
+    TData extends RouteDataRecord = RouteDataRecord
+> {
     path: string;
     component: string;
     renderZone?: string;
@@ -47,6 +52,8 @@ export interface RouteRecord<TParams extends Record<string, string> = Record<str
      * validated (and optionally coerced) after every route match.
      */
     paramsSchema?: ParamsSchema<TParams>;
+    /** Phantom field so loader data can be carried through types without affecting runtime. */
+    __dataType?: TData;
 }
 
 export interface RouterEventBus {
@@ -64,8 +71,11 @@ export interface RouteLocation {
     fullPath: string;
 }
 
-export interface RouteContext<TParams extends Record<string, string> = Record<string, string>> {
-    route: RouteRecord<TParams>;
+export interface RouteContext<
+    TParams extends Record<string, string> = Record<string, string>,
+    TData extends RouteDataRecord = RouteDataRecord
+> {
+    route: RouteRecord<TParams, TData>;
     /** Full matched chain from root layout to leaf — use for nested outlet rendering */
     matched: RouteRecord[];
     pathname: string;
@@ -73,12 +83,15 @@ export interface RouteContext<TParams extends Record<string, string> = Record<st
     params: TParams;
     query: URLSearchParams;
     hash: string;
-    data: Record<string, any>;
+    data: TData;
     loaders: RouteLoaderState;
     timestamp: number;
 }
 
-export interface RouteRenderContext<TParams extends Record<string, string> = Record<string, string>> extends RouteContext<TParams> {
+export interface RouteRenderContext<
+    TParams extends Record<string, string> = Record<string, string>,
+    TData extends RouteDataRecord = RouteDataRecord
+> extends RouteContext<TParams, TData> {
     previous?: RouteContext | null;
 }
 
@@ -135,6 +148,7 @@ export interface Router {
     stop(): void;
     destroy(): void;
     select<T>(selector: (context: RouteContext | undefined) => T): RouteSignal<T>;
+    dataSignal<TData = RouteDataRecord>(): RouteSignal<TData | undefined>;
     dataSignal<T = unknown>(key: string, fallback?: T): RouteSignal<T | undefined>;
     navigate(target: string, options?: NavigationOptions): Promise<NavigationResult>;
     replace(target: string, options?: NavigationOptions): Promise<NavigationResult>;
@@ -143,3 +157,10 @@ export interface Router {
 }
 
 export interface RouterInstance extends Router { }
+
+export type RouteDataOf<TRoute> =
+    TRoute extends { record: RouteRecord<any, infer TData> }
+        ? TData
+        : TRoute extends RouteRecord<any, infer TData>
+            ? TData
+            : never;
