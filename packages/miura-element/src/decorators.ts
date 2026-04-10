@@ -1,6 +1,7 @@
 import type { ComponentDebugOptions } from '@miurajs/miura-debugger';
 import { setComponentDebugOptions } from '@miurajs/miura-debugger';
 import { MiuraElement } from "./miura-element";
+import { consumeContext, type ContextKey } from "./context.js";
 
 export interface ComponentOptions {
     tag?: string;
@@ -124,4 +125,28 @@ export function state(options: StateOptions = {}) {
         // Create/update the static state() function
         constructor.state = () => newState;
     };
-} 
+}
+
+/**
+ * Property decorator that automatically consumes a context value from the DOM tree.
+ * 
+ * This decorator uses a lazy getter mechanism which solves the "constructor bug"
+ * (where context lookups fail because the element is not yet connected).
+ * 
+ * @example
+ * class MyElement extends MiuraElement {
+ *   @consume(MY_CONTEXT)
+ *   data!: MyContextType;
+ * }
+ */
+export function consume<T>(key: ContextKey<T>) {
+    return function (target: MiuraElement, propertyKey: string) {
+        Object.defineProperty(target, propertyKey, {
+            get(this: MiuraElement) {
+                return consumeContext(this, key);
+            },
+            enumerable: true,
+            configurable: true,
+        });
+    };
+}
