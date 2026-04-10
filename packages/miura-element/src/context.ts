@@ -48,6 +48,20 @@ export function hasProvidedContext(host: object, key: ContextKey<unknown>): bool
     return getContextMap(host)?.has(key) ?? false;
 }
 
+function resolveContextValue<T>(host: Node, key: ContextKey<T>, fallback?: T): T | undefined {
+    let current: Node | null = host;
+
+    while (current) {
+        const map = getContextMap(current);
+        if (map?.has(key as ContextKey<unknown>)) {
+            return map.get(key as ContextKey<unknown>) as T;
+        }
+        current = getTraversalParent(current);
+    }
+
+    return fallback;
+}
+
 /**
  * Consumes a context value from the DOM tree.
  * 
@@ -60,34 +74,53 @@ export function hasProvidedContext(host: object, key: ContextKey<unknown>): bool
  *    to the new value on next access.
  */
 export function consumeContext<T>(host: Node, key: ContextKey<T>, fallback?: T): T {
-    return new Proxy({} as any, {
-        get(_target, prop, receiver) {
-            // Perform the actual DOM-walking lookup
-            let current: Node | null = host;
-            let value: any = undefined;
+    const target = function contextValueProxy() { /* lazy context proxy */ };
 
-            while (current) {
-                const map = getContextMap(current);
-                if (map?.has(key as ContextKey<unknown>)) {
-                    value = map.get(key as ContextKey<unknown>);
-                    break;
-                }
-                current = getTraversalParent(current);
+    return new Proxy(target as any, {
+        apply(_target, thisArg, args) {
+            const actualValue = resolveContextValue(host, key, fallback);
+            if (typeof actualValue !== 'function') {
+                return actualValue;
             }
 
-            const actualValue = value !== undefined ? value : fallback;
+            return Reflect.apply(actualValue, thisArg, args);
+        },
+        get(_target, prop, _receiver) {
+            const actualValue = resolveContextValue(host, key, fallback);
 
-            if (actualValue === undefined) {
-                // If we're accessing a property on an undefined context,
-                // we'll eventually throw a natural JS error, but for signals
-                // and templates, we want to be as helpful as possible.
+            if (prop === Symbol.toPrimitive) {
+                return () => actualValue as any;
+            }
+
+            if (prop === 'valueOf') {
+                return () => actualValue as any;
+            }
+
+            if (prop === 'toString') {
+                return () => String(actualValue);
+            }
+
+            if (actualValue === undefined || actualValue === null) {
                 return undefined;
             }
 
-            const result = Reflect.get(actualValue, prop, receiver);
-            
-            // If the result is a function, we must bind it to the actual context value
+            const valueType = typeof actualValue;
+            if (valueType !== 'object' && valueType !== 'function') {
+                const boxed = Object(actualValue) as Record<PropertyKey, unknown>;
+                const result = boxed[prop as keyof typeof boxed];
+                return typeof result === 'function' ? result.bind(actualValue) : result;
+            }
+
+            const result = Reflect.get(actualValue as object, prop, actualValue);
             return typeof result === 'function' ? result.bind(actualValue) : result;
-        }
+        },
+        has(_target, prop) {
+            const actualValue = resolveContextValue(host, key, fallback);
+            if (actualValue === undefined || actualValue === null) {
+                return false;
+            }
+
+            return prop in Object(actualValue);
+        },
     }) as T;
 }

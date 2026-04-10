@@ -413,12 +413,12 @@ The AOT compiler generates JS functions via `new Function()` with cached element
 All `static properties` are backed by `Signal` objects internally. You can also create standalone reactive signals:
 
 ```typescript
-import { $signal, $computed } from '@miurajs/miura-element';
+import { createSignal, createComputed } from '@miurajs/miura-element';
 
-const count = $signal(0);
-const double = $computed(() => count.get() * 2);
+const count = createSignal(0);
+const double = createComputed(() => count() * 2);
 
-count.set(5); // double automatically becomes 10
+count(5); // double automatically becomes 10
 ```
 
 ### Internationalization (`miura-i18n`)

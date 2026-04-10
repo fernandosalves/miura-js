@@ -170,7 +170,14 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 
     rfn.subscribe = (cb: (v: T) => void): (() => void) => {
         _subs.add(cb);
-        return () => _subs.delete(cb);
+        return () => {
+            _subs.delete(cb);
+            if (_subs.size === 0) {
+                _sourcesUnsubs.splice(0).forEach(u => u());
+                _sources.clear();
+                _dirty = true;
+            }
+        };
     };
     rfn.peek = (): T => {
         if (_dirty) recompute();

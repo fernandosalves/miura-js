@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { MiuraElement, createContextKey, html, signal, type Signal } from '../index.js';
+import { MiuraElement, createContextKey, createSignal, html, type Signal } from '../index.js';
 
 const waitForMicrotask = async () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -135,7 +135,7 @@ describe('MiuraElement context', () => {
 
         class SignalConsumer extends MiuraElement {
             protected override template() {
-                const theme = this.$inject(THEME_SIGNAL, signal('fallback'))!;
+                const theme = this.$inject(THEME_SIGNAL, createSignal('fallback'))!;
                 return html`<p class="theme">${theme}</p>`;
             }
         }

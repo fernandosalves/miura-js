@@ -24,6 +24,7 @@ export interface PropertyDeclarations {
  * e.g.  element.__sig_count   → Signal<number> for property "count"
  */
 export const SIGNAL_KEY_PREFIX = '__sig_';
+export const LOCAL_SIGNAL_KEY_PREFIX = '__local_sig_';
 
 /**
  * Creates signal-backed property accessors for `static properties`.
@@ -112,6 +113,48 @@ export function createStateProperties(
     for (const [name, options] of Object.entries(properties)) {
         // Force reflect: false — state is always internal
         _createSignalProperty(instance, name, { ...options, reflect: false });
+    }
+}
+
+/**
+ * Creates signal-backed local field accessors for `@signal`.
+ *
+ * These fields expose plain property syntax (`this.count = 1`, `this.count`)
+ * while keeping a backing Signal available for direct fine-grained bindings.
+ *
+ * Unlike `static properties` / `static state()`, these are intentionally not
+ * auto-subscribed to `requestUpdate()`. Consumers should bind their backing
+ * signal directly when they want fine-grained DOM updates.
+ */
+export function createLocalSignalProperties(
+    instance: any,
+    properties: PropertyDeclarations,
+): void {
+    for (const [name, options] of Object.entries(properties)) {
+        const sigKey = `${LOCAL_SIGNAL_KEY_PREFIX}${name}`;
+        const defaultVal = 'default' in options
+            ? convertValue(options.default, options.type)
+            : undefined;
+        const s = signal(defaultVal);
+
+        Object.defineProperty(instance, sigKey, {
+            value: s,
+            writable: false,
+            enumerable: false,
+            configurable: false,
+        });
+
+        Object.defineProperty(instance, name, {
+            get() {
+                return (this as any)[sigKey].peek();
+            },
+            set(rawValue: unknown) {
+                const converted = convertValue(rawValue, options.type);
+                (this as any)[sigKey](converted);
+            },
+            configurable: true,
+            enumerable: true,
+        });
     }
 }
 

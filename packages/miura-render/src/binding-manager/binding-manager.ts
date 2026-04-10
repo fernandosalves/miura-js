@@ -23,7 +23,13 @@ type SignalLike = { peek(): unknown; subscribe(fn: (v: unknown) => void): () => 
 type MultipartBinding = AttributeBinding | UtilityBinding;
 
 function _isSignal(v: unknown): v is SignalLike {
-    return typeof v === 'function' && (v as any).__isSignal === true;
+    return Boolean(
+        v
+        && ((typeof v === 'function') || typeof v === 'object')
+        && typeof (v as any).peek === 'function'
+        && typeof (v as any).subscribe === 'function'
+        && (v as any).__isSignal === true
+    );
 }
 
 export class BindingManager {

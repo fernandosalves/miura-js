@@ -1,6 +1,7 @@
 import { signal, type Signal } from './signals.js';
 
 const sharedSignals = new Map<string, Signal<unknown>>();
+export const GLOBAL_SIGNAL_KEY_PREFIX = '__global_sig_';
 
 export type SharedKeyPart = string | number;
 export type SharedKey = string | readonly SharedKeyPart[];
@@ -11,6 +12,10 @@ export function sharedKey(...parts: readonly SharedKeyPart[]): string {
 
 function normalizeSharedKey(key: SharedKey): string {
     return Array.isArray(key) ? sharedKey(...key) : String(key);
+}
+
+export function resolveSharedKey(key: SharedKey): string {
+    return normalizeSharedKey(key);
 }
 
 export function createSharedNamespace(namespace: string) {
@@ -44,4 +49,33 @@ export function getShared<T>(key: SharedKey): Signal<T> | undefined {
 
 export function clearShared(): void {
     sharedSignals.clear();
+}
+
+export function createGlobalProperties(
+    instance: any,
+    globals: Record<string, { key?: SharedKey; initial?: unknown }>,
+): void {
+    for (const [name, options] of Object.entries(globals)) {
+        const normalizedKey = resolveSharedKey(options.key ?? name);
+        const sigKey = `${GLOBAL_SIGNAL_KEY_PREFIX}${name}`;
+        const sharedSignal = shared(normalizedKey, options.initial);
+
+        Object.defineProperty(instance, sigKey, {
+            value: sharedSignal,
+            writable: false,
+            enumerable: false,
+            configurable: false,
+        });
+
+        Object.defineProperty(instance, name, {
+            get() {
+                return (this as any)[sigKey].peek();
+            },
+            set(value: unknown) {
+                (this as any)[sigKey](value);
+            },
+            configurable: true,
+            enumerable: true,
+        });
+    }
 }

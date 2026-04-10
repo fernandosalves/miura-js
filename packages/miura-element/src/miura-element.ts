@@ -1,13 +1,15 @@
 import { PropertyValues } from './property-values';
 import { consumeContext, provideContext, type ContextKey } from './context.js';
 import { findIslandHost, readIslandProps, type MiuraIsland } from './miura-island.js';
-import { PropertyDeclarations, createProperties, createStateProperties, SIGNAL_KEY_PREFIX } from './properties';
+import { PropertyDeclarations, createLocalSignalProperties, createProperties, createStateProperties, LOCAL_SIGNAL_KEY_PREFIX, SIGNAL_KEY_PREFIX } from './properties';
 import type { RouteSignalLike, RouterBridgeLike } from './router-bridge.js';
 import { getComponentDebugOptions, registerDebugLayer, reportDiagnostic, reportTimelineEvent, unregisterDebugLayer } from '@miurajs/miura-debugger';
 import { signal, computed, Signal, ReadonlySignal } from './signals.js';
-import { shared, type SharedKey } from './shared.js';
+import { createFieldRef, type FieldRef } from './field-ref.js';
+import { shared, createGlobalProperties, GLOBAL_SIGNAL_KEY_PREFIX, type SharedKey } from './shared.js';
 import { createForm, Form, FormOptions } from './form.js';
 import { createResource, resourceKey, Resource, ResourceKey, ResourceOptions } from './resource.js';
+import { useBeacon, usePulse, type Beacon, type Pulse } from './channels.js';
 
 import { TemplateResult, CSSResult, debugLog } from '@miurajs/miura-render';
 import { TemplateProcessor, TemplateCompiler, NodeBinding, DirectiveBinding, ensureUtilityStylesInRoot } from '@miurajs/miura-render';
@@ -90,6 +92,10 @@ export class MiuraElement extends HTMLElement {
      * @type {PropertyDeclarations}
      */
     static properties: PropertyDeclarations = {};
+    static signals?: PropertyDeclarations;
+    static globals?: Record<string, { key?: SharedKey; initial?: unknown }>;
+    static beacons?: Record<string, Beacon<unknown>>;
+    static pulses?: Record<string, Pulse>;
 
     /**
      * Optional component-specific debugger configuration.
@@ -229,6 +235,10 @@ export class MiuraElement extends HTMLElement {
     private _islandPropsValue: Record<string, unknown> = {};
     /** Lazy proxy so field initializers can keep a stable object reference before connection. */
     private _islandPropsProxy: Record<string, unknown> | null = null;
+    /** Lazy proxy for signal-backed field refs (`this.$.fieldName`). */
+    private _signalRefsProxy: Record<string, FieldRef<unknown>> | null = null;
+    /** Stable cache of per-field ref wrappers. */
+    private _fieldRefCache = new Map<string, FieldRef<unknown>>();
 
     /**
      * Memory optimization: WeakMap for property storage
@@ -415,6 +425,16 @@ export class MiuraElement extends HTMLElement {
         if (ctor.properties) {
             createProperties(this, ctor.properties);
         }
+
+        if (ctor.signals) {
+            createLocalSignalProperties(this, ctor.signals);
+        }
+
+        if (ctor.globals) {
+            createGlobalProperties(this, ctor.globals);
+        }
+
+        this._initializeChannelFields();
 
         // Initialize plain non-reactive state fields (static state())
         if (typeof ctor.state === 'function') {
@@ -1040,11 +1060,142 @@ export class MiuraElement extends HTMLElement {
     }
 
     /**
+     * Stable proxy for signal-backed fields.
+     *
+     * Use `this.$.count` in templates to bind directly to the backing Signal of
+     * a decorated `@signal` / `@global` field while preserving plain property
+     * syntax in component logic.
+     */
+    protected get $(): Record<string, FieldRef<unknown>> {
+        if (!this._signalRefsProxy) {
+            this._signalRefsProxy = new Proxy({}, {
+                get: (_target, property) => this.$ref(String(property)),
+                has: (_target, property) => {
+                    const name = String(property);
+                    return Boolean(
+                        (this as any)[`${LOCAL_SIGNAL_KEY_PREFIX}${name}`]
+                        || (this as any)[`${GLOBAL_SIGNAL_KEY_PREFIX}${name}`]
+                    );
+                },
+                ownKeys: () => {
+                    const ctor = this.constructor as typeof MiuraElement;
+                    return [
+                        ...Object.keys(ctor.signals || {}),
+                        ...Object.keys(ctor.globals || {}),
+                    ];
+                },
+                getOwnPropertyDescriptor: (_target, property) => {
+                    const name = String(property);
+                    try {
+                        const value = this.$ref(name);
+                        return {
+                            enumerable: true,
+                            configurable: true,
+                            value,
+                        };
+                    } catch {
+                        return undefined;
+                    }
+                },
+            }) as Record<string, FieldRef<unknown>>;
+        }
+
+        return this._signalRefsProxy;
+    }
+
+    /**
+     * Access the backing Signal for an `@signal` field by name.
+     *
+     * This enables direct fine-grained bindings while the decorated field keeps
+     * plain property syntax for component logic.
+     */
+    protected $signalRef<T>(propertyName: string): FieldRef<T> {
+        const signalRef = this.$ref<T>(propertyName);
+        if (!signalRef || typeof signalRef.subscribe !== 'function') {
+            throw new Error(`No local signal found for "${propertyName}".`);
+        }
+        return signalRef;
+    }
+
+    /**
+     * Access the backing Signal for an `@global` field by name.
+     */
+    protected $globalRef<T>(propertyName: string): FieldRef<T> {
+        const signalRef = this._resolveFieldRefSignal<T>(propertyName, 'global');
+        if (!signalRef || typeof signalRef.subscribe !== 'function') {
+            throw new Error(`No global signal found for "${propertyName}".`);
+        }
+        return this._getOrCreateFieldRef(propertyName, signalRef);
+    }
+
+    /**
+     * Access the backing Signal for a decorated `@signal` or `@global` field.
+     */
+    protected $ref<T>(propertyName: string): FieldRef<T> {
+        const resolvedSignal =
+            this._resolveFieldRefSignal<T>(propertyName, 'local')
+            ?? this._resolveFieldRefSignal<T>(propertyName, 'global');
+        if (resolvedSignal) {
+            return this._getOrCreateFieldRef(propertyName, resolvedSignal);
+        }
+
+        throw new Error(`No signal-backed field found for "${propertyName}".`);
+    }
+
+    /**
      * Create or retrieve shared reactive state by key.
      * Multiple components using the same key receive the same signal instance.
      */
     protected $shared<T>(key: SharedKey, initial: T): Signal<T> {
         return shared(key, initial);
+    }
+
+    /**
+     * Create or retrieve a named global event channel with payload.
+     */
+    protected $beacon<T>(key: string): Beacon<T> {
+        return useBeacon<T>(key);
+    }
+
+    /**
+     * Create or retrieve a named global void event channel.
+     */
+    protected $pulse(key: string): Pulse {
+        return usePulse(key);
+    }
+
+    /**
+     * Framework-native helper for emitting on beacons and pulses.
+     */
+    protected $emit(channel: Pulse): void;
+    protected $emit<T>(channel: Beacon<T>, value: T): void;
+    protected $emit<T>(channel: Beacon<T> | Pulse, value?: T): void {
+        (channel as Beacon<T>).emit(value as T);
+    }
+
+    /**
+     * Subscribe to a beacon or pulse for the lifetime of this component
+     * connection. The unsubscribe function is cleaned up automatically on
+     * disconnect.
+     */
+    protected $on(channel: Pulse, listener: () => void): () => void;
+    protected $on<T>(channel: Beacon<T>, listener: (value: T) => void): () => void;
+    protected $on<T>(channel: Beacon<T> | Pulse, listener: ((value: T) => void) | (() => void)): () => void {
+        const unsubscribe = (channel as Beacon<T>).on(listener as (value: T) => void);
+        this._propSignalUnsubs.push(unsubscribe);
+        return unsubscribe;
+    }
+
+    /**
+     * Subscribe once to a beacon or pulse for the lifetime of this component
+     * connection.
+     */
+    protected $once(channel: Pulse, listener: () => void): () => void;
+    protected $once<T>(channel: Beacon<T>, listener: (value: T) => void): () => void;
+    protected $once<T>(channel: Beacon<T> | Pulse, listener: ((value: T) => void) | (() => void)): () => void {
+        const unsubscribe = (channel as Beacon<T>).once(listener as (value: T) => void);
+        this._propSignalUnsubs.push(unsubscribe);
+        return unsubscribe;
     }
 
     /**
@@ -1572,9 +1723,11 @@ export class MiuraElement extends HTMLElement {
         const stateKeys = typeof ctor.state === 'function'
             ? Object.keys(ctor.state() || {})
             : [];
+        const globalKeys = Object.keys(ctor.globals || {});
 
-        for (const name of [...propKeys, ...stateKeys]) {
-            const sig = (this as any)[`${SIGNAL_KEY_PREFIX}${name}`];
+        for (const name of [...propKeys, ...stateKeys, ...globalKeys]) {
+            const sig = (this as any)[`${SIGNAL_KEY_PREFIX}${name}`]
+                ?? (this as any)[`${GLOBAL_SIGNAL_KEY_PREFIX}${name}`];
             if (sig && typeof sig.subscribe === 'function') {
                 const unsub = sig.subscribe(() => {
                     this._invalidateComputedCache(name);
@@ -1596,6 +1749,54 @@ export class MiuraElement extends HTMLElement {
 
     private _resolveIslandProps(): void {
         this._islandPropsValue = readIslandProps<Record<string, unknown>>(this) ?? {};
+    }
+
+    private _initializeChannelFields(): void {
+        const ctor = this.constructor as typeof MiuraElement;
+
+        for (const [name, channel] of Object.entries(ctor.beacons || {})) {
+            if (Object.prototype.hasOwnProperty.call(this, name)) {
+                continue;
+            }
+            Object.defineProperty(this, name, {
+                value: channel,
+                writable: false,
+                enumerable: true,
+                configurable: true,
+            });
+        }
+
+        for (const [name, channel] of Object.entries(ctor.pulses || {})) {
+            if (Object.prototype.hasOwnProperty.call(this, name)) {
+                continue;
+            }
+            Object.defineProperty(this, name, {
+                value: channel,
+                writable: false,
+                enumerable: true,
+                configurable: true,
+            });
+        }
+    }
+
+    private _resolveFieldRefSignal<T>(propertyName: string, scope: 'local' | 'global'): Signal<T> | undefined {
+        const keyPrefix = scope === 'local' ? LOCAL_SIGNAL_KEY_PREFIX : GLOBAL_SIGNAL_KEY_PREFIX;
+        const signalRef = (this as any)[`${keyPrefix}${propertyName}`];
+        if (signalRef && typeof signalRef.subscribe === 'function') {
+            return signalRef as Signal<T>;
+        }
+        return undefined;
+    }
+
+    private _getOrCreateFieldRef<T>(propertyName: string, signalRef: Signal<T>): FieldRef<T> {
+        const cached = this._fieldRefCache.get(propertyName);
+        if (cached) {
+            return cached as FieldRef<T>;
+        }
+
+        const created = createFieldRef(signalRef);
+        this._fieldRefCache.set(propertyName, created as FieldRef<unknown>);
+        return created;
     }
 
     private _registerDebugResource(kind: DebugResourceRegistration['kind'], resource: Resource<unknown>, label?: string): void {

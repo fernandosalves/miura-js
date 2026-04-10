@@ -15,7 +15,7 @@ The core component system for the miura framework. Provides the `MiuraElement` b
 - **Error Boundaries** — `onError` handler with fallback UI and recovery
 - **Two-Way Binding** — `&` prefix with `bind()` helper for form elements
 - **AOT / JIT Compiler** — `static compiler = 'AOT'` to opt a component into the zero-DOM-query render path
-- **Standalone Signals** — `$signal()` and `$computed()` for use outside components
+- **Standalone Signals** — `createSignal()` / `createComputed()` for low-level usage outside components
 - **Shared Signals** — `$shared(key, initial)` for lightweight app-wide reactive state
 - **Router Bridge** — `$route()`, `$routeSelect()`, and `$routeData()` for reactive route context in components
 - **Route Resources** — `$routeResource()` for param-driven async state tied to navigation
@@ -458,7 +458,7 @@ this.theme = this.$shared(['blog-editor', 'theme'], 'light');
 Use tree-scoped context when a parent should expose data or services to deep descendants without threading them through props or global shared keys.
 
 ```typescript
-import { MiuraElement, createContextKey, html, signal, type Signal } from '@miurajs/miura-element';
+import { MiuraElement, createContextKey, html, createSignal, type Signal } from '@miurajs/miura-element';
 
 const themeContext = createContextKey<Signal<string>>('theme');
 
@@ -482,7 +482,7 @@ class ThemeProvider extends MiuraElement {
 
 class ThemeBadge extends MiuraElement {
   template() {
-    const theme = this.$inject(themeContext, signal('light'));
+    const theme = this.$inject(themeContext, createSignal('light'));
     return html`<p>Theme: ${theme}</p>`;
   }
 }
@@ -893,16 +893,20 @@ class DataRow extends MiuraElement {
 Create reactive values outside of components:
 
 ```typescript
-import { $signal, $computed } from '@miurajs/miura-element';
+import { createSignal, createComputed } from '@miurajs/miura-element';
 
-const count = $signal(0);
-const label = $computed(() => `Count: ${count.get()}`);
+const count = createSignal(0);
+const label = createComputed(() => `Count: ${count()}`);
 
-count.set(count.get() + 1);
-console.log(label.get()); // 'Count: 1'
+count(count() + 1);
+console.log(label()); // 'Count: 1'
 ```
 
-Signals created with `$signal()` / `$computed()` can be passed directly into `html` bindings — `BindingManager` subscribes to them automatically so bindings update without triggering a full component re-render.
+Signals created with `createSignal()` / `createComputed()` can be passed directly into `html` bindings.
+
+For decorated signal-backed fields, use `this.$.fieldName` in templates when you want the direct fine-grained binding path while keeping plain property syntax in component logic. These field refs expose `.value`, `.peek()`, `.subscribe()`, and `.map(...)` in addition to being directly bindable. `this.$ref('fieldName')` remains available when you need explicit programmatic access.
+
+For event channels, use `this.$emit(channel, value?)` to publish and `this.$on(channel, handler)` / `this.$once(channel, handler)` to subscribe with automatic cleanup on disconnect.
 
 ## Best Practices
 
