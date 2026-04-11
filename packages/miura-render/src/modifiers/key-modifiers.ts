@@ -11,7 +11,6 @@ export class KeyModifier implements EventModifier {
         if (!key) {
             throw new Error('Key must be specified for KeyModifier');
         }
-        console.log('KeyModifier created with key:', key);
     }
 
     apply(event: Event): boolean {
@@ -21,13 +20,7 @@ export class KeyModifier implements EventModifier {
 
         const targetKey = this.keyMap[this.key.toLowerCase()] || this.key;
         const eventKey = event.key;
-        
-        console.log('KeyModifier check:', {
-            targetKey,
-            eventKey,
-            matches: eventKey === targetKey
-        });
-        
+
         return eventKey === targetKey;
     }
 } 
