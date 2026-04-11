@@ -31,7 +31,6 @@ class SignalFieldRef<T> implements FieldRef<T> {
     }
 
     subscribe(fn: (value: T) => void): () => void {
-        console.log('[FieldRef] subscribe()');
         return this.signal.subscribe(fn);
     }
 

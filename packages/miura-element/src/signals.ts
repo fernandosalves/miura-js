@@ -81,24 +81,20 @@ export function signal<T>(initial: T): Signal<T> {
     function fn(value: T): void;
     function fn(value?: T): T | void {
         if (arguments.length === 0) {
-            console.log('[signal] READ', _value, _currentComputed ? '(inside computed)' : '');
             if (_currentComputed) {
                 _currentComputed._registerDependency(fn as Signal<T>);
             }
             return _value;
         }
         const next = value as T;
-        console.log('[signal] WRITE', next, '→ subs:', _subs.size);
-        if (Object.is(_value, next)) { console.log('[signal] WRITE skipped (same value)'); return; }
+        if (Object.is(_value, next)) { return; }
         _value = next;
         [..._subs].forEach(s => s(_value));
-        console.log('[signal] WRITE notified all subs');
     }
 
     fn.subscribe = (cb: (v: T) => void): (() => void) => {
-        console.log('[signal] SUBSCRIBE, total subs now:', _subs.size + 1);
         _subs.add(cb);
-        return () => { console.log('[signal] UNSUBSCRIBE'); _subs.delete(cb); };
+        return () => { _subs.delete(cb); };
     };
     fn.peek = (): T => _value;
     (fn as any).__isSignal = true;
@@ -128,7 +124,6 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
 
     const node: ComputedNode = {
         _registerDependency(source: SubscribableSignal) {
-            console.log('[computed] _registerDependency called, already tracked:', _sources.has(source));
             if (_sources.has(source)) return;
             _sources.add(source);
 
@@ -151,7 +146,6 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
     };
 
     function recompute(): T {
-        console.log('[computed] recompute START, sources clearing:', _sources.size);
         _sourcesUnsubs.splice(0).forEach(u => u());
         _sources.clear();
 
@@ -163,12 +157,10 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
         } finally {
             _currentComputed = prev;
         }
-        console.log('[computed] recompute END, value:', _value, 'sources now:', _sources.size);
         return _value;
     }
 
     function rfn(): T {
-        console.log('[computed] rfn() called, dirty:', _dirty);
         if (_currentComputed) {
             _currentComputed._registerDependency(rfn as ReadonlySignal<T>);
         }
@@ -177,10 +169,8 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
     }
 
     rfn.subscribe = (cb: (v: T) => void): (() => void) => {
-        console.log('[computed] SUBSCRIBE, subs now:', _subs.size + 1);
         _subs.add(cb);
         return () => {
-            console.log('[computed] UNSUBSCRIBE, subs now:', _subs.size - 1);
             _subs.delete(cb);
             if (_subs.size === 0) {
                 _sourcesUnsubs.splice(0).forEach(u => u());
@@ -190,7 +180,6 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
         };
     };
     rfn.peek = (): T => {
-        console.log('[computed] peek(), dirty:', _dirty);
         if (_dirty) recompute();
         return _value;
     };
