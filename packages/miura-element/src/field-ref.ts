@@ -18,7 +18,9 @@ export interface FieldRef<T> {
 class SignalFieldRef<T> implements FieldRef<T> {
     readonly __isSignal = true as const;
 
-    constructor(private readonly signal: SignalLike<T>) {}
+    private _mapCache: ReadonlySignal<unknown> | null = null;
+
+    constructor(private readonly signal: SignalLike<T>) { }
 
     get value(): T {
         return this.signal.peek();
@@ -29,15 +31,21 @@ class SignalFieldRef<T> implements FieldRef<T> {
     }
 
     subscribe(fn: (value: T) => void): () => void {
+        console.log('[FieldRef] subscribe()');
         return this.signal.subscribe(fn);
     }
 
     map<U>(selector: (value: T) => U): ReadonlySignal<U> {
-        return computed(() => {
+        if (this._mapCache) {
+            return this._mapCache as ReadonlySignal<U>;
+        }
+        const result = computed(() => {
             const readable = this.signal as Signal<T>;
             const currentValue = typeof readable === 'function' ? readable() : this.signal.peek();
             return selector(currentValue);
         });
+        this._mapCache = result;
+        return result as ReadonlySignal<U>;
     }
 
     valueOf(): T {
