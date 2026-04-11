@@ -1,7 +1,7 @@
 import type { ComponentDebugOptions } from '@miurajs/miura-debugger';
 import { setComponentDebugOptions } from '@miurajs/miura-debugger';
 import { MiuraElement } from "./miura-element";
-import { consumeContext, type ContextKey } from "./context.js";
+import { consumeContext, provideContext, type ContextKey } from "./context.js";
 import { createBeacon, createPulse, type Beacon, type Pulse } from './channels.js';
 
 export interface ComponentOptions {
@@ -189,6 +189,9 @@ export function consume<T>(key: ContextKey<T>) {
         Object.defineProperty(target, propertyKey, {
             get(this: MiuraElement) {
                 return consumeContext(this, key);
+            },
+            set(this: MiuraElement, value: T) {
+                provideContext(this, key, value);
             },
             enumerable: true,
             configurable: true,
