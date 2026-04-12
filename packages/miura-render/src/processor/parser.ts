@@ -246,7 +246,21 @@ export class TemplateParser {
                             }
                             state = ParserState.TEXT;
                         } else if (ch === '/' && str[j + 1] === '>') {
-                            // Self-closing tag — no namespace push needed
+                            // Self-closing tag
+                            if (inForeignNs()) {
+                                // In SVG/MathML, the HTML parser ignores /> and treats
+                                // the tag as an opening tag, nesting subsequent siblings
+                                // inside it. Emit an explicit closing tag instead.
+                                // Emit everything up to the />, then the closing tag,
+                                // and skip past the /> so it isn't double-emitted.
+                                html += str.substring(htmlStart, j);
+                                html += `></${currentTagName}>`;
+                                htmlStart = j + 2; // skip past '/>'
+                            }
+                            // Pop namespace if this was an svg/math self-closing tag
+                            if (nsStack.length && nsStack[nsStack.length - 1] === currentTagName) {
+                                nsStack.pop();
+                            }
                             currentTagName = '';
                             isClosingTag = false;
                             state = ParserState.TEXT;

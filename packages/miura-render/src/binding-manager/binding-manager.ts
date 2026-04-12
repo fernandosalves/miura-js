@@ -426,20 +426,34 @@ export class BindingManager {
         }
         // Check for data-bN marker attribute (SVG/MathML context — avoids
         // putting "binding:N" as SVG attribute values which the parser rejects)
-        return element.hasAttribute(`data-b${index}`);
-    }
-
-    /**
-     * Remove the data-bN marker attribute from an element (used for SVG/MathML bindings).
-     * Returns true if such a marker was found and removed.
-     */
-    private static removeDataBindingMarker(element: Element, index: number): boolean {
-        const markerName = `data-b${index}`;
-        if (element.hasAttribute(markerName)) {
-            element.removeAttribute(markerName);
+        if (element.hasAttribute(`data-b${index}`)) {
+            return true;
+        }
+        // Check for data-eN marker attribute (SVG/MathML event bindings —
+        // @ prefix is invalid in SVG attribute names, so we use data-eN)
+        if (element.hasAttribute(`data-e${index}`)) {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Remove the data-bN or data-eN marker attribute from an element (used for SVG/MathML bindings).
+     * Returns true if such a marker was found and removed.
+     */
+    private static removeDataBindingMarker(element: Element, index: number): boolean {
+        const bMarker = `data-b${index}`;
+        const eMarker = `data-e${index}`;
+        let removed = false;
+        if (element.hasAttribute(bMarker)) {
+            element.removeAttribute(bMarker);
+            removed = true;
+        }
+        if (element.hasAttribute(eMarker)) {
+            element.removeAttribute(eMarker);
+            removed = true;
+        }
+        return removed;
     }
 
     public static async initializeBindings(

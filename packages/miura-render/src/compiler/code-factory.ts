@@ -113,18 +113,40 @@ function fixNamespaces(root) {
         el.parentNode.replaceChild(recreateNS(el, _NS_MAP.svg), el);
     }
 }
+const _SVG_VOID = new Set(['circle','ellipse','line','path','polygon','polyline','rect','stop','use','image']);
 function recreateNS(src, ns) {
     const el = document.createElementNS(ns, src.tagName.toLowerCase());
     const BINDING_RE = /^binding:(\d+)$/;
     for (const attr of Array.from(src.attributes)) {
         const m = BINDING_RE.exec(attr.value);
-        if (m) { el.setAttribute('data-b' + m[1], ''); }
+        if (m && attr.name.startsWith('@')) { el.setAttribute('data-e' + m[1], ''); }
+        else if (m) { el.setAttribute('data-b' + m[1], ''); }
+        else if (attr.name.startsWith('@')) { el.setAttribute('data-e-' + attr.name.slice(1), attr.value); }
         else { el.setAttributeNS(attr.namespaceURI, attr.name, attr.value); }
     }
+    const isVoid = ns === _NS_MAP.svg && _SVG_VOID.has(src.tagName.toLowerCase());
+    const hoisted = [];
     for (const child of Array.from(src.childNodes)) {
-        el.appendChild(child.nodeType === 1 ? recreateNS(child, ns) : child.cloneNode(true));
+        const fixed = child.nodeType === 1 ? recreateNS(child, ns) : child.cloneNode(true);
+        if (isVoid) { hoisted.push(fixed); }
+        else { el.appendChild(fixed); }
     }
+    if (hoisted.length) { el._hoistedSiblings = hoisted; }
     return el;
+}
+function insertHoisted(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+    const toInsert = [];
+    let node;
+    while ((node = walker.nextNode())) {
+        if (node._hoistedSiblings) { toInsert.push(node); }
+    }
+    for (const el of toInsert) {
+        const sibs = el._hoistedSiblings;
+        delete el._hoistedSiblings;
+        let before = el.nextSibling;
+        for (const s of sibs) { el.parentNode.insertBefore(s, before); }
+    }
 }
 
 /** Update a single Node binding (replaces nodes between comment markers). */
@@ -372,6 +394,7 @@ export class CodeFactory {
             _tpl.innerHTML = html;
             const fragment = _tpl.content.cloneNode(true);
             fixNamespaces(fragment);
+            insertHoisted(fragment);
             const refs = collectRefs(fragment, ${count});
             ${updateLines}
             return { fragment, refs };

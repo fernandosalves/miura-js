@@ -128,6 +128,7 @@ export class TemplateProcessor {
         const fragment = document.importNode(template.content, true);
         applyStaticUtilities(fragment);
         this._fixNamespaces(fragment);
+        this._insertHoistedSiblings(fragment);
         return fragment;
     }
 
@@ -144,6 +145,15 @@ export class TemplateProcessor {
      * using `createElementNS` with the correct namespace, preserving all
      * attributes, children, and binding markers.
      */
+    // SVG elements that cannot have children in SVG namespace.
+    // The HTML parser treats <circle ... /> as an opening tag and nests
+    // subsequent siblings inside it. When re-creating in SVG namespace,
+    // we must hoist those children out as siblings after the void element.
+    private static readonly SVG_VOID_ELEMENTS = new Set([
+        'circle', 'ellipse', 'line', 'path', 'polygon', 'polyline',
+        'rect', 'stop', 'use', 'image',
+    ]);
+
     private _fixNamespaces(root: DocumentFragment): void {
         const HTML_NS = 'http://www.w3.org/1999/xhtml';
 
@@ -202,38 +212,95 @@ export class TemplateProcessor {
     /**
      * Deep-recreates an element (and its subtree) in the given namespace.
      * Preserves attributes, text nodes, and comment nodes (including binding markers).
+     *
+     * For SVG void elements (circle, line, path, etc.), the HTML parser treats
+     * <tag ... /> as an opening tag and nests subsequent elements inside it.
+     * When re-creating in SVG namespace, we hoist those children out as siblings
+     * after the void element, since SVG void elements cannot have children.
      */
     private _recreateInNamespace(source: Element, namespace: string): Element {
         const recreated = document.createElementNS(namespace, source.tagName.toLowerCase());
 
-        // Copy attributes, converting binding:N markers to data-bN for SVG/MathML
-        // (SVG rejects "binding:N" as invalid for numeric attrs like viewBox, x, y, etc.)
+        // Copy attributes, converting binding markers for SVG/MathML compatibility:
+        // - "binding:N" values → data-bN marker (SVG rejects "binding:N" for numeric attrs)
+        // - @event="binding:N" → data-eN marker (@ is invalid in SVG attribute names)
         const BINDING_RE = /^binding:(\d+)$/;
         for (const attr of Array.from(source.attributes)) {
             const match = BINDING_RE.exec(attr.value);
-            if (match) {
-                // Skip the original attribute (SVG would reject it) and emit data-bN marker
+            if (match && attr.name.startsWith('@')) {
+                // Event binding: @mouseenter="binding:N" → data-eN marker
+                // (@ is not valid in SVG attribute names for setAttribute)
+                recreated.setAttribute(`data-e${match[1]}`, '');
+            } else if (match) {
+                // Non-event attribute binding: x="binding:N" → data-bN marker
                 recreated.setAttribute(`data-b${match[1]}`, '');
+            } else if (attr.name.startsWith('@')) {
+                // Static @ attribute (shouldn't normally happen, but handle gracefully)
+                // Strip the @ prefix and store as data attribute
+                recreated.setAttribute(`data-e-${attr.name.slice(1)}`, attr.value);
             } else {
                 recreated.setAttributeNS(attr.namespaceURI, attr.name, attr.value);
             }
         }
 
-        // Deep-copy children
+        const isVoidSvg = namespace === ElementNamespace.SVG &&
+            TemplateProcessor.SVG_VOID_ELEMENTS.has(source.tagName.toLowerCase());
+
+        // Deep-copy children — but for SVG void elements, hoist children to siblings
+        // because the HTML parser incorrectly nested them inside self-closing tags.
+        // We collect hoisted nodes and insert them after the replaced element.
+        const hoisted: Node[] = [];
         for (const child of Array.from(source.childNodes)) {
             if (child.nodeType === Node.ELEMENT_NODE) {
                 const childEl = child as Element;
-                // Children of SVG/MathML inherit the parent namespace
                 const childNs = namespace;
                 const fixed = this._recreateInNamespace(childEl, childNs);
-                recreated.appendChild(fixed);
+                if (isVoidSvg) {
+                    hoisted.push(fixed);
+                } else {
+                    recreated.appendChild(fixed);
+                }
             } else {
                 // Text nodes, comment nodes (including binding markers)
-                recreated.appendChild(child.cloneNode(true));
+                if (isVoidSvg) {
+                    hoisted.push(child.cloneNode(true));
+                } else {
+                    recreated.appendChild(child.cloneNode(true));
+                }
             }
         }
 
+        // If we hoisted children from a void element, store them for insertion
+        // after the element is placed in the DOM (caller handles this via _hoistSiblings)
+        if (hoisted.length > 0) {
+            (recreated as Element & { _hoistedSiblings?: Node[] })._hoistedSiblings = hoisted;
+        }
+
         return recreated;
+    }
+
+    /**
+     * After _recreateInNamespace replaces an element, insert any hoisted siblings
+     * that were promoted out of SVG void elements.
+     */
+    private _insertHoistedSiblings(root: DocumentFragment | Element): void {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+        const toInsert: [Element, Node[]][] = [];
+        let node: Element | null;
+        while ((node = walker.nextNode() as Element | null)) {
+            const hoisted = (node as Element & { _hoistedSiblings?: Node[] })._hoistedSiblings;
+            if (hoisted?.length) {
+                toInsert.push([node, hoisted]);
+                delete (node as Element & { _hoistedSiblings?: Node[] })._hoistedSiblings;
+            }
+        }
+        // Insert hoisted siblings after each element (in reverse to maintain order)
+        for (const [el, siblings] of toInsert) {
+            let insertBefore = el.nextSibling;
+            for (const sib of siblings) {
+                el.parentNode!.insertBefore(sib, insertBefore);
+            }
+        }
     }
 }
 

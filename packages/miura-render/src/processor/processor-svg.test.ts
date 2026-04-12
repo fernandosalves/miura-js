@@ -303,4 +303,162 @@ describe('SVG and Foreign Namespace Bindings', () => {
         rect.dispatchEvent(new MouseEvent('click'));
         expect(clicked).toBe(true);
     });
+
+    // ── Sub-template SVG elements (the real chart scenario) ──
+
+    it('should render SVG sub-template with self-closing elements as siblings (not nested)', async () => {
+        // This is the core bug: sub-templates like html`<circle cx=${x} cy=${y} r="3" />`
+        // are parsed as HTML, where /> is ignored and <circle> becomes an opening tag,
+        // nesting subsequent elements inside it.
+        const cx = 10;
+        const cy = 20;
+
+        const result = html`
+            <svg width="100" height="100">
+                ${html`<circle cx=${cx} cy=${cy} r="3" fill="red" />`}
+                ${html`<circle cx="50" cy="50" r="5" fill="blue" />`}
+            </svg>
+        `;
+
+        await render(result);
+
+        const circles = container.querySelectorAll('circle');
+        expect(circles.length).toBe(2);
+        // Both circles should be direct children of <svg>, not nested inside each other
+        expect(circles[0].parentElement!.tagName.toLowerCase()).toBe('svg');
+        expect(circles[1].parentElement!.tagName.toLowerCase()).toBe('svg');
+        expect(circles[0].getAttribute('cx')).toBe('10');
+        expect(circles[1].getAttribute('cx')).toBe('50');
+    });
+
+    it('should render SVG sub-template with multiple self-closing elements in one template', async () => {
+        const x1 = 10;
+        const y1 = 20;
+        const x2 = 90;
+        const y2 = 80;
+
+        // Multiple self-closing elements in a single sub-template
+        const result = html`
+            <svg width="100" height="100">
+                ${html`<line x1=${x1} y1=${y1} x2=${x2} y2=${y2} stroke="black" /><circle cx="50" cy="50" r="5" fill="red" />`}
+            </svg>
+        `;
+
+        await render(result);
+
+        const line = container.querySelector('line');
+        const circle = container.querySelector('circle');
+        expect(line).toBeTruthy();
+        expect(circle).toBeTruthy();
+        // Both should be siblings inside svg, not circle nested inside line
+        expect(line!.parentElement!.tagName.toLowerCase()).toBe('svg');
+        expect(circle!.parentElement!.tagName.toLowerCase()).toBe('svg');
+        expect(line!.getAttribute('x1')).toBe('10');
+    });
+
+    it('should handle event bindings on SVG sub-template elements', async () => {
+        let entered = false;
+        let left = false;
+
+        const result = html`
+            <svg width="100" height="100">
+                ${html`<circle @mouseenter=${() => { entered = true; }} @mouseleave=${() => { left = true; }} cx="50" cy="50" r="25" fill="red" />`}
+            </svg>
+        `;
+
+        await render(result);
+
+        const circle = container.querySelector('circle')!;
+        expect(circle).toBeTruthy();
+        circle.dispatchEvent(new MouseEvent('mouseenter'));
+        expect(entered).toBe(true);
+        circle.dispatchEvent(new MouseEvent('mouseleave'));
+        expect(left).toBe(true);
+    });
+
+    it('should render chart-like template with mapped series', async () => {
+        // Simulates the real mui-chart pattern
+        const series = [
+            { key: 'a', color: 'red' },
+            { key: 'b', color: 'blue' },
+        ];
+        const data = [
+            { a: 10, b: 20 },
+            { a: 30, b: 40 },
+        ];
+
+        const result = html`
+            <svg viewBox="0 0 100 100">
+                ${series.map((s) => {
+            const points = data.map((p, i) => ({ x: i * 50, y: 100 - Number(p[s.key]) }));
+            const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+            return html`<path d=${d} stroke=${s.color} fill="none" />`;
+        })}
+            </svg>
+        `;
+
+        await render(result);
+
+        const paths = container.querySelectorAll('path');
+        expect(paths.length).toBe(2);
+        expect(paths[0].getAttribute('stroke')).toBe('red');
+        expect(paths[1].getAttribute('stroke')).toBe('blue');
+        // Both paths should be direct children of svg
+        expect(paths[0].parentElement!.tagName.toLowerCase()).toBe('svg');
+        expect(paths[1].parentElement!.tagName.toLowerCase()).toBe('svg');
+    });
+
+    it('should render bar chart pattern with nested map + flat', async () => {
+        const series = [
+            { key: 'a', color: 'red' },
+            { key: 'b', color: 'blue' },
+        ];
+        const data = [
+            { label: 'X', a: 10, b: 20 },
+            { label: 'Y', a: 30, b: 40 },
+        ];
+
+        const result = html`
+            <svg viewBox="0 0 200 100">
+                ${data.map((point, i) => {
+            return series.map((s) => {
+                const val = Number(point[s.key]) || 0;
+                return html`<rect x=${i * 100} y=${100 - val} width="40" height=${val} fill=${s.color} />`;
+            });
+        }).flat()}
+            </svg>
+        `;
+
+        await render(result);
+
+        const rects = container.querySelectorAll('rect');
+        expect(rects.length).toBe(4);
+        // All rects should be direct children of svg
+        for (const rect of rects) {
+            expect(rect.parentElement!.tagName.toLowerCase()).toBe('svg');
+        }
+    });
+
+    it('should not produce stray /> text nodes in SVG output', async () => {
+        const result = html`
+            <svg width="100" height="100">
+                <line x1="10" y1="10" x2="90" y2="90" stroke="black" />
+            </svg>
+        `;
+
+        await render(result);
+
+        // Check no stray "/>" text nodes exist
+        const svg = container.querySelector('svg')!;
+        const textNodes: string[] = [];
+        const walker = document.createTreeWalker(svg, NodeFilter.SHOW_TEXT);
+        let node: Node | null;
+        while ((node = walker.nextNode())) {
+            if (node.textContent?.trim()) {
+                textNodes.push(node.textContent.trim());
+            }
+        }
+        expect(textNodes).not.toContain('/>');
+        expect(textNodes.length).toBe(0);
+    });
 });
