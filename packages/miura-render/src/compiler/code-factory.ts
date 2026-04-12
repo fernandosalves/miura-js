@@ -65,6 +65,26 @@ function collectRefs(frag, count) {
     return refs;
 }
 
+/** Fix namespace for foreign-content elements (SVG, MathML) parsed via innerHTML. */
+const _NS_MAP = { svg: 'http://www.w3.org/2000/svg', math: 'http://www.w3.org/1998/Math/MathML' };
+function fixNamespaces(root) {
+    for (const [tag, ns] of Object.entries(_NS_MAP)) {
+        for (const el of root.querySelectorAll(tag)) {
+            if (el.namespaceURI === ns) continue;
+            if (el.parentElement && el.parentElement.namespaceURI === ns) continue;
+            el.parentNode.replaceChild(recreateNS(el, ns), el);
+        }
+    }
+}
+function recreateNS(src, ns) {
+    const el = document.createElementNS(ns, src.tagName.toLowerCase());
+    for (const attr of Array.from(src.attributes)) el.setAttributeNS(attr.namespaceURI, attr.name, attr.value);
+    for (const child of Array.from(src.childNodes)) {
+        el.appendChild(child.nodeType === 1 ? recreateNS(child, ns) : child.cloneNode(true));
+    }
+    return el;
+}
+
 /** Update a single Node binding (replaces nodes between comment markers). */
 function setNodeBinding(ref, value) {
     if (ref.prev === value) return;
@@ -309,6 +329,7 @@ export class CodeFactory {
             const _tpl = document.createElement('template');
             _tpl.innerHTML = html;
             const fragment = _tpl.content.cloneNode(true);
+            fixNamespaces(fragment);
             const refs = collectRefs(fragment, ${count});
             ${updateLines}
             return { fragment, refs };

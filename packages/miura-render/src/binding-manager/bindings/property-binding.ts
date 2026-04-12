@@ -7,7 +7,7 @@ export class PropertyBinding implements Binding {
         private element: Element,
         private propertyName: string,
         private isBoolean: boolean = false
-    ) {}
+    ) { }
 
     setValue(value: unknown): void {
         if (value === this.previousValue) return;
@@ -31,7 +31,19 @@ export class PropertyBinding implements Binding {
             }
         } else {
             // Handle regular properties
-            (this.element as any)[this.propertyName] = value;
+            // SVG elements have a read-only className property (SVGAnimatedString).
+            // Fall back to setAttribute for properties that can't be set directly.
+            try {
+                (this.element as any)[this.propertyName] = value;
+            } catch {
+                // Property is read-only (e.g. SVGElement.className) — use attribute instead
+                const attrName = this.propertyName === 'className' ? 'class' : this.propertyName;
+                if (value == null) {
+                    this.element.removeAttribute(attrName);
+                } else {
+                    this.element.setAttribute(attrName, String(value));
+                }
+            }
         }
 
         this.previousValue = value;
