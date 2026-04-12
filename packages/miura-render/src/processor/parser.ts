@@ -61,6 +61,7 @@ interface AttrContext {
     strings: string[];
     partCount: number;
     modifiers: string[];
+    foreignNs?: boolean; // true if this attribute is inside SVG/MathML context
 }
 
 /**
@@ -124,11 +125,21 @@ export class TemplateParser {
         let attrNameStart = -1;
         let attrValueContentStart = -1;
         let openQuotePos = -1;
-        
+
         // Tag tracking for auto-promotion (e.g. textarea interpolation)
         let currentTagName = '';
         let tagNameStart = -1;
-        let lastTagOpenHtmlPos = -1; 
+        let lastTagOpenHtmlPos = -1;
+
+        // Namespace tracking for foreign content (SVG, MathML)
+        // When inside SVG/MathML, attribute binding markers must use data-bN
+        // instead of attrName="binding:N" because the HTML parser validates
+        // SVG attribute values and rejects "binding:N" for numeric attrs like viewBox.
+        const nsStack: string[] = []; // stack of 'svg' | 'math'
+        let isClosingTag = false;
+        // Check if we're inside a foreign namespace OR currently parsing an svg/math
+        // opening tag (its own attributes are parsed before the '>' pushes to nsStack)
+        const inForeignNs = () => nsStack.length > 0 || currentTagName === 'svg' || currentTagName === 'math';
 
         // Multi-part attribute tracking
         let attrCtx: AttrContext | null = null;
@@ -177,9 +188,12 @@ export class TemplateParser {
                     // Finalize the attribute type for the group
                     this.finalizeAttrGroup(bindings, attrCtx);
 
+                    const wasForeignNs = attrCtx.foreignNs;
                     attrCtx = null;
                     state = ParserState.TAG;
-                    htmlStart = closePos + 1; // resume HTML after closing quote
+                    // Resume HTML after closing quote (same for both cases,
+                    // but foreign namespace already omitted the opening attrName=")
+                    htmlStart = closePos + 1;
                 }
             }
 
@@ -195,10 +209,11 @@ export class TemplateParser {
                                 state = ParserState.COMMENT;
                                 j += 3;
                             } else if (str[j + 1] === '/') {
-                                // Closing tag — reset tag name tracking
+                                isClosingTag = true;
                                 currentTagName = '';
                                 state = ParserState.TAG;
                             } else {
+                                isClosingTag = false;
                                 state = ParserState.TAG;
                                 tagNameStart = j + 1;
                                 lastTagOpenHtmlPos = html.length + (j - htmlStart);
@@ -216,9 +231,24 @@ export class TemplateParser {
                                 }
                                 tagNameStart = -1;
                             }
+                            // Track namespace entry/exit
+                            if (isClosingTag) {
+                                // Closing tag — pop namespace if it matches
+                                if (nsStack.length && nsStack[nsStack.length - 1] === currentTagName) {
+                                    nsStack.pop();
+                                }
+                                isClosingTag = false;
+                            } else {
+                                // Opening tag — push namespace for svg/math
+                                if (currentTagName === 'svg' || currentTagName === 'math') {
+                                    nsStack.push(currentTagName);
+                                }
+                            }
                             state = ParserState.TEXT;
                         } else if (ch === '/' && str[j + 1] === '>') {
+                            // Self-closing tag — no namespace push needed
                             currentTagName = '';
+                            isClosingTag = false;
                             state = ParserState.TEXT;
                             j++;
                         } else if (/\s/.test(ch)) {
@@ -325,12 +355,26 @@ export class TemplateParser {
                             strings: [staticPart],
                             partCount: 1,
                             modifiers,
+                            foreignNs: inForeignNs(),
                         };
 
                         // Emit HTML: everything from htmlStart up to and including the opening quote,
                         // then a binding marker as placeholder, then closing quote
-                        html += str.substring(htmlStart, openQuotePos + 1);
-                        html += `${TemplateParser.BINDING_MARKER}${i}"`;
+                        if (inForeignNs()) {
+                            // Inside SVG/MathML: the HTML parser validates attribute values
+                            // and rejects both "binding:N" and empty "" for numeric attrs.
+                            // Completely omit the attribute and only emit a data-bN marker.
+                            // Find where the attribute name starts (skip backwards past = and attr name)
+                            let attrNameStartInStr = openQuotePos - 1; // before the opening quote is =
+                            while (attrNameStartInStr >= 0 && str[attrNameStartInStr] === '=') attrNameStartInStr--;
+                            while (attrNameStartInStr >= 0 && /\S/.test(str[attrNameStartInStr])) attrNameStartInStr--;
+                            attrNameStartInStr++; // move to first char of attr name
+                            html += str.substring(htmlStart, attrNameStartInStr);
+                            html += `data-b${i}`;
+                        } else {
+                            html += str.substring(htmlStart, openQuotePos + 1);
+                            html += `${TemplateParser.BINDING_MARKER}${i}"`;
+                        }
 
                         bindings.push({
                             type: prefix === '%' ? BindingType.Utility : BindingType.Attribute,
@@ -385,10 +429,22 @@ export class TemplateParser {
                     });
 
                     // Emit HTML: up to the = sign, replace with marker
-                    // Find where the attribute name starts by going backwards
-                    const eqPos = str.lastIndexOf('=');
-                    html += str.substring(htmlStart, eqPos + 1);
-                    html += `"${TemplateParser.BINDING_MARKER}${i}"`;
+                    if (inForeignNs()) {
+                        // Inside SVG/MathML: the HTML parser validates attribute values
+                        // and rejects both "binding:N" and empty "" for numeric attrs.
+                        // Completely omit the attribute and only emit a data-bN marker.
+                        // Find where the attribute name starts (skip backwards past = and attr name)
+                        const eqPos = str.lastIndexOf('=');
+                        let attrNameStartInStr = eqPos - 1;
+                        while (attrNameStartInStr >= 0 && /\S/.test(str[attrNameStartInStr])) attrNameStartInStr--;
+                        attrNameStartInStr++; // move to first char of attr name
+                        html += str.substring(htmlStart, attrNameStartInStr);
+                        html += `data-b${i}`;
+                    } else {
+                        const eqPos = str.lastIndexOf('=');
+                        html += str.substring(htmlStart, eqPos + 1);
+                        html += `"${TemplateParser.BINDING_MARKER}${i}"`;
+                    }
 
                     state = ParserState.TAG;
 
@@ -404,10 +460,10 @@ export class TemplateParser {
                         const propertyName = autoPromoteTags[currentTagName];
                         // Promotion: Convert text interpolation inside raw-text tags to a property binding
                         // on the element itself (e.g. <textarea> -> .value, <style> -> .textContent)
-                        
+
                         // 1. Emit the HTML up to the expression
                         html += str.substring(htmlStart);
-                        
+
                         // 2. We need to patch the opening tag.
                         if (lastTagOpenHtmlPos !== -1) {
                             const tagEndPos = html.indexOf('>', lastTagOpenHtmlPos);
@@ -529,7 +585,7 @@ export class TemplateParser {
         const snippet = compact.length > 60 ? `...${compact.slice(Math.max(0, compact.length - 60))}` : compact;
         const prefix = `[binding:${index}]`;
         const tagContext = currentTagName ? ` inside <${currentTagName}>` : '';
-        
+
         let suffix = '';
         if (currentTagName && type === BindingType.Node) {
             const hoistedTags = ['table', 'thead', 'tbody', 'tfoot', 'tr', 'select', 'colgroup'];

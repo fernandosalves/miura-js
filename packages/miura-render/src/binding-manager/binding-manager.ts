@@ -123,7 +123,19 @@ export class BindingManager {
                     if (groupStart === binding.index) {
                         // First part in the group — find element via marker
                         element = this.findBindingElement(fragment, binding.index, binding.debugLabel);
-                        if (element) elementCache.set(groupStart, element);
+                        if (element) {
+                            elementCache.set(groupStart, element);
+                            // Clean up SVG/MathML data-bN marker attribute
+                            if (this.removeDataBindingMarker(element, binding.index)) {
+                                // Also remove the empty-value placeholder attribute that was
+                                // emitted alongside the data-bN marker for SVG/MathML bindings.
+                                // The placeholder has the original attr name with empty value.
+                                const attrName = binding.name || '';
+                                if (attrName && element.getAttribute(attrName) === '') {
+                                    element.removeAttribute(attrName);
+                                }
+                            }
+                        }
                     } else {
                         // Subsequent part — reuse cached element
                         element = elementCache.get(groupStart) || null;
@@ -162,6 +174,8 @@ export class BindingManager {
                 if (!element) {
                     throw new Error(`Could not find element for ${binding.debugLabel ?? `binding:${binding.index}`}. The element was likely removed from the DOM manually or by a directive.`);
                 }
+                // Clean up SVG/MathML data-bN marker attribute
+                this.removeDataBindingMarker(element, binding.index);
                 const bindingInstance = this.createBindingForType(element, binding, processor);
                 if (bindingInstance) {
                     bindingInstances[binding.index] = bindingInstance;
@@ -198,36 +212,36 @@ export class BindingManager {
         processor?: ITemplateProcessor
     ): Binding {
         const name = binding.name || '';
-        
+
         switch (binding.type) {
             case BindingType.Property:
                 return new PropertyBinding(element, name.slice(1)); // Remove . prefix
-                
+
             case BindingType.Boolean:
                 const booleanAttrName = name.startsWith('?') ? name.slice(1) : name;
                 return new BooleanBinding(element, booleanAttrName);
-                
+
             case BindingType.Event:
                 return new EventBinding(
-                    element, 
+                    element,
                     name,
                     binding.modifiers || []
                 );
-                
+
             case BindingType.Class:
                 debugLog('bindingManager', 'Creating class binding', {
                     element: element.tagName,
                     name
                 });
                 return new ClassBinding(element);
-                
+
             case BindingType.Reference:
                 const refName = name.startsWith('#') ? name.slice(1) : name;
                 return new ReferenceBinding(element);
-                
+
             case BindingType.Style:
                 return new StyleBinding(element);
-                
+
             case BindingType.Directive:
                 const directiveName = name.replace(/^#/, '');
                 return new DirectiveBinding(element, directiveName);
@@ -404,9 +418,28 @@ export class BindingManager {
     }
 
     private static hasBindingAttribute(element: Element, index: number): boolean {
-        return Array.from(element.attributes).some(attr => 
+        // Check for standard binding marker in attribute value (HTML context)
+        if (Array.from(element.attributes).some(attr =>
             attr.value === `binding:${index}`
-        );
+        )) {
+            return true;
+        }
+        // Check for data-bN marker attribute (SVG/MathML context — avoids
+        // putting "binding:N" as SVG attribute values which the parser rejects)
+        return element.hasAttribute(`data-b${index}`);
+    }
+
+    /**
+     * Remove the data-bN marker attribute from an element (used for SVG/MathML bindings).
+     * Returns true if such a marker was found and removed.
+     */
+    private static removeDataBindingMarker(element: Element, index: number): boolean {
+        const markerName = `data-b${index}`;
+        if (element.hasAttribute(markerName)) {
+            element.removeAttribute(markerName);
+            return true;
+        }
+        return false;
     }
 
     public static async initializeBindings(

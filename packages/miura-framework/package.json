@@ -1,6 +1,6 @@
 {
     "name": "@miurajs/miura-framework",
-    "version": "0.3.9",
+    "version": "0.3.11",
     "type": "module",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
@@ -37,7 +37,7 @@
     "dependencies": {
         "@miurajs/miura-data-flow": "^0.3.1",
         "@miurajs/miura-debugger": "^0.3.1",
-        "@miurajs/miura-element": "^0.3.10",
+        "@miurajs/miura-element": "^0.3.12",
         "@miurajs/miura-router": "^0.3.2"
     },
     "devDependencies": {

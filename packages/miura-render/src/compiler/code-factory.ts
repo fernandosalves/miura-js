@@ -59,6 +59,21 @@ function collectRefs(frag, count) {
                     }
                 }
             }
+            // Also check for data-bN marker attributes (SVG/MathML context)
+            const dataAttrs = Array.from(node.attributes).filter(a => a.name.startsWith('data-b'));
+            for (const da of dataAttrs) {
+                const idx = +da.name.slice(7); // 'data-b'.length === 7
+                if (!isNaN(idx)) {
+                    refs[idx] = refs[idx] || {};
+                    refs[idx].el = node;
+                    node.removeAttribute(da.name);
+                    // Remove the empty-value placeholder attribute too
+                    if (idx < count) {
+                        // The placeholder attr name is stored in the binding metadata;
+                        // we can't access it here, so we'll clean it up in the update code.
+                    }
+                }
+            }
         }
         node = walker.nextNode();
     }
