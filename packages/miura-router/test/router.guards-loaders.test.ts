@@ -151,4 +151,76 @@ describe('MiuraRouter guards and loaders', () => {
 
         router.destroy();
     });
+
+    it('runs parent route guards when navigating to a child route', async () => {
+        const guardFn = vi.fn<() => boolean | string>().mockReturnValue(true);
+        const nestedRoutes: RouteRecord[] = [
+            { path: '/login', component: 'nested-login' },
+            {
+                path: '/dashboard',
+                component: 'nested-layout',
+                guards: [guardFn],
+                children: [
+                    { path: 'overview', component: 'nested-overview' },
+                    { path: 'settings', component: 'nested-settings' },
+                ],
+            },
+        ];
+
+        const nestedRouter = createRouter({
+            routes: nestedRoutes,
+            mode: 'memory',
+            eventBus,
+            render: (context) => renderSpy(context),
+        });
+
+        await nestedRouter.start();
+        renderSpy.mockClear();
+        guardFn.mockClear();
+
+        // Navigate to child route /dashboard/overview
+        const result = await nestedRouter.navigate('/dashboard/overview');
+
+        expect(result.ok).toBe(true);
+        // Parent guard must have been called even though we navigated to a child
+        expect(guardFn).toHaveBeenCalledTimes(1);
+        const context = renderSpy.mock.calls.at(-1)?.[0];
+        expect(context?.route.path).toBe('overview');
+
+        nestedRouter.destroy();
+    });
+
+    it('redirects from parent guard when navigating to a child route', async () => {
+        const nestedRoutes: RouteRecord[] = [
+            { path: '/login', component: 'nested-login' },
+            {
+                path: '/protected',
+                component: 'nested-protected-layout',
+                guards: [() => '/login'],
+                children: [
+                    { path: 'page1', component: 'nested-page1' },
+                    { path: 'page2', component: 'nested-page2' },
+                ],
+            },
+        ];
+
+        const nestedRouter = createRouter({
+            routes: nestedRoutes,
+            mode: 'memory',
+            eventBus,
+            render: (context) => renderSpy(context),
+        });
+
+        await nestedRouter.start();
+        renderSpy.mockClear();
+
+        // Navigate to child route /protected/page1 — parent guard should redirect
+        const result = await nestedRouter.navigate('/protected/page1');
+
+        expect(result.ok).toBe(true);
+        const context = renderSpy.mock.calls.at(-1)?.[0];
+        expect(context?.route.path).toBe('/login');
+
+        nestedRouter.destroy();
+    });
 });

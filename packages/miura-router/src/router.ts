@@ -319,11 +319,16 @@ export class MiuraRouter implements RouterInstance {
     }
 
     private async runGuards(context: RouteRenderContext): Promise<boolean | string | void> {
-        const guards = context.route.guards || [];
-        for (const guard of guards) {
-            const result = await guard(context);
-            if (typeof result === 'string' || result === false) {
-                return result;
+        // Run guards from all matched routes (ancestors → leaf) so parent route
+        // guards (e.g. auth) are evaluated even when navigating to a child route.
+        const allRecords = context.matched ?? [context.route];
+        for (const record of allRecords) {
+            const guards = record.guards || [];
+            for (const guard of guards) {
+                const result = await guard(context);
+                if (typeof result === 'string' || result === false) {
+                    return result;
+                }
             }
         }
         return true;
