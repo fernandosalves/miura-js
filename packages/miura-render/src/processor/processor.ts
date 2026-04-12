@@ -145,7 +145,9 @@ export class TemplateProcessor {
      * attributes, children, and binding markers.
      */
     private _fixNamespaces(root: DocumentFragment): void {
-        // Map of tag names that signal a foreign namespace
+        const HTML_NS = 'http://www.w3.org/1999/xhtml';
+
+        // Map of tag names that signal a foreign namespace root
         const namespaceRoots: Record<string, string> = {
             svg: ElementNamespace.SVG,
             math: ElementNamespace.MathML,
@@ -166,6 +168,35 @@ export class TemplateProcessor {
                 el.parentNode?.replaceChild(fixed, el);
             }
         }
+
+        // Also fix standalone SVG/MathML child elements from sub-templates.
+        // Sub-templates like <rect x=${v} ...> don't contain an <svg> wrapper,
+        // so the loop above doesn't catch them. They get inserted into a parent
+        // <svg> later via NodeBinding, but by then they're in the wrong namespace.
+        const svgChildTags = new Set([
+            'g', 'path', 'circle', 'rect', 'line', 'text', 'ellipse',
+            'polygon', 'polyline', 'defs', 'clippath', 'use', 'symbol',
+            'image', 'tspan', 'foreignobject', 'lineargradient',
+            'radialgradient', 'stop', 'filter', 'fegaussianblur',
+            'desc', 'title', 'metadata', 'marker', 'pattern', 'mask',
+            'a', 'animate', 'animatetransform', 'animatemotion', 'set',
+        ]);
+
+        // Walk all elements; fix any HTML-namespace element whose tag is a known SVG child
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+        const toFix: [Element, string][] = [];
+        let node: Element | null;
+        while ((node = walker.nextNode() as Element | null)) {
+            if (node.namespaceURI === HTML_NS && svgChildTags.has(node.tagName.toLowerCase())) {
+                toFix.push([node, ElementNamespace.SVG]);
+            }
+        }
+        // Replace in reverse to avoid invalidating tree positions
+        for (let i = toFix.length - 1; i >= 0; i--) {
+            const [el, ns] = toFix[i];
+            const fixed = this._recreateInNamespace(el, ns);
+            el.parentNode?.replaceChild(fixed, el);
+        }
     }
 
     /**
@@ -175,9 +206,17 @@ export class TemplateProcessor {
     private _recreateInNamespace(source: Element, namespace: string): Element {
         const recreated = document.createElementNS(namespace, source.tagName.toLowerCase());
 
-        // Copy all attributes
+        // Copy attributes, converting binding:N markers to data-bN for SVG/MathML
+        // (SVG rejects "binding:N" as invalid for numeric attrs like viewBox, x, y, etc.)
+        const BINDING_RE = /^binding:(\d+)$/;
         for (const attr of Array.from(source.attributes)) {
-            recreated.setAttributeNS(attr.namespaceURI, attr.name, attr.value);
+            const match = BINDING_RE.exec(attr.value);
+            if (match) {
+                // Skip the original attribute (SVG would reject it) and emit data-bN marker
+                recreated.setAttribute(`data-b${match[1]}`, '');
+            } else {
+                recreated.setAttributeNS(attr.namespaceURI, attr.name, attr.value);
+            }
         }
 
         // Deep-copy children

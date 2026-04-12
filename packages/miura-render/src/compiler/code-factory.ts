@@ -82,6 +82,15 @@ function collectRefs(frag, count) {
 
 /** Fix namespace for foreign-content elements (SVG, MathML) parsed via innerHTML. */
 const _NS_MAP = { svg: 'http://www.w3.org/2000/svg', math: 'http://www.w3.org/1998/Math/MathML' };
+const _HTML_NS = 'http://www.w3.org/1999/xhtml';
+const _SVG_CHILD_TAGS = new Set([
+    'g', 'path', 'circle', 'rect', 'line', 'text', 'ellipse',
+    'polygon', 'polyline', 'defs', 'clippath', 'use', 'symbol',
+    'image', 'tspan', 'foreignobject', 'lineargradient',
+    'radialgradient', 'stop', 'filter', 'fegaussianblur',
+    'desc', 'title', 'metadata', 'marker', 'pattern', 'mask',
+    'a', 'animate', 'animatetransform', 'animatemotion', 'set',
+]);
 function fixNamespaces(root) {
     for (const [tag, ns] of Object.entries(_NS_MAP)) {
         for (const el of root.querySelectorAll(tag)) {
@@ -90,10 +99,28 @@ function fixNamespaces(root) {
             el.parentNode.replaceChild(recreateNS(el, ns), el);
         }
     }
+    // Also fix standalone SVG child elements from sub-templates
+    const toFix = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+    let node;
+    while ((node = walker.nextNode())) {
+        if (node.namespaceURI === _HTML_NS && _SVG_CHILD_TAGS.has(node.tagName.toLowerCase())) {
+            toFix.push(node);
+        }
+    }
+    for (let i = toFix.length - 1; i >= 0; i--) {
+        const el = toFix[i];
+        el.parentNode.replaceChild(recreateNS(el, _NS_MAP.svg), el);
+    }
 }
 function recreateNS(src, ns) {
     const el = document.createElementNS(ns, src.tagName.toLowerCase());
-    for (const attr of Array.from(src.attributes)) el.setAttributeNS(attr.namespaceURI, attr.name, attr.value);
+    const BINDING_RE = /^binding:(\d+)$/;
+    for (const attr of Array.from(src.attributes)) {
+        const m = BINDING_RE.exec(attr.value);
+        if (m) { el.setAttribute('data-b' + m[1], ''); }
+        else { el.setAttributeNS(attr.namespaceURI, attr.name, attr.value); }
+    }
     for (const child of Array.from(src.childNodes)) {
         el.appendChild(child.nodeType === 1 ? recreateNS(child, ns) : child.cloneNode(true));
     }
