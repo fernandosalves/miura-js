@@ -1,4 +1,15 @@
 import { CSSResult } from './css-result';
+import { TRUSTED_SYMBOL, TrustedValue } from './html';
+
+/**
+ * Marks a string as trusted CSS style text
+ */
+export function trustCSS(value: string): TrustedValue {
+    return {
+        [TRUSTED_SYMBOL]: true,
+        value: String(value)
+    };
+}
 
 /**
  * Performance tracking for css function

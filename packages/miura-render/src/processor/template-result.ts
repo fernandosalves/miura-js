@@ -4,6 +4,16 @@
 export type TemplateExpression = Function | ((context: unknown) => unknown);
 
 /**
+ * Symbol used to mark strings as trusted/safe for raw HTML injection
+ */
+export const TRUSTED_SYMBOL = Symbol('miura:trusted');
+
+export interface TrustedValue {
+    [TRUSTED_SYMBOL]: true;
+    value: string;
+}
+
+/**
  * Represents the result of processing a template literal.
  * Contains the strings and values that make up the template.
  * @interface TemplateResult

@@ -1,5 +1,5 @@
 import { Binding } from './binding';
-import { TemplateResult } from '../../processor/template-result';
+import { TemplateResult, TRUSTED_SYMBOL } from '../../processor/template-result';
 import { ITemplateProcessor } from '../../processor/types';
 import { RepeatResult } from '../../directives/repeat';
 import { KeyedListState } from '../../directives/keyed-diff';
@@ -122,7 +122,20 @@ export class NodeBinding implements Binding {
             return;
         }
 
-        // ── Primitive (string / number / boolean) ───────────────
+        // ── Primitive (string / number / boolean / TrustedValue) ───────────────
+        if (value && typeof value === 'object' && (value as any)[TRUSTED_SYMBOL]) {
+            this.teardown();
+            const html = (value as any).value;
+            const temp = document.createElement('template');
+            temp.innerHTML = html;
+            const fragment = document.importNode(temp.content, true);
+            this.insert(fragment);
+            // We don't cache textNode for trusted HTML as it can be multiple nodes
+            this.prevKind = PrevKind.Node; 
+            this.previousValue = value;
+            return;
+        }
+
         if (this.prevKind === PrevKind.Text && this.textNode) {
             // Reuse existing text node — zero DOM operations
             this.textNode.nodeValue = String(value);

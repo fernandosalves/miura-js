@@ -1,7 +1,18 @@
-import { TemplateResult } from './processor/template-result';
+import { TemplateResult, TRUSTED_SYMBOL, TrustedValue } from './processor/template-result';
+export { TRUSTED_SYMBOL, TrustedValue };
 
 export interface HtmlOptions {
   compiledMode?: boolean;
+}
+
+/**
+ * Marks a string as trusted HTML to bypass character escaping
+ */
+export function trustHTML(value: string): TrustedValue {
+    return {
+        [TRUSTED_SYMBOL]: true,
+        value: String(value)
+    };
 }
 
 /**
