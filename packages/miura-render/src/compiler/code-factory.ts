@@ -207,14 +207,14 @@ function _stripPrefix(name: string | undefined): string {
     return name.replace(/^(\.\.\.|[.?&~:#@])/, '');
 }
 
-function _updateCode(b: TemplateBinding, ri: number): string {
-    const r = `refs[${ri}]`;
+function _updateCode(b: TemplateBinding, _ri: number): string {
+    const r = `refs[${b.groupStart ?? b.index}]`;
     const v = `values[${b.index}]`;
 
     switch (b.type) {
         case BindingType.Node:
             // Handled externally via NodeBinding instances — skip in generated code.
-            return `/* node binding ${ri}: managed by caller */`;
+            return `/* node binding ${b.groupStart ?? b.index}: managed by caller */`;
 
         case BindingType.Property: {
             const prop = _stripPrefix(b.name);
@@ -309,8 +309,8 @@ function _updateCode(b: TemplateBinding, ri: number): string {
     }
 }
 
-function _renderEventCode(b: TemplateBinding, ri: number): string {
-    const r = `refs[${ri}]`;
+function _renderEventCode(b: TemplateBinding, _ri: number): string {
+    const r = `refs[${b.groupStart ?? b.index}]`;
     const v = `values[${b.index}]`;
     const evt = JSON.stringify(b.name);
     const modifiers = b.modifiers ?? [];
