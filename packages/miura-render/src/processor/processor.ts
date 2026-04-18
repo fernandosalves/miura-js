@@ -189,7 +189,7 @@ export class TemplateProcessor {
             'image', 'tspan', 'foreignobject', 'lineargradient',
             'radialgradient', 'stop', 'filter', 'fegaussianblur',
             'desc', 'title', 'metadata', 'marker', 'pattern', 'mask',
-            'a', 'animate', 'animatetransform', 'animatemotion', 'set',
+            'animate', 'animatetransform', 'animatemotion', 'set',
         ]);
 
         // Walk all elements; fix any HTML-namespace element whose tag is a known SVG child
@@ -224,7 +224,7 @@ export class TemplateProcessor {
         // Copy attributes, converting binding markers for SVG/MathML compatibility:
         // - "binding:N" values → data-bN marker (SVG rejects "binding:N" for numeric attrs)
         // - @event="binding:N" → data-eN marker (@ is invalid in SVG attribute names)
-        const BINDING_RE = /^binding:(\d+)$/;
+        const BINDING_RE = /^binding:(\d+)(?::\d+)*$/;
         for (const attr of Array.from(source.attributes)) {
             const match = BINDING_RE.exec(attr.value);
             if (match && attr.name.startsWith('@')) {

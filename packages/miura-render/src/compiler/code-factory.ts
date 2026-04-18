@@ -37,13 +37,13 @@ function collectRefs(frag, count) {
         if (node.nodeType === 8) {
             const text = node.textContent || '';
             if (text.startsWith(MARKER)) {
-                const idx = +text.slice(MARKER.length);
+                const idx = parseInt(text.slice(MARKER.length).split(':')[0]);
                 if (!isNaN(idx)) {
                     refs[idx] = refs[idx] || {};
                     refs[idx].startComment = node;
                 }
             } else if (text.startsWith('/binding:')) {
-                const idx = +text.slice(9);
+                const idx = parseInt(text.slice(9).split(':')[0]);
                 if (!isNaN(idx) && refs[idx]) {
                     refs[idx].endComment = node;
                 }
@@ -51,7 +51,7 @@ function collectRefs(frag, count) {
         } else if (node.nodeType === 1) {
             for (const attr of Array.from(node.attributes)) {
                 if (attr.value.startsWith(MARKER)) {
-                    const idx = +attr.value.slice(MARKER.length);
+                    const idx = parseInt(attr.value.slice(MARKER.length).split(':')[0]);
                     if (!isNaN(idx)) {
                         refs[idx] = refs[idx] || {};
                         refs[idx].el = node;
@@ -62,7 +62,7 @@ function collectRefs(frag, count) {
             // Also check for data-bN marker attributes (SVG/MathML context)
             const dataAttrs = Array.from(node.attributes).filter(a => a.name.startsWith('data-b'));
             for (const da of dataAttrs) {
-                const idx = +da.name.slice(7); // 'data-b'.length === 7
+                const idx = parseInt(da.name.slice(7).split(':')[0]);
                 if (!isNaN(idx)) {
                     refs[idx] = refs[idx] || {};
                     refs[idx].el = node;
@@ -89,7 +89,7 @@ const _SVG_CHILD_TAGS = new Set([
     'image', 'tspan', 'foreignobject', 'lineargradient',
     'radialgradient', 'stop', 'filter', 'fegaussianblur',
     'desc', 'title', 'metadata', 'marker', 'pattern', 'mask',
-    'a', 'animate', 'animatetransform', 'animatemotion', 'set',
+    'animate', 'animatetransform', 'animatemotion', 'set',
 ]);
 function fixNamespaces(root) {
     for (const [tag, ns] of Object.entries(_NS_MAP)) {
