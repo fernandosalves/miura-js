@@ -79,4 +79,170 @@ describe('TemplateCompiler events', () => {
 
     document.body.innerHTML = '';
   });
+
+  it('keeps a simple button click handler working with an inline svg child', () => {
+    const compiler = new TemplateCompiler();
+    const clickHandler = vi.fn();
+
+    const template = html`
+      <button id="simple-svg-btn" @click=${clickHandler}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="m15 18-6-6 6-6"></path>
+        </svg>
+        Back
+      </button>
+    `;
+
+    const compiled = compiler.compile(template);
+    const { fragment } = compiled.render(template.values);
+    document.body.appendChild(fragment);
+
+    const button = document.getElementById('simple-svg-btn') as HTMLButtonElement | null;
+    expect(button).not.toBeNull();
+    button!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(clickHandler).toHaveBeenCalledTimes(1);
+
+    document.body.innerHTML = '';
+  });
+
+  it('preserves refs for a single button with :class, @click, and a conditional svg child', () => {
+    const compiler = new TemplateCompiler();
+    const clickHandler = vi.fn();
+    const darkIcon = html`
+      <svg data-icon="dark" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="4"></circle>
+      </svg>
+    `;
+    const lightIcon = html`
+      <svg data-icon="light" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+      </svg>
+    `;
+
+    const renderButton = (active: boolean, dark: boolean) => html`
+      <button
+        id="compound-btn"
+        class="tool-btn"
+        :class=${{ active }}
+        @click=${clickHandler}
+      >
+        ${dark ? darkIcon : lightIcon}
+      </button>
+    `;
+
+    const template = renderButton(false, true);
+    const compiled = compiler.compile(template);
+    const { fragment, refs } = compiled.render(template.values);
+    document.body.appendChild(fragment);
+
+    const button = document.getElementById('compound-btn') as HTMLButtonElement | null;
+    expect(button).not.toBeNull();
+    button!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(clickHandler).toHaveBeenCalledTimes(1);
+
+    const updated = renderButton(true, false);
+    compiled.update(refs, updated.values);
+
+    expect(button!.classList.contains('active')).toBe(true);
+
+    document.body.innerHTML = '';
+  });
+
+  it('preserves button event handlers with conditional inline svg children across updates', () => {
+    const compiler = new TemplateCompiler();
+    const themeHandler = vi.fn();
+    const markersHandler = vi.fn();
+    const sidebarHandler = vi.fn();
+
+    const darkIcon = html`
+      <svg data-icon="dark" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="4"></circle>
+      </svg>
+    `;
+    const lightIcon = html`
+      <svg data-icon="light" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+      </svg>
+    `;
+    const sidebarOpenIcon = html`
+      <svg data-icon="sidebar-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+      </svg>
+    `;
+    const sidebarClosedIcon = html`
+      <svg data-icon="sidebar-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M15 3h6v6"></path>
+      </svg>
+    `;
+
+    const renderToolbar = (theme: 'dark' | 'light', showMarkers: boolean, sidebarOpen: boolean) => html`
+      <div class="reader-toolbar">
+        <button
+          id="theme-btn"
+          class="tool-btn"
+          title="Toggle Theme"
+          @click=${themeHandler}
+        >
+          ${theme === 'dark' ? darkIcon : lightIcon}
+        </button>
+        <button
+          id="markers-btn"
+          class="tool-btn"
+          title="Toggle Markers"
+          :class=${{ active: showMarkers }}
+          @click=${markersHandler}
+        >
+          <svg data-icon="markers" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 2v8"></path>
+          </svg>
+        </button>
+        <button
+          id="sidebar-btn"
+          class="tool-btn"
+          title="Toggle Focus Mode"
+          :class=${{ active: !sidebarOpen }}
+          @click=${sidebarHandler}
+        >
+          ${sidebarOpen ? sidebarOpenIcon : sidebarClosedIcon}
+        </button>
+      </div>
+    `;
+
+    const template = renderToolbar('dark', false, true);
+    const compiled = compiler.compile(template);
+    expect(compiled.html).not.toContain('data-b4');
+    expect(compiled.html).not.toContain('data-b5');
+    const { fragment, refs } = compiled.render(template.values);
+    document.body.appendChild(fragment);
+
+    const click = (id: string) => {
+      const button = document.getElementById(id) as HTMLButtonElement | null;
+      expect(button).not.toBeNull();
+      button!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    };
+
+    click('theme-btn');
+    click('markers-btn');
+    click('sidebar-btn');
+
+    expect(themeHandler).toHaveBeenCalledTimes(1);
+    expect(markersHandler).toHaveBeenCalledTimes(1);
+    expect(sidebarHandler).toHaveBeenCalledTimes(1);
+
+    const updated = renderToolbar('light', true, false);
+    compiled.update(refs, updated.values);
+
+    click('theme-btn');
+    click('markers-btn');
+    click('sidebar-btn');
+
+    expect(themeHandler).toHaveBeenCalledTimes(2);
+    expect(markersHandler).toHaveBeenCalledTimes(2);
+    expect(sidebarHandler).toHaveBeenCalledTimes(2);
+    expect((document.getElementById('markers-btn') as HTMLButtonElement).classList.contains('active')).toBe(true);
+    expect((document.getElementById('sidebar-btn') as HTMLButtonElement).classList.contains('active')).toBe(true);
+
+    document.body.innerHTML = '';
+  });
 });

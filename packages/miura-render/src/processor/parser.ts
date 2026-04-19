@@ -212,6 +212,7 @@ export class TemplateParser {
                                 isClosingTag = true;
                                 currentTagName = '';
                                 state = ParserState.TAG;
+                                tagNameStart = j + 2;
                             } else {
                                 isClosingTag = false;
                                 state = ParserState.TAG;
