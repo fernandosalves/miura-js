@@ -151,6 +151,7 @@ function insertHoisted(root) {
 
 /** Update a single Node binding (replaces nodes between comment markers). */
 function setNodeBinding(ref, value) {
+    if (!ref) return;
     if (ref.prev === value) return;
     ref.prev = value;
     const start = ref.startComment;
@@ -258,7 +259,19 @@ function _updateCode(b: TemplateBinding, _ri: number): string {
 
         case BindingType.Attribute: {
             const attrName = JSON.stringify(b.name);
-            return `if (${r}.prev !== ${v}) { ${r}.prev = ${v}; ${r}.el.setAttribute(${attrName}, ${v} == null ? '' : String(${v})); }`;
+            const rPrev = `${r}.p${b.index}`;
+            const { strings } = b;
+            if (strings && strings.length > 1) {
+                const parts = strings.map((s, i) => {
+                    const valIdx = (b.groupStart ?? b.index) + i;
+                    const val = `(values[${valIdx}] == null ? '' : values[${valIdx}])`;
+                    return i < strings.length - 1 
+                        ? `${JSON.stringify(s)} + ${val}` 
+                        : JSON.stringify(s);
+                }).join(' + ');
+                return `if (${rPrev} !== ${v}) { ${rPrev} = ${v}; ${r}.el.setAttribute(${attrName}, ${parts}); }`;
+            }
+            return `if (${rPrev} !== ${v}) { ${rPrev} = ${v}; ${r}.el.setAttribute(${attrName}, ${v} == null ? '' : String(${v})); }`;
         }
 
         case BindingType.Event:

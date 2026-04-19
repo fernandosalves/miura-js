@@ -179,10 +179,10 @@ export class TemplateParser {
                     const finalStaticPart = str.substring(0, closePos);
                     attrCtx.strings.push(finalStaticPart);
 
-                    // Assign the completed strings array to the first binding in the group
-                    const firstBinding = bindings.find(b => b.index === attrCtx!.startBindingIndex);
-                    if (firstBinding) {
-                        firstBinding.strings = attrCtx.strings;
+                    // Assign the completed strings array to all bindings in the group
+                    const groupBindings = bindings.filter(b => b.groupStart === attrCtx!.startBindingIndex);
+                    for (const b of groupBindings) {
+                        b.strings = attrCtx.strings;
                     }
 
                     // Finalize the attribute type for the group
