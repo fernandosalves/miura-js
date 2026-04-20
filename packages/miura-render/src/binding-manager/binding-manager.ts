@@ -1,7 +1,7 @@
 import { NodeBinding } from './bindings/node-binding';
 import { Binding } from './bindings/binding';
 import { TemplateBinding } from '../processor/parser';
-import { BindingType } from '../processor/template-result';
+import { BindingType } from './binding-type';
 import { ITemplateProcessor } from '../processor/types';
 import { debugLog } from '../utils/debug';
 
@@ -524,13 +524,18 @@ export class BindingManager {
                     return;
                 }
 
-                // Handle function values as auto-executing expressions with context
+                // Handle function values: differentiate between content (auto-invoke) and properties (pass-through)
                 let finalValue = value;
                 if (typeof value === 'function' && 
                     bindingDef.type !== BindingType.Event && 
                     bindingDef.type !== BindingType.Directive &&
                     bindingDef.type !== BindingType.Reference) {
-                    finalValue = (value as any)(context);
+                    
+                    // Only auto-invoke if it's a Node content binding or Expression.
+                    // NEVER auto-invoke for Property bindings as they expect function references.
+                    if (bindingDef.type === BindingType.Node || bindingDef.type === BindingType.Expression) {
+                        finalValue = (value as any)(context);
+                    }
                 }
 
                 // Set value — always await to handle both sync and async setValue methods

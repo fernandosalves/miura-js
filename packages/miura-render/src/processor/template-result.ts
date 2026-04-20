@@ -31,38 +31,8 @@ export class TemplateResult {
     ) { }
 }
 
-/**
- * Represents the type of binding in a template.
- * @enum {number}
- */
-export enum BindingType {
-    /** A binding that represents a DOM node (text content) */
-    Node = 'node',
-    /** A binding that represents a property on an element */
-    Property = 'property',
-    /** A binding that represents an event handler */
-    Event = 'event',
-    Reference = 'reference',
-    Boolean = 'boolean',
-    /** A binding that represents a class attribute */
-    Class = 'class',
-    Style = 'style',
-    Directive = 'directive',
-    /** A binding that represents a generic attribute value (single or multi-expression) */
-    Attribute = 'attribute',
-    /** Two-way binding: syncs a property with a DOM element value via events */
-    Bind = 'bind',
-    /** Object class map: :class=${{ active: bool }} */
-    ObjectClass = 'object-class',
-    /** Object style map: :style=${{ color: 'red' }} */
-    ObjectStyle = 'object-style',
-    /** Spread binding: ...=${propsObj} — sets each key as a property */
-    Spread = 'spread',
-    /** Async auto-unwrap: ~prop=${promise} — resolves and sets when promise settles */
-    Async = 'async',
-    /** Utility styling: %=${'flex gap-2'} or %padding=${'1rem'} */
-    Utility = 'utility'
-}
+import { BindingType } from '../binding-manager/binding-type';
+export { BindingType };
 
 /**
  * Represents a binding in a template.
