@@ -5,13 +5,13 @@ import {
   css,
   debug,
   html,
-} from '@miurajs/miura-element';
+} from '../../packages/miura-element';
 import {
   clearDebugLayers,
   clearDiagnostics,
   clearTimelineEvents,
   enableMiuraDebugger,
-} from '@miurajs/miura-debugger';
+} from '../../packages/miura-debugger';
 
 const overlayTag = 'debugger-overlay-demo';
 

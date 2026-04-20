@@ -211,8 +211,8 @@ describe('TemplateCompiler events', () => {
 
     const template = renderToolbar('dark', false, true);
     const compiled = compiler.compile(template);
-    expect(compiled.html).not.toContain('data-b4');
-    expect(compiled.html).not.toContain('data-b5');
+    expect(compiled.html).toContain('data-b2'); // :class on #markers-btn
+    expect(compiled.html).toContain('data-b4'); // :class on #sidebar-btn
     const { fragment, refs } = compiled.render(template.values);
     document.body.appendChild(fragment);
 

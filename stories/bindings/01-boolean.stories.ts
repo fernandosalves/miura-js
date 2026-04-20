@@ -1,11 +1,10 @@
-import { MiuraElement, html } from '@miurajs/miura-element';
+import { MiuraElement, html, component } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { component } from '@miurajs/miura-element';
 
 
 @component({
     tag: 'boolean-binding-demo',
-    
+
 })
 class BooleanBindingDemo extends MiuraElement {
     declare isDisabled: boolean;
@@ -16,7 +15,7 @@ class BooleanBindingDemo extends MiuraElement {
         isReadOnly: { type: Boolean, default: false }
     };
 
-    protected override template() {
+    protected template() {
         return html`
             <div>
                 <h3>Boolean Binding Examples</h3>

@@ -1,11 +1,9 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css, component } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { component } from '@miurajs/miura-element';
 
 
 @component({
     tag: 'event-modifiers-demo',
-    
 })
 class EventModifiersDemo extends MiuraElement {
     declare clickCount: number;
@@ -84,7 +82,7 @@ class EventModifiersDemo extends MiuraElement {
         // Log any key press
         const key = e.key;
         console.log('Key pressed:', key);
-        
+
         // Only update state if Enter is pressed (due to |key:Enter modifier)
         if (key === 'Enter') {
             this.keyPressed = 'Enter ⏎';

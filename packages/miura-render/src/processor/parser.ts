@@ -289,6 +289,29 @@ export class TemplateParser {
                             state = ParserState.ATTR_EQ;
                         } else if (ch === '>' || /\s/.test(ch)) {
                             lastAttrName = str.substring(attrNameStart, j);
+
+                            // Handle static directives (#else) and references (#box)
+                            // without expressions. Convert them to clean data markers.
+                            if (lastAttrName.startsWith('#')) {
+                                const directiveName = lastAttrName.slice(1);
+                                const isDirective = DirectiveManager.has(directiveName) || 
+                                                  ['if', 'elseif', 'else', 'for', 'switch', 'case', 'default', 'async'].includes(directiveName);
+                                
+                                // Peek back to see where the attribute started in the HTML emit buffer
+                                // and replace it with data-d or data-r.
+                                const markerSuffix = isDirective ? 'd' : 'r';
+                                const newAttr = `data-${markerSuffix}="${lastAttrName}"`;
+                                
+                                // We'll handle this by retroactively patching the html buffer
+                                // or just emitting it differently.
+                                // Actually, it's easier to just emit it normally and let 
+                                // BindingManager clean it up if it stays in the DOM.
+                                // BUT to keep the DOM clean from #, we should rename it.
+                                html += str.substring(htmlStart, attrNameStart);
+                                html += newAttr;
+                                htmlStart = j;
+                            }
+
                             state = ch === '>' ? ParserState.TEXT : ParserState.TAG;
                             if (ch === '>') {
                                 if (tagNameStart !== -1) {
@@ -373,22 +396,23 @@ export class TemplateParser {
                             foreignNs: inForeignNs(),
                         };
 
-                        // Emit HTML: everything from htmlStart up to and including the opening quote,
-                        // then a binding marker as placeholder, then closing quote
-                        if (inForeignNs()) {
-                            // Inside SVG/MathML: the HTML parser validates attribute values
-                            // and rejects both "binding:N" and empty "" for numeric attrs.
-                            // Completely omit the attribute and only emit a data-bN marker.
-                            // Find where the attribute name starts (skip backwards past = and attr name)
-                            let attrNameStartInStr = openQuotePos - 1; // before the opening quote is =
-                            while (attrNameStartInStr >= 0 && str[attrNameStartInStr] === '=') attrNameStartInStr--;
-                            while (attrNameStartInStr >= 0 && /\S/.test(str[attrNameStartInStr])) attrNameStartInStr--;
-                            attrNameStartInStr++; // move to first char of attr name
-                            html += str.substring(htmlStart, attrNameStartInStr);
-                            html += `data-b${i}`;
-                        } else {
-                            html += str.substring(htmlStart, openQuotePos + 1);
-                            html += `${TemplateParser.BINDING_MARKER}${i}"`;
+                        // Unified Data-Marker System:
+                        // Always omit the original attribute name and only emit a data-bN marker.
+                        // Find where the attribute name starts (skip backwards past = and attr name)
+                        let attrNameStartInStr = openQuotePos - 1; // before the opening quote is =
+                        while (attrNameStartInStr >= 0 && str[attrNameStartInStr] === '=') attrNameStartInStr--;
+                        while (attrNameStartInStr >= 0 && /\S/.test(str[attrNameStartInStr])) attrNameStartInStr--;
+                        attrNameStartInStr++; // move to first char of attr name
+
+                        html += str.substring(htmlStart, attrNameStartInStr);
+                        html += `data-b${i}`;
+
+                        // Add hint markers for directives and references to support neighbor discovery
+                        if (prefix === '#') {
+                            const isDirective = DirectiveManager.has(cleanName) || 
+                                              ['if', 'elseif', 'else', 'for', 'switch', 'case', 'default', 'async'].includes(cleanName);
+                            const markerSuffix = isDirective ? 'd' : 'r';
+                            html += ` data-${markerSuffix}="${lastAttrName}"`;
                         }
 
                         bindings.push({
@@ -443,22 +467,24 @@ export class TemplateParser {
                         debugLabel: this.buildBindingDebugLabel(type, lastAttrName, str, i, currentTagName),
                     });
 
-                    // Emit HTML: up to the = sign, replace with marker
-                    if (inForeignNs()) {
-                        // Inside SVG/MathML: the HTML parser validates attribute values
-                        // and rejects both "binding:N" and empty "" for numeric attrs.
-                        // Completely omit the attribute and only emit a data-bN marker.
-                        // Find where the attribute name starts (skip backwards past = and attr name)
-                        const eqPos = str.lastIndexOf('=');
-                        let attrNameStartInStr = eqPos - 1;
-                        while (attrNameStartInStr >= 0 && /\S/.test(str[attrNameStartInStr])) attrNameStartInStr--;
-                        attrNameStartInStr++; // move to first char of attr name
-                        html += str.substring(htmlStart, attrNameStartInStr);
-                        html += `data-b${i}`;
-                    } else {
-                        const eqPos = str.lastIndexOf('=');
-                        html += str.substring(htmlStart, eqPos + 1);
-                        html += `"${TemplateParser.BINDING_MARKER}${i}"`;
+                    const isSpecialAttr = lastAttrName === 'class' || lastAttrName === 'style' || 
+                                        lastAttrName === ':class' || lastAttrName === ':style';
+
+                    // Unified Data-Marker System:
+                    // Always omit the original attribute name and only emit a data-bN marker.
+                    const eqPos = str.lastIndexOf('=');
+                    let attrNameStartInStr = eqPos - 1;
+                    while (attrNameStartInStr >= 0 && /\S/.test(str[attrNameStartInStr])) attrNameStartInStr--;
+                    attrNameStartInStr++; // move to first char of attr name
+                    html += str.substring(htmlStart, attrNameStartInStr);
+                    html += `data-b${i}`;
+
+                    // Add hint markers for directives and references
+                    if (prefix === '#') {
+                        const isDirective = DirectiveManager.has(cleanName) || 
+                                          ['if', 'elseif', 'else', 'for', 'switch', 'case', 'default', 'async'].includes(cleanName);
+                        const markerSuffix = isDirective ? 'd' : 'r';
+                        html += ` data-${markerSuffix}="${lastAttrName}"`;
                     }
 
                     state = ParserState.TAG;
@@ -483,8 +509,8 @@ export class TemplateParser {
                         if (lastTagOpenHtmlPos !== -1) {
                             const tagEndPos = html.indexOf('>', lastTagOpenHtmlPos);
                             if (tagEndPos !== -1) {
-                                // Insert the marker attribute
-                                const markerAttr = ` ${propertyName}="${TemplateParser.BINDING_MARKER}${i}"`;
+                                // Insert the unified data marker
+                                const markerAttr = ` data-b${i}`;
                                 html = html.slice(0, tagEndPos) + markerAttr + html.slice(tagEndPos);
                             }
                         }
@@ -554,6 +580,18 @@ export class TemplateParser {
             firstBinding.type = type;
             firstBinding.name = ctx.prefix === '@' ? ctx.cleanName : ctx.name;
             firstBinding.modifiers = ctx.modifiers.length > 0 ? ctx.modifiers : undefined;
+        } else if (ctx.cleanName === 'class' || ctx.cleanName === 'style') {
+            // Multi-part class/style — use specialized type but keep strings for merging
+            const type = ctx.cleanName === 'class' ? BindingType.Class : BindingType.Style;
+            
+            // Set specialized type for all bindings in this group so BindingManager detects them correctly
+            for (let i = ctx.startBindingIndex; i < ctx.startBindingIndex + ctx.partCount; i++) {
+                const b = bindings.find(b => b.index === i);
+                if (b) b.type = type;
+            }
+            
+            firstBinding.name = ctx.name;
+            firstBinding.strings = ctx.strings;
         } else {
             // Multi-expression or has static content — stays as Attribute
             firstBinding.name = ctx.name;

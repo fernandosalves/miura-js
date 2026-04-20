@@ -1,5 +1,5 @@
 import { CSSResult } from './css-result';
-import { TRUSTED_SYMBOL, TrustedValue } from './html';
+import { TRUSTED_SYMBOL, type TrustedValue } from './html';
 
 /**
  * Marks a string as trusted CSS style text

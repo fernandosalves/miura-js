@@ -69,14 +69,32 @@ function _createSignalProperty(
     // Attribute reflection — fires whenever the signal changes
     if (options.reflect) {
         s.subscribe((v) => {
-            if (!instance.isConnected) return;
-            const attrName = options.attribute || name.toLowerCase();
-            if (v == null) {
-                instance.removeAttribute(attrName);
-            } else if (options.type === Boolean) {
-                v ? instance.setAttribute(attrName, '') : instance.removeAttribute(attrName);
-            } else {
-                instance.setAttribute(attrName, String(v));
+            try {
+                if (!instance.isConnected) return;
+                const attrName = options.attribute || name.toLowerCase();
+                if (v == null) {
+                    instance.removeAttribute(attrName);
+                } else if (options.type === Boolean) {
+                    v ? instance.setAttribute(attrName, '') : instance.removeAttribute(attrName);
+                } else {
+                    instance.setAttribute(attrName, String(v));
+                }
+            } catch (error) {
+                const reportDiagnostic = (instance.constructor as any).reportDiagnostic || 
+                    (globalThis as any).__miura_report_diagnostic;
+                
+                if (typeof reportDiagnostic === 'function') {
+                    reportDiagnostic({
+                        subsystem: 'element',
+                        stage: 'reflect',
+                        severity: 'error',
+                        message: `Failed to reflect property "${name}" to attribute`,
+                        summary: error instanceof Error ? error.message : String(error),
+                        elementTag: instance.localName,
+                        error,
+                    });
+                }
+                console.error(`[miura] Reflection error for property "${name}":`, error);
             }
         });
     }

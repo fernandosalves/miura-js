@@ -1,5 +1,6 @@
 import { TemplateResult, TRUSTED_SYMBOL, TrustedValue } from './processor/template-result';
-export { TRUSTED_SYMBOL, TrustedValue };
+export { TRUSTED_SYMBOL };
+export type { TrustedValue };
 
 export interface HtmlOptions {
   compiledMode?: boolean;

@@ -1,4 +1,4 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
 
 class GestureDirectiveDemo extends MiuraElement {
@@ -15,13 +15,15 @@ class GestureDirectiveDemo extends MiuraElement {
     static properties = {
         gestureCount: { type: Number, default: 0, state: true },
         lastGesture: { type: String, default: 'None', state: true },
-        gestureData: { type: Object, default: () => ({
-            type: '',
-            direction: '',
-            distance: 0,
-            velocity: 0,
-            duration: 0
-        }), state: true }
+        gestureData: {
+            type: Object, default: () => ({
+                type: '',
+                direction: '',
+                distance: 0,
+                velocity: 0,
+                duration: 0
+            }), state: true
+        }
     };
 
     static get styles() {
@@ -317,7 +319,7 @@ class GestureDirectiveDemo extends MiuraElement {
     handleGesture = (gestureType: string) => (event: CustomEvent) => {
         this.gestureCount++;
         this.lastGesture = gestureType;
-        
+
         const detail = event.detail;
         this.gestureData = {
             type: gestureType,
@@ -326,9 +328,9 @@ class GestureDirectiveDemo extends MiuraElement {
             velocity: detail.velocity,
             duration: detail.duration
         };
-        
+
         console.log(`${gestureType} gesture detected:`, detail);
-        
+
         // Add visual feedback
         const target = event.target as HTMLElement;
         target.classList.add(gestureType.toLowerCase().replace(' ', '-'));
@@ -401,10 +403,10 @@ class GestureDirectiveDemo extends MiuraElement {
                         <div 
                             class="gesture-item"
                             #gesture=${{
-                                swipe: true,
-                                threshold: 50,
-                                onSwipe: this.handleGesture('Swipe')
-                            }}
+                swipe: true,
+                threshold: 50,
+                onSwipe: this.handleGesture('Swipe')
+            }}
                         >
                             Swipe Any Direction
                         </div>
@@ -412,10 +414,10 @@ class GestureDirectiveDemo extends MiuraElement {
                         <div 
                             class="gesture-item"
                             #gesture=${{
-                                swipeLeft: true,
-                                threshold: 50,
-                                onSwipeLeft: this.handleGesture('Swipe Left')
-                            }}
+                swipeLeft: true,
+                threshold: 50,
+                onSwipeLeft: this.handleGesture('Swipe Left')
+            }}
                         >
                             Swipe Left
                         </div>
@@ -423,10 +425,10 @@ class GestureDirectiveDemo extends MiuraElement {
                         <div 
                             class="gesture-item"
                             #gesture=${{
-                                swipeRight: true,
-                                threshold: 50,
-                                onSwipeRight: this.handleGesture('Swipe Right')
-                            }}
+                swipeRight: true,
+                threshold: 50,
+                onSwipeRight: this.handleGesture('Swipe Right')
+            }}
                         >
                             Swipe Right
                         </div>
@@ -434,10 +436,10 @@ class GestureDirectiveDemo extends MiuraElement {
                         <div 
                             class="gesture-item"
                             #gesture=${{
-                                swipeUp: true,
-                                threshold: 50,
-                                onSwipeUp: this.handleGesture('Swipe Up')
-                            }}
+                swipeUp: true,
+                threshold: 50,
+                onSwipeUp: this.handleGesture('Swipe Up')
+            }}
                         >
                             Swipe Up
                         </div>
@@ -445,10 +447,10 @@ class GestureDirectiveDemo extends MiuraElement {
                         <div 
                             class="gesture-item"
                             #gesture=${{
-                                swipeDown: true,
-                                threshold: 50,
-                                onSwipeDown: this.handleGesture('Swipe Down')
-                            }}
+                swipeDown: true,
+                threshold: 50,
+                onSwipeDown: this.handleGesture('Swipe Down')
+            }}
                         >
                             Swipe Down
                         </div>
@@ -456,9 +458,9 @@ class GestureDirectiveDemo extends MiuraElement {
                         <div 
                             class="gesture-item"
                             #gesture=${{
-                                tap: true,
-                                onTap: this.handleGesture('Tap')
-                            }}
+                tap: true,
+                onTap: this.handleGesture('Tap')
+            }}
                         >
                             Tap
                         </div>
@@ -466,9 +468,9 @@ class GestureDirectiveDemo extends MiuraElement {
                         <div 
                             class="gesture-item"
                             #gesture=${{
-                                doubleTap: true,
-                                onDoubleTap: this.handleGesture('Double Tap')
-                            }}
+                doubleTap: true,
+                onDoubleTap: this.handleGesture('Double Tap')
+            }}
                         >
                             Double Tap
                         </div>
@@ -476,10 +478,10 @@ class GestureDirectiveDemo extends MiuraElement {
                         <div 
                             class="gesture-item"
                             #gesture=${{
-                                longPress: true,
-                                duration: 1000,
-                                onLongPress: this.handleGesture('Long Press')
-                            }}
+                longPress: true,
+                duration: 1000,
+                onLongPress: this.handleGesture('Long Press')
+            }}
                         >
                             Long Press (1s)
                         </div>
@@ -497,16 +499,16 @@ class GestureDirectiveDemo extends MiuraElement {
                             <div 
                                 class="gesture-area"
                                 #gesture=${{
-                                    pinch: true,
-                                    onPinchIn: (event: CustomEvent) => {
-                                        this.handleGesture('Pinch In')(event);
-                                        this.showFeedback('Pinch In', event.target as HTMLElement);
-                                    },
-                                    onPinchOut: (event: CustomEvent) => {
-                                        this.handleGesture('Pinch Out')(event);
-                                        this.showFeedback('Pinch Out', event.target as HTMLElement);
-                                    }
-                                }}
+                pinch: true,
+                onPinchIn: (event: CustomEvent) => {
+                    this.handleGesture('Pinch In')(event);
+                    this.showFeedback('Pinch In', event.target as HTMLElement);
+                },
+                onPinchOut: (event: CustomEvent) => {
+                    this.handleGesture('Pinch Out')(event);
+                    this.showFeedback('Pinch Out', event.target as HTMLElement);
+                }
+            }}
                             >
                                 Pinch Here
                                 <div class="gesture-feedback"></div>
@@ -519,12 +521,12 @@ class GestureDirectiveDemo extends MiuraElement {
                             <div 
                                 class="gesture-area"
                                 #gesture=${{
-                                    rotate: true,
-                                    onRotate: (event: CustomEvent) => {
-                                        this.handleGesture('Rotate')(event);
-                                        this.showFeedback(`Rotate ${Math.round(event.detail.angle)}°`, event.target as HTMLElement);
-                                    }
-                                }}
+                rotate: true,
+                onRotate: (event: CustomEvent) => {
+                    this.handleGesture('Rotate')(event);
+                    this.showFeedback(`Rotate ${Math.round(event.detail.angle)}°`, event.target as HTMLElement);
+                }
+            }}
                             >
                                 Rotate Here
                                 <div class="gesture-feedback"></div>
@@ -537,26 +539,26 @@ class GestureDirectiveDemo extends MiuraElement {
                             <div 
                                 class="gesture-area"
                                 #gesture=${{
-                                    swipe: true,
-                                    pinch: true,
-                                    rotate: true,
-                                    onSwipe: (event: CustomEvent) => {
-                                        this.handleGesture('Multi Swipe')(event);
-                                        this.showFeedback(`Swipe ${event.detail.direction}`, event.target as HTMLElement);
-                                    },
-                                    onPinchIn: (event: CustomEvent) => {
-                                        this.handleGesture('Multi Pinch In')(event);
-                                        this.showFeedback('Pinch In', event.target as HTMLElement);
-                                    },
-                                    onPinchOut: (event: CustomEvent) => {
-                                        this.handleGesture('Multi Pinch Out')(event);
-                                        this.showFeedback('Pinch Out', event.target as HTMLElement);
-                                    },
-                                    onRotate: (event: CustomEvent) => {
-                                        this.handleGesture('Multi Rotate')(event);
-                                        this.showFeedback(`Rotate ${Math.round(event.detail.angle)}°`, event.target as HTMLElement);
-                                    }
-                                }}
+                swipe: true,
+                pinch: true,
+                rotate: true,
+                onSwipe: (event: CustomEvent) => {
+                    this.handleGesture('Multi Swipe')(event);
+                    this.showFeedback(`Swipe ${event.detail.direction}`, event.target as HTMLElement);
+                },
+                onPinchIn: (event: CustomEvent) => {
+                    this.handleGesture('Multi Pinch In')(event);
+                    this.showFeedback('Pinch In', event.target as HTMLElement);
+                },
+                onPinchOut: (event: CustomEvent) => {
+                    this.handleGesture('Multi Pinch Out')(event);
+                    this.showFeedback('Pinch Out', event.target as HTMLElement);
+                },
+                onRotate: (event: CustomEvent) => {
+                    this.handleGesture('Multi Rotate')(event);
+                    this.showFeedback(`Rotate ${Math.round(event.detail.angle)}°`, event.target as HTMLElement);
+                }
+            }}
                             >
                                 Multi-touch Area
                                 <div class="gesture-feedback"></div>
@@ -569,14 +571,14 @@ class GestureDirectiveDemo extends MiuraElement {
                             <div 
                                 class="gesture-area"
                                 #gesture=${{
-                                    swipe: true,
-                                    velocityThreshold: 500,
-                                    onSwipe: (event: CustomEvent) => {
-                                        const isFast = event.detail.velocity > 500;
-                                        this.handleGesture(isFast ? 'Fast Swipe' : 'Slow Swipe')(event);
-                                        this.showFeedback(isFast ? 'Fast Swipe!' : 'Slow Swipe', event.target as HTMLElement);
-                                    }
-                                }}
+                swipe: true,
+                velocityThreshold: 500,
+                onSwipe: (event: CustomEvent) => {
+                    const isFast = event.detail.velocity > 500;
+                    this.handleGesture(isFast ? 'Fast Swipe' : 'Slow Swipe')(event);
+                    this.showFeedback(isFast ? 'Fast Swipe!' : 'Slow Swipe', event.target as HTMLElement);
+                }
+            }}
                             >
                                 Swipe Fast or Slow
                                 <div class="gesture-feedback"></div>

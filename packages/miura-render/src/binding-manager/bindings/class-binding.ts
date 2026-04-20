@@ -3,59 +3,59 @@ import { debugLog } from '../../utils/debug';
 
 export class ClassBinding implements Binding {
     private previousClasses: Set<string> = new Set();
+    private partValues: unknown[];
+    private strings: string[];
 
     constructor(
-        private element: Element
+        private element: Element,
+        strings?: string[]
     ) {
+        this.strings = strings || ['', ''];
+        this.partValues = new Array(this.strings.length - 1).fill('');
         debugLog('classBinding', 'Created class binding', {
-            element: element.tagName
+            element: element.tagName,
+            strings: this.strings
         });
     }
 
-    setValue(value: unknown): void {
-        debugLog('classBinding', 'Setting value', {
-            element: this.element.tagName,
-            value,
-            previousClasses: Array.from(this.previousClasses),
-            currentClassList: Array.from(this.element.classList),
-            valueType: typeof value,
-            valueIsObject: typeof value === 'object'
-        });
+    setPartValue(partIndex: number, value: unknown): void {
+        this.partValues[partIndex] = value;
+        this.commit();
+    }
 
-        // Convert value to array of class names
+    setValue(value: unknown): void {
+        this.setPartValue(0, value);
+    }
+
+    private commit(): void {
         const newClasses = new Set<string>();
-        
-        if (typeof value === 'string') {
-            // Handle string value
-            value.split(/\s+/).filter(Boolean).forEach(c => newClasses.add(c));
-            debugLog('classBinding', 'String value processed', {
-                value,
-                newClasses: Array.from(newClasses)
-            });
-        } else if (typeof value === 'object' && value !== null) {
-            // Handle object value { class: boolean }
-            const entries = Object.entries(value as Record<string, boolean>);
-            debugLog('classBinding', 'Object value processing', {
-                entries
-            });
-            entries
-                .filter(([_, active]) => active)
-                .forEach(([className]) => newClasses.add(className));
+
+        for (let i = 0; i < this.strings.length; i++) {
+            // Add static segment classes
+            if (this.strings[i]) {
+                this.strings[i].split(/\s+/).filter(Boolean).forEach(c => newClasses.add(c));
+            }
+
+            // Add dynamic part classes
+            if (i < this.partValues.length) {
+                const value = this.partValues[i];
+                if (typeof value === 'string') {
+                    value.split(/\s+/).filter(Boolean).forEach(c => newClasses.add(c));
+                } else if (typeof value === 'object' && value !== null) {
+                    Object.entries(value as Record<string, boolean>)
+                        .filter(([_, active]) => active)
+                        .forEach(([className]) => newClasses.add(className));
+                }
+            }
         }
 
-        debugLog('classBinding', 'Classes to apply', {
-            newClasses: Array.from(newClasses),
-            previousClasses: Array.from(this.previousClasses)
-        });
-
-        // Remove old classes that aren't in new set
+        // Diff and apply
         this.previousClasses.forEach(className => {
             if (!newClasses.has(className)) {
                 this.element.classList.remove(className);
             }
         });
 
-        // Add new classes
         newClasses.forEach(className => {
             if (!this.previousClasses.has(className)) {
                 this.element.classList.add(className);
@@ -70,9 +70,28 @@ export class ClassBinding implements Binding {
             this.element.classList.remove(className);
         });
         this.previousClasses.clear();
+        this.partValues.fill('');
     }
 
     disconnect(): void {
         this.clear();
     }
-} 
+}
+
+/**
+ * Part wrapper for multi-part class attributes.
+ */
+export class ClassPartBinding implements Binding {
+    constructor(
+        private parent: ClassBinding,
+        private partIndex: number
+    ) {}
+
+    setValue(value: unknown): void {
+        this.parent.setPartValue(this.partIndex, value);
+    }
+
+    clear(): void {}
+    disconnect(): void {}
+}
+ 

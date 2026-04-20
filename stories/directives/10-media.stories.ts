@@ -1,4 +1,4 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
 
 class MediaDirectiveDemo extends MiuraElement {
@@ -14,12 +14,14 @@ class MediaDirectiveDemo extends MiuraElement {
     static properties = {
         currentBreakpoint: { type: String, default: 'unknown', state: true },
         mediaQueries: { type: Object, default: () => ({}), state: true },
-        deviceInfo: { type: Object, default: () => ({
-            width: 0,
-            height: 0,
-            orientation: 'unknown',
-            pixelRatio: 1
-        }), state: true }
+        deviceInfo: {
+            type: Object, default: () => ({
+                width: 0,
+                height: 0,
+                orientation: 'unknown',
+                pixelRatio: 1
+            }), state: true
+        }
     };
 
     static get styles() {
@@ -312,7 +314,7 @@ class MediaDirectiveDemo extends MiuraElement {
 
     handleMediaChange = (query: string) => (matches: boolean) => {
         this.mediaQueries = { ...this.mediaQueries, [query]: matches };
-        
+
         // Update current breakpoint
         if (matches) {
             if (query.includes('max-width: 768px')) this.currentBreakpoint = 'mobile';
@@ -399,16 +401,16 @@ class MediaDirectiveDemo extends MiuraElement {
                         <div 
                             class="responsive-card"
                             #media=${{
-                                queries: {
-                                    mobile: '(max-width: 768px)',
-                                    tablet: '(min-width: 769px) and (max-width: 1024px)',
-                                    desktop: '(min-width: 1025px) and (max-width: 1440px)',
-                                    large: '(min-width: 1441px)'
-                                },
-                                onMatch: (breakpoint: string) => {
-                                    console.log(`Card matched: ${breakpoint}`);
-                                }
-                            }}
+                queries: {
+                    mobile: '(max-width: 768px)',
+                    tablet: '(min-width: 769px) and (max-width: 1024px)',
+                    desktop: '(min-width: 1025px) and (max-width: 1440px)',
+                    large: '(min-width: 1441px)'
+                },
+                onMatch: (breakpoint: string) => {
+                    console.log(`Card matched: ${breakpoint}`);
+                }
+            }}
                         >
                             <div class="card-title">Adaptive Card 1</div>
                             <div class="card-content">
@@ -420,13 +422,13 @@ class MediaDirectiveDemo extends MiuraElement {
                         <div 
                             class="responsive-card"
                             #media=${{
-                                queries: {
-                                    mobile: '(max-width: 768px)',
-                                    tablet: '(min-width: 769px) and (max-width: 1024px)',
-                                    desktop: '(min-width: 1025px) and (max-width: 1440px)',
-                                    large: '(min-width: 1441px)'
-                                }
-                            }}
+                queries: {
+                    mobile: '(max-width: 768px)',
+                    tablet: '(min-width: 769px) and (max-width: 1024px)',
+                    desktop: '(min-width: 1025px) and (max-width: 1440px)',
+                    large: '(min-width: 1441px)'
+                }
+            }}
                         >
                             <div class="card-title">Adaptive Card 2</div>
                             <div class="card-content">
@@ -438,13 +440,13 @@ class MediaDirectiveDemo extends MiuraElement {
                         <div 
                             class="responsive-card"
                             #media=${{
-                                queries: {
-                                    mobile: '(max-width: 768px)',
-                                    tablet: '(min-width: 769px) and (max-width: 1024px)',
-                                    desktop: '(min-width: 1025px) and (max-width: 1440px)',
-                                    large: '(min-width: 1441px)'
-                                }
-                            }}
+                queries: {
+                    mobile: '(max-width: 768px)',
+                    tablet: '(min-width: 769px) and (max-width: 1024px)',
+                    desktop: '(min-width: 1025px) and (max-width: 1440px)',
+                    large: '(min-width: 1441px)'
+                }
+            }}
                         >
                             <div class="card-title">Adaptive Card 3</div>
                             <div class="card-content">
@@ -468,16 +470,16 @@ class MediaDirectiveDemo extends MiuraElement {
                             <div 
                                 class="responsive-element"
                                 #media=${{
-                                    queries: {
-                                        mobile: '(max-width: 768px)',
-                                        tablet: '(min-width: 769px) and (max-width: 1024px)',
-                                        desktop: '(min-width: 1025px) and (max-width: 1440px)',
-                                        large: '(min-width: 1441px)'
-                                    },
-                                    onMatch: (breakpoint: string) => {
-                                        console.log(`Element visible on: ${breakpoint}`);
-                                    }
-                                }}
+                queries: {
+                    mobile: '(max-width: 768px)',
+                    tablet: '(min-width: 769px) and (max-width: 1024px)',
+                    desktop: '(min-width: 1025px) and (max-width: 1440px)',
+                    large: '(min-width: 1441px)'
+                },
+                onMatch: (breakpoint: string) => {
+                    console.log(`Element visible on: ${breakpoint}`);
+                }
+            }}
                             >
                                 📱 Mobile Only
                             </div>
@@ -485,10 +487,10 @@ class MediaDirectiveDemo extends MiuraElement {
                             <div 
                                 class="responsive-element"
                                 #media=${{
-                                    queries: {
-                                        tablet: '(min-width: 769px) and (max-width: 1024px)'
-                                    }
-                                }}
+                queries: {
+                    tablet: '(min-width: 769px) and (max-width: 1024px)'
+                }
+            }}
                             >
                                 📱 Tablet Only
                             </div>
@@ -496,10 +498,10 @@ class MediaDirectiveDemo extends MiuraElement {
                             <div 
                                 class="responsive-element"
                                 #media=${{
-                                    queries: {
-                                        desktop: '(min-width: 1025px) and (max-width: 1440px)'
-                                    }
-                                }}
+                queries: {
+                    desktop: '(min-width: 1025px) and (max-width: 1440px)'
+                }
+            }}
                             >
                                 💻 Desktop Only
                             </div>
@@ -507,10 +509,10 @@ class MediaDirectiveDemo extends MiuraElement {
                             <div 
                                 class="responsive-element"
                                 #media=${{
-                                    queries: {
-                                        large: '(min-width: 1441px)'
-                                    }
-                                }}
+                queries: {
+                    large: '(min-width: 1441px)'
+                }
+            }}
                             >
                                 🖥️ Large Screen Only
                             </div>
@@ -523,11 +525,11 @@ class MediaDirectiveDemo extends MiuraElement {
                             <div 
                                 class="responsive-element"
                                 #media=${{
-                                    queries: {
-                                        landscape: '(orientation: landscape)',
-                                        portrait: '(orientation: portrait)'
-                                    }
-                                }}
+                queries: {
+                    landscape: '(orientation: landscape)',
+                    portrait: '(orientation: portrait)'
+                }
+            }}
                             >
                                 🌄 Landscape Mode
                             </div>
@@ -535,10 +537,10 @@ class MediaDirectiveDemo extends MiuraElement {
                             <div 
                                 class="responsive-element"
                                 #media=${{
-                                    queries: {
-                                        portrait: '(orientation: portrait)'
-                                    }
-                                }}
+                queries: {
+                    portrait: '(orientation: portrait)'
+                }
+            }}
                             >
                                 📱 Portrait Mode
                             </div>
@@ -554,13 +556,13 @@ class MediaDirectiveDemo extends MiuraElement {
                     <div 
                         class="responsive-layout"
                         #media=${{
-                            queries: {
-                                mobile: '(max-width: 768px)',
-                                tablet: '(min-width: 769px) and (max-width: 1024px)',
-                                desktop: '(min-width: 1025px) and (max-width: 1440px)',
-                                large: '(min-width: 1441px)'
-                            }
-                        }}
+                queries: {
+                    mobile: '(max-width: 768px)',
+                    tablet: '(min-width: 769px) and (max-width: 1024px)',
+                    desktop: '(min-width: 1025px) and (max-width: 1440px)',
+                    large: '(min-width: 1441px)'
+                }
+            }}
                     >
                         <div class="layout-item">Item 1</div>
                         <div class="layout-item">Item 2</div>

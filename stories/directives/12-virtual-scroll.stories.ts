@@ -1,7 +1,7 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { component } from '@miurajs/miura-element';
-import type { VirtualScrollDirectiveConfig } from '@miurajs/miura-element';
+import { component } from '../../packages/miura-element';
+import type { VirtualScrollDirectiveConfig } from '../../packages/miura-element';
 
 interface DataRow {
     id: number;

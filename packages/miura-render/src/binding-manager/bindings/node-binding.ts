@@ -48,7 +48,7 @@ export class NodeBinding implements Binding {
         private processor?: ITemplateProcessor
     ) { }
 
-    async setValue(value: unknown): Promise<void> {
+    async setValue(value: unknown, context?: unknown): Promise<void> {
         // Fast path: identical value reference
         if (value === this.previousValue) return;
 
@@ -64,7 +64,7 @@ export class NodeBinding implements Binding {
                     this.processor
                 );
             }
-            await this.keyedState.update(value);
+            await this.keyedState.update(value, context);
             this.prevKind = PrevKind.Keyed;
             this.previousValue = value;
             return;
@@ -91,11 +91,11 @@ export class NodeBinding implements Binding {
                 this.templateStrings === value.strings
             ) {
                 // Same template structure → just update values (no DOM teardown)
-                await this.templateInstance.update(value.values);
+                await this.templateInstance.update(value.values, context);
             } else {
                 // Different template or first render → full create
                 this.teardown();
-                const instance = await this.processor.createInstance(value);
+                const instance = await this.processor.createInstance(value, context);
                 this.templateInstance = instance;
                 this.templateStrings = value.strings;
                 this.insert(instance.getFragment());
@@ -107,7 +107,7 @@ export class NodeBinding implements Binding {
 
         // ── Array of values ─────────────────────────────────────
         if (Array.isArray(value) && this.processor) {
-            await this.setArrayValue(value);
+            await this.setArrayValue(value, context);
             this.prevKind = PrevKind.TemplateArray;
             this.previousValue = value;
             return;
@@ -150,7 +150,7 @@ export class NodeBinding implements Binding {
 
     // ── Array optimisation ──────────────────────────────────────
 
-    private async setArrayValue(value: unknown[]): Promise<void> {
+    private async setArrayValue(value: unknown[], context?: unknown): Promise<void> {
         const prevLen = this.arrayInstances.length;
         const newLen = value.length;
 
@@ -177,7 +177,7 @@ export class NodeBinding implements Binding {
             }
             if (canReuse) {
                 for (let i = 0; i < newLen; i++) {
-                    await this.arrayInstances[i].update((value[i] as TemplateResult).values);
+                    await this.arrayInstances[i].update((value[i] as TemplateResult).values, context);
                 }
                 return;
             }
@@ -193,7 +193,9 @@ export class NodeBinding implements Binding {
         for (let i = 0; i < newLen; i++) {
             const item = value[i];
             if (item instanceof TemplateResult) {
-                const instance = await this.processor!.createInstance(item, { index: i });
+                // Mix in loop index with parent context if possible, or just pass context
+                // For now, we prioritize the parent context (signals/element)
+                const instance = await this.processor!.createInstance(item, context);
                 this.arrayInstances.push(instance);
                 this.arrayStrings.push(item.strings);
                 fragment.appendChild(instance.getFragment());

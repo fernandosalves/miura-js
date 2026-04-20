@@ -1,15 +1,13 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css, component } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { component } from '@miurajs/miura-element';
 
 @component({
     tag: 'style-binding-demo',
-    
 })
 class StyleBindingDemo extends MiuraElement {
     declare bgColor: string;
     declare fontSize: number;
-    
+
     static properties = {
         bgColor: { type: String, default: '#2196F3' },
         fontSize: { type: Number, default: 16 },
@@ -31,6 +29,8 @@ class StyleBindingDemo extends MiuraElement {
                 font-weight: 600;
                 transition: all 0.3s ease;
             }
+
+            .highlighted { border: 4px solid #000; }
 
             .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 
@@ -82,16 +82,16 @@ class StyleBindingDemo extends MiuraElement {
                 </div>
 
                 <div class="demo-box" style=${{
-                    backgroundColor: this.bgColor,
-                    fontSize: this.fontSize + 'px',
-                }}>
+                backgroundColor: this.bgColor,
+                fontSize: this.fontSize,
+            }}>
                     This element has dynamic styles
                 </div>
 
                 <div class="syntax">style=\${{
-  backgroundColor: this.bgColor,   // '${this.bgColor}'
-  fontSize: this.fontSize + 'px',  // '${this.fontSize}px'
-}}</div>
+                    backgroundColor: '${this.bgColor}',
+                    fontSize: ${this.fontSize}
+                }}</div>
             </div>
         `;
     }

@@ -1,4 +1,4 @@
-import { MiuraElement, html } from '@miurajs/miura-element';
+import { MiuraElement, html } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
 
 class PropertyBindingsElement extends MiuraElement {

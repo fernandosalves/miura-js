@@ -5,9 +5,9 @@ import {
   css,
   debug,
   html,
-} from '@miurajs/miura-element';
-import { createRouter } from '@miurajs/miura-router';
-import type { RouterInstance, RouteRenderContext } from '@miurajs/miura-router';
+} from '../../packages/miura-element';
+import { createRouter } from '../../packages/miura-router';
+import type { RouterInstance, RouteRenderContext } from '../../packages/miura-router';
 import {
   clearDebugLayers,
   clearDiagnostics,

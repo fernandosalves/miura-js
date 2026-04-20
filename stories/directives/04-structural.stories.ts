@@ -1,10 +1,8 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css, component } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { component } from '@miurajs/miura-element';
 
 @component({
     tag: 'structural-demo',
-    
 })
 class StructuralDemo extends MiuraElement {
     static compiler = 'AOT' as const;
@@ -15,8 +13,15 @@ class StructuralDemo extends MiuraElement {
     static properties = {
         showContent: { type: Boolean, default: true },
         score: { type: Number, default: 85 },
-        items: { type: Array, default: ['Apple', 'Banana', 'Orange'] }
+        items: { type: Array, default: ['Apple', 'Banana', 'Orange'] },
+        currentView: { type: String, default: 'home' },
+        userPromise: { type: Object, default: null },
+        largeList: { type: Array, default: Array.from({ length: 100 }, (_, i) => `Item ${i + 1}`) }
     };
+
+    declare currentView: string;
+    declare userPromise: Promise<any> | null;
+    declare largeList: string[];
 
     static get styles() {
         return css`
@@ -108,6 +113,27 @@ class StructuralDemo extends MiuraElement {
                 flex-wrap: wrap;
                 margin: 8px 0;
             }
+
+            .scroll-container {
+                height: 200px;
+                overflow-y: auto;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                background: white;
+            }
+
+            .row {
+                padding: 10px;
+                border-bottom: 1px solid #eee;
+            }
+
+            .async-box {
+                padding: 20px;
+                text-align: center;
+                background: #f8fafc;
+                border-radius: 8px;
+                border: 2px dashed #cbd5e1;
+            }
         `;
     }
 
@@ -122,15 +148,31 @@ class StructuralDemo extends MiuraElement {
     private addItem = () => {
         const allFruits = ['Mango', 'Pear', 'Grape', 'Kiwi', 'Apple', 'Banana', 'Orange'];
         const availableFruits = allFruits.filter(f => !this.items.includes(f));
-        
+
         if (availableFruits.length === 0) return;
-        
+
         const randomFruit = availableFruits[Math.floor(Math.random() * availableFruits.length)];
         this.items = [...this.items, randomFruit];
     };
 
     private removeItem = () => {
         this.items = this.items.slice(0, -1);
+    };
+
+    private setView = (view: string) => {
+        this.currentView = view;
+    };
+
+    private fetchUser = () => {
+        this.userPromise = new Promise((resolve, reject) => {
+            setTimeout(() => {
+                if (Math.random() > 0.3) {
+                    resolve({ name: 'Jane Doe', email: 'jane@example.com' });
+                } else {
+                    reject(new Error('Failed to connect to auth service'));
+                }
+            }, 1500);
+        });
     };
 
     protected override template() {
@@ -179,6 +221,25 @@ class StructuralDemo extends MiuraElement {
                         Grade F — Needs improvement
                     </div>
                 </div>
+                
+                <!-- ── Native JS Ternary ── -->
+                <div class="demo-section">
+                    <h4>Native JS Ternary</h4>
+                    <div style="color:#6b7280;font-size:13px;margin-top:0">
+                        JS ternary expressions <code>\${cond ? 'A' : 'B'}</code> are now fully reactive and 
+                        can return strings, numbers, or nested <code>html\`...\`</code> templates.
+                    </div>
+                    <button @click="${this.toggleContent}">
+                        Toggle (Current: ${this.showContent ? 'ON' : 'OFF'})
+                    </button>
+                    
+                    <div class="if-else-box ${this.showContent ? 'shown' : 'hidden'}">
+                        ${this.showContent 
+                            ? html`<span><strong>Ternary ON:</strong> You are seeing a nested template.</span>`
+                            : html`<span><strong>Ternary OFF:</strong> Showing a different template.</span>`
+                        }
+                    </div>
+                </div>
 
                 <!-- ── #for (callback mode) ── -->
                 <div class="demo-section">
@@ -215,19 +276,80 @@ class StructuralDemo extends MiuraElement {
                         </ul>
                     </div>
                 </div>
+
+                <!-- ── #switch ── -->
+                <div class="demo-section">
+                    <h4>#switch / #case</h4>
+                    <div class="btn-group">
+                        <button @click="${() => this.setView('home')}">Home</button>
+                        <button @click="${() => this.setView('profile')}">Profile</button>
+                        <button @click="${() => this.setView('settings')}">Settings</button>
+                    </div>
+                    
+                    <div #switch=${this.currentView}>
+                        <template case="home">
+                            <div class="if-else-box shown">
+                                🏠 <strong>Home View</strong>: This is the dashboard.
+                            </div>
+                        </template>
+                        <template case="profile">
+                            <div class="if-else-box shown" style="background:#f0f9ff; color:#0369a1; border-color:#7dd3fc">
+                                👤 <strong>Profile View</strong>: User details go here.
+                            </div>
+                        </template>
+                        <template case="settings">
+                            <div class="if-else-box shown" style="background:#f5f5f5; color:#404040; border-color:#d4d4d4">
+                                ⚙️ <strong>Settings</strong>: System configuration.
+                            </div>
+                        </template>
+                        <template default>
+                            <div class="if-else-box hidden">Unknown View</div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- ── #async ── -->
+                <div class="demo-section">
+                    <h4>#async</h4>
+                    <button @click="${this.fetchUser}">
+                        ${this.userPromise ? 'Retry Fetch' : 'Fetch User Data'}
+                    </button>
+                    
+                    <div #async=${this.userPromise}>
+                        <template pending>
+                            <div class="async-box">
+                                ⏳ Loading data (1.5s delay)...
+                            </div>
+                        </template>
+                        <template resolved>
+                            <div class="async-box" style="border-style:solid; border-color:#16a34a; background:#f0fdf4">
+                                ✅ Success! Welcome, <strong>{{name}}</strong> ({{email}})
+                            </div>
+                        </template>
+                        <template rejected>
+                            <div class="async-box" style="border-style:solid; border-color:#dc2626; background:#fef2f2">
+                                ❌ Error! {{message}}
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- ── #virtualScroll ── -->
+                <div class="demo-section">
+                    <h4>#virtualScroll</h4>
+                    <div class="scroll-container" #virtualScroll=${{
+                        items: this.largeList,
+                        itemHeight: 41,
+                        containerHeight: 200,
+                        render: (item: string) => html`<div class="row">${item}</div>`
+                    }}></div>
+                </div>
             </div>
         `;
     }
 }
 
-export default {
-    title: 'Miura/Directives/Structural/01. If & For',
-    component: 'structural-demo',
-    tags: ['autodocs'],
-    parameters: {
-        docs: {
-            description: {
-                component: `
+const SUMMARY_DOCS = `
 # Structural Directives
 
 Structural directives modify the DOM structure by adding or removing elements.
@@ -259,12 +381,15 @@ Only the **first matching branch** is rendered. The #else is the fallback.
 Renders lists of items. Two modes:
 
 ### Callback mode
+
 \`\`\`html
-<li #for=\${[items, (item) => html\`\${item.name}\`]}></li>
+<li #for=\${[items, (item) => html\\\`\\\${item.name}\\\` ]}></li>
 \`\`\`
 
 ### Template mode
+
 Pass just the array, use \`{{$item}}\` / \`{{$index}}\` tokens:
+
 \`\`\`html
 <ul #for=\${this.items}>
   <template>
@@ -272,7 +397,80 @@ Pass just the array, use \`{{$item}}\` / \`{{$index}}\` tokens:
   </template>
 </ul>
 \`\`\`
-                `
+
+## #switch / #case
+
+Multi-branch conditional rendering using children \`<template>\` elements:
+
+\`\`\`html
+<div #switch=\${this.view}>
+  <template case="home">
+    <home-view></home-view>
+  </template>
+  <template case="profile">
+    <profile-view></profile-view>
+  </template>
+  <template default>
+    <p>Not Found</p>
+  </template>
+</div>
+\`\`\`
+
+## #async
+
+Declarative promise rendering with built-in state management:
+
+\`\`\`html
+<div #async=\${this.userPromise}>
+  <template pending>
+    <p>Loading user data...</p>
+  </template>
+  <template resolved>
+    <p>Welcome, {{name}}!</p>
+  </template>
+  <template rejected>
+    <p>Error loading data.</p>
+  </template>
+</div>
+\`\`\`
+
+## #virtualScroll
+
+High-performance virtualization for large lists:
+
+\`\`\`html
+<div #virtualScroll=\${{
+  items: this.largeList,
+  itemHeight: 50,
+  containerHeight: 500,
+  render: (item) => html\\\`<div class="row">\\\${item.name}</div>\\\`
+}}></div>
+\`\`\`
+
+## Native Ternary Support
+
+You can now use standard JavaScript ternary expressions for simple conditional rendering. These are fully reactive:
+
+\`\`\`html
+<div>
+  \\\${this.isActive 
+    ? html\\\`<span class="online">Online</span>\\\` 
+    : html\\\`<span class="offline">Offline</span>\\\`
+  }
+</div>
+\`\`\`
+
+Unlike the \`when()\` directive, ternary expressions are evaluated every render, but Miura's architecture ensures that nested templates are still efficiently morphed rather than replaced.
+`;
+
+export default {
+    title: 'Miura/Directives/Structural/01. If & For',
+    component: 'structural-demo',
+    tags: ['autodocs'],
+    parameters: {
+        docs: {
+            description: {
+                component: SUMMARY_DOCS
             }
         }
     }

@@ -1,10 +1,8 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css, component } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { component } from '@miurajs/miura-element';
 
 @component({
     tag: 'class-binding-demo',
-    
 })
 class ClassBindingDemo extends MiuraElement {
     declare isActive: boolean;
@@ -67,14 +65,14 @@ class ClassBindingDemo extends MiuraElement {
         const currentIndex = themes.indexOf(this.theme);
         const nextIndex = (currentIndex + 1) % themes.length;
         const nextTheme = themes[nextIndex];
-        
+
         console.log('Theme change:', {
             currentTheme: this.theme,
             currentIndex,
             nextIndex,
             nextTheme
         });
-        
+
         this.theme = nextTheme;
     };
 
@@ -104,18 +102,15 @@ class ClassBindingDemo extends MiuraElement {
                 <h3>Class Binding Examples</h3>
                 
                 <div class=${this.isActive ? 'demo-box active' : 'demo-box'}>
-                    1. Simple Toggle
+                    1. Simple Toggle (Ternary)
                 </div>
                 
-                <div class=${Object.entries(classMap)
-                    .filter(([_, active]) => active)
-                    .map(([className]) => className)
-                    .join(' ')}>
-                    2. Multiple Classes (${this.theme})
+                <div class=${classMap}>
+                    2. Multiple Classes (Object Binding)
                 </div>
                 
-                <div class="demo-box ${this.isHighlighted ? 'highlighted' : ''}">
-                    3. Mixed Classes
+                <div class="demo-box ${ { highlighted: this.isHighlighted } }">
+                    3. Mixed Static and Dynamic Object Classes
                 </div>
 
                 <div>

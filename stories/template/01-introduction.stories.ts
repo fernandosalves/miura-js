@@ -1,5 +1,5 @@
-import { MiuraElement } from '@miurajs/miura-element';
-import { html, css } from '@miurajs/miura-render';
+import { MiuraElement } from '../../packages/miura-element';
+import { html, css } from '../../packages/miura-render';
 import type { Meta, StoryObj } from '@storybook/web-components';
 
 class IntroductionElement extends MiuraElement {

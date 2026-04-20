@@ -7,10 +7,10 @@ import { debugLog } from '../utils/debug';
 
 import { PropertyBinding } from './bindings/property-binding';
 import { EventBinding } from './bindings/event-binding';
-import { ClassBinding } from './bindings/class-binding';
+import { ClassBinding, ClassPartBinding } from './bindings/class-binding';
 import { BooleanBinding } from './bindings/boolean-binding';
 import { ReferenceBinding } from './bindings/reference-binding';
-import { StyleBinding } from './bindings/style-binding';
+import { StyleBinding, StylePartBinding } from './bindings/style-binding';
 import { DirectiveBinding } from './bindings/directive-binding';
 import { AttributeBinding, AttributePartBinding } from './bindings/attribute-binding';
 import { BindBinding } from './bindings/bind-binding';
@@ -20,7 +20,7 @@ import { UtilityBinding, UtilityPartBinding } from './bindings/utility-binding';
 import { reportDiagnostic } from '@miurajs/miura-debugger';
 
 type SignalLike = { peek(): unknown; subscribe(fn: (v: unknown) => void): () => void };
-type MultipartBinding = AttributeBinding | UtilityBinding;
+type MultipartBinding = AttributeBinding | UtilityBinding | ClassBinding | StyleBinding;
 
 function _isSignal(v: unknown): v is SignalLike {
     return Boolean(
@@ -115,8 +115,13 @@ export class BindingManager {
                     return;
                 }
 
-                // Handle multi-part Attribute bindings
-                if (binding.type === BindingType.Attribute || binding.type === BindingType.Utility) {
+                // Handle multi-part Attribute, Class, Style, and Utility bindings
+                if (
+                    binding.type === BindingType.Attribute || 
+                    binding.type === BindingType.Utility ||
+                    binding.type === BindingType.Class ||
+                    binding.type === BindingType.Style
+                ) {
                     const groupStart = binding.groupStart ?? binding.index;
                     let element: Element | null;
 
@@ -151,6 +156,14 @@ export class BindingManager {
                             const utilityBinding = new UtilityBinding(element, binding.name || '', strings);
                             attrBindingCache.set(groupStart, utilityBinding);
                             bindingInstances[binding.index] = utilityBinding;
+                        } else if (binding.type === BindingType.Class) {
+                            const classBinding = new ClassBinding(element, strings);
+                            attrBindingCache.set(groupStart, classBinding);
+                            bindingInstances[binding.index] = classBinding;
+                        } else if (binding.type === BindingType.Style) {
+                            const styleBinding = new StyleBinding(element, strings);
+                            attrBindingCache.set(groupStart, styleBinding);
+                            bindingInstances[binding.index] = styleBinding;
                         } else {
                             const attrBinding = new AttributeBinding(element, binding.name || '', strings);
                             attrBindingCache.set(groupStart, attrBinding);
@@ -161,6 +174,10 @@ export class BindingManager {
                         if (parent) {
                             if (binding.type === BindingType.Utility) {
                                 bindingInstances[binding.index] = new UtilityPartBinding(parent as UtilityBinding, binding.partIndex ?? 0);
+                            } else if (binding.type === BindingType.Class) {
+                                bindingInstances[binding.index] = new ClassPartBinding(parent as ClassBinding, binding.partIndex ?? 0);
+                            } else if (binding.type === BindingType.Style) {
+                                bindingInstances[binding.index] = new StylePartBinding(parent as StyleBinding, binding.partIndex ?? 0);
                             } else {
                                 bindingInstances[binding.index] = new AttributePartBinding(parent as AttributeBinding, binding.partIndex ?? 0);
                             }
@@ -229,18 +246,14 @@ export class BindingManager {
                 );
 
             case BindingType.Class:
-                debugLog('bindingManager', 'Creating class binding', {
-                    element: element.tagName,
-                    name
-                });
-                return new ClassBinding(element);
+                return new ClassBinding(element, binding.strings);
 
             case BindingType.Reference:
                 const refName = name.startsWith('#') ? name.slice(1) : name;
                 return new ReferenceBinding(element);
 
             case BindingType.Style:
-                return new StyleBinding(element);
+                return new StyleBinding(element, binding.strings);
 
             case BindingType.Directive:
                 const directiveName = name.replace(/^#/, '');
@@ -252,10 +265,10 @@ export class BindingManager {
             }
 
             case BindingType.ObjectClass:
-                return new ClassBinding(element);
+                return new ClassBinding(element, binding.strings);
 
             case BindingType.ObjectStyle:
-                return new StyleBinding(element);
+                return new StyleBinding(element, binding.strings);
 
             case BindingType.Spread:
                 return new SpreadBinding(element);
@@ -418,42 +431,57 @@ export class BindingManager {
     }
 
     private static hasBindingAttribute(element: Element, index: number): boolean {
-        // Check for standard binding marker in attribute value (HTML context)
-        if (Array.from(element.attributes).some(attr =>
-            attr.value === `binding:${index}`
-        )) {
+        // Modern: data-bN or data-eN
+        if (element.hasAttribute(`data-b${index}`) || element.hasAttribute(`data-e${index}`)) {
             return true;
         }
-        // Check for data-bN marker attribute (SVG/MathML context — avoids
-        // putting "binding:N" as SVG attribute values which the parser rejects)
-        if (element.hasAttribute(`data-b${index}`)) {
-            return true;
+
+        // Legacy: attr="binding:index"
+        const legacyMarker = `binding:${index}`;
+        for (const attr of Array.from(element.attributes)) {
+            if (attr.value === legacyMarker) return true;
         }
-        // Check for data-eN marker attribute (SVG/MathML event bindings —
-        // @ prefix is invalid in SVG attribute names, so we use data-eN)
-        if (element.hasAttribute(`data-e${index}`)) {
-            return true;
-        }
+
         return false;
     }
 
-    /**
-     * Remove the data-bN or data-eN marker attribute from an element (used for SVG/MathML bindings).
-     * Returns true if such a marker was found and removed.
-     */
     private static removeDataBindingMarker(element: Element, index: number): boolean {
-        const bMarker = `data-b${index}`;
-        const eMarker = `data-e${index}`;
+        const markers = [`data-b${index}`, `data-e${index}`];
         let removed = false;
-        if (element.hasAttribute(bMarker)) {
-            element.removeAttribute(bMarker);
-            removed = true;
+        
+        // Remove modern markers
+        for (const m of markers) {
+            if (element.hasAttribute(m)) {
+                element.removeAttribute(m);
+                removed = true;
+            }
         }
-        if (element.hasAttribute(eMarker)) {
-            element.removeAttribute(eMarker);
-            removed = true;
+
+        // Remove legacy markers: attr="binding:index"
+        const legacyMarker = `binding:${index}`;
+        for (const attr of Array.from(element.attributes)) {
+            if (attr.value === legacyMarker) {
+                element.removeAttribute(attr.name);
+                removed = true;
+            }
         }
+
         return removed;
+    }
+
+    /**
+     * Thoroughly cleans up all Miura-specific data markers from an element.
+     */
+    public static cleanUpAllMarkers(element: Element): void {
+        const markers = Array.from(element.attributes)
+            .filter(attr => attr.name.startsWith('data-b') || 
+                            attr.name.startsWith('data-e') || 
+                            attr.name.startsWith('data-d') || 
+                            attr.name.startsWith('data-r'));
+        
+        for (const attr of markers) {
+            element.removeAttribute(attr.name);
+        }
     }
 
     public static async initializeBindings(
@@ -469,8 +497,13 @@ export class BindingManager {
         });
 
         const promises = bindings.map(async (binding, i) => {
+            if (!binding) return;
             try {
                 const bindingDef = bindingDefs[i];
+                if (!bindingDef) {
+                    console.warn(`[miura][bindingManager] No binding definition for binding at index ${i}`);
+                    return;
+                }
                 const value = values[i];
 
                 if (_isSignal(value)) {
@@ -491,14 +524,31 @@ export class BindingManager {
                     return;
                 }
 
-                // Handle async directive bindings
-                if (binding.setValue.constructor.name === 'AsyncFunction') {
-                    await binding.setValue(value, context);
-                } else {
-                    binding.setValue(value, context);
+                // Handle function values as auto-executing expressions with context
+                let finalValue = value;
+                if (typeof value === 'function' && 
+                    bindingDef.type !== BindingType.Event && 
+                    bindingDef.type !== BindingType.Directive &&
+                    bindingDef.type !== BindingType.Reference) {
+                    finalValue = (value as any)(context);
                 }
+
+                // Set value — always await to handle both sync and async setValue methods
+                await (binding.setValue as any)(finalValue, context);
             } catch (error) {
-                console.error(`Error initializing ${this.formatBindingContext(bindingDefs[i], i)}:`, error);
+                const def = bindingDefs[i];
+                reportDiagnostic({
+                    subsystem: 'render',
+                    stage: 'update',
+                    severity: 'error',
+                    message: `Error updating ${this.formatBindingContext(def, i)}`,
+                    summary: error instanceof Error ? error.message : String(error),
+                    bindingIndex: i,
+                    bindingLabel: def?.debugLabel ?? undefined,
+                    bindingKind: def ? this.getBindingKind(def.type) : 'unknown',
+                    error,
+                });
+                console.error(`Error initializing ${this.formatBindingContext(def, i)}:`, error);
                 throw error;
             }
         });

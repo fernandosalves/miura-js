@@ -22,11 +22,11 @@ class ConditionalTemplateRepro extends MiuraElement {
                     </button>
                 `)}
                 ${choose(this.showArrow, [
-                    true, () => html`
+                    [true, () => html`
                         <button class="nav-pill choose-arrow" aria-label="Go up">
                             <span class="nav-arrow">↑</span>
                         </button>
-                    `
+                    `]
                 ])}
             </div>
         `;

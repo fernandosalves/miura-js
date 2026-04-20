@@ -1,6 +1,6 @@
-import { MiuraElement, html, css, repeat } from "@miurajs/miura-element";
+import { MiuraElement, html, css, repeat } from "../../packages/miura-element";
 import type { Meta, StoryObj } from "@storybook/web-components";
-import { component } from "@miurajs/miura-element";
+import { component } from "../../packages/miura-element";
 
 let nextId = 1;
 
@@ -284,10 +284,10 @@ class TodoListElement extends MiuraElement {
 
         <ul class="todo-list">
           ${repeat(
-            this.filteredTodos,
-            (todo: Todo) => todo.id,
-            (todo: Todo, index: number) => this.todoTemplate(todo, index)
-          )}
+      this.filteredTodos,
+      (todo: Todo) => todo.id,
+      (todo: Todo, index: number) => this.todoTemplate(todo, index)
+    )}
         </ul>
       </div>
     `;

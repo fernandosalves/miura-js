@@ -1,17 +1,16 @@
 import { TemplateParser } from './parser';
 import { BindingType } from './template-result';
-import { describe, beforeEach, expect } from 'vitest';
+import { describe, beforeEach, it, expect } from 'vitest';
 import '../directives/lazy-setup';
 
 // Helper function to create a TemplateStringsArray-like object
 function createTemplateStrings(strings: string[]): TemplateStringsArray {
-  const result = strings as unknown as TemplateStringsArray;
-  result.raw = strings;
-  return result;
+  Object.defineProperty(strings, 'raw', { value: strings });
+  return strings as unknown as TemplateStringsArray;
 }
 
 function expectBinding(
-  actual: Record<string, unknown>,
+  actual: any,
   expected: Record<string, unknown>,
 ) {
   expect(actual).toMatchObject(expected);
@@ -39,7 +38,7 @@ describe('TemplateParser', () => {
         modifiers: undefined
       });
       
-      expect(result.html).toBe('<button @click="binding:0">Click</button>');
+      expect(result.html).toBe('<button data-b0>Click</button>');
     });
 
     it('should parse quoted event bindings', () => {
@@ -53,7 +52,7 @@ describe('TemplateParser', () => {
         modifiers: undefined
       });
       
-      expect(result.html).toBe('<button @click="binding:0">Click</button>');
+      expect(result.html).toBe('<button data-b0>Click</button>');
     });
 
     it('should parse unquoted property bindings', () => {
@@ -70,7 +69,7 @@ describe('TemplateParser', () => {
         groupStart: 0,
       });
       
-      expect(result.html).toBe('<input .value="binding:0">');
+      expect(result.html).toBe('<input data-b0>');
     });
 
     it('should parse quoted property bindings', () => {
@@ -87,7 +86,7 @@ describe('TemplateParser', () => {
         groupStart: 0,
       });
       
-      expect(result.html).toBe('<input .value="binding:0">');
+      expect(result.html).toBe('<input data-b0>');
     });
 
     it('should parse unquoted boolean bindings', () => {
@@ -104,7 +103,7 @@ describe('TemplateParser', () => {
         groupStart: 0,
       });
       
-      expect(result.html).toBe('<button ?disabled="binding:0">Submit</button>');
+      expect(result.html).toBe('<button data-b0>Submit</button>');
     });
 
     it('should parse quoted boolean bindings', () => {
@@ -121,7 +120,7 @@ describe('TemplateParser', () => {
         groupStart: 0,
       });
       
-      expect(result.html).toBe('<button ?disabled="binding:0">Submit</button>');
+      expect(result.html).toBe('<button data-b0>Submit</button>');
     });
 
     it('should parse event bindings with modifiers (unquoted)', () => {
@@ -135,7 +134,7 @@ describe('TemplateParser', () => {
         modifiers: ['prevent']
       });
       
-      expect(result.html).toBe('<button @click|prevent="binding:0">Submit</button>');
+      expect(result.html).toBe('<button data-b0>Submit</button>');
     });
 
     it('should parse event bindings with modifiers (quoted)', () => {
@@ -149,7 +148,7 @@ describe('TemplateParser', () => {
         modifiers: ['prevent']
       });
       
-      expect(result.html).toBe('<button @click|prevent="binding:0">Submit</button>');
+      expect(result.html).toBe('<button data-b0>Submit</button>');
     });
 
     it('should parse class bindings (unquoted)', () => {
@@ -166,7 +165,7 @@ describe('TemplateParser', () => {
         groupStart: 0,
       });
       
-      expect(result.html).toBe('<div class="binding:0">Content</div>');
+      expect(result.html).toBe('<div data-b0>Content</div>');
     });
 
     it('should parse class bindings (quoted)', () => {
@@ -183,7 +182,7 @@ describe('TemplateParser', () => {
         groupStart: 0,
       });
       
-      expect(result.html).toBe('<div class="binding:0">Content</div>');
+      expect(result.html).toBe('<div data-b0>Content</div>');
     });
 
     it('should parse unquoted utility bindings', () => {
@@ -199,7 +198,7 @@ describe('TemplateParser', () => {
         groupStart: 0,
       });
 
-      expect(result.html).toBe('<div %="binding:0"></div>');
+      expect(result.html).toBe('<div data-b0></div>');
     });
 
     it('should parse named utility bindings', () => {
@@ -214,7 +213,7 @@ describe('TemplateParser', () => {
         strings: ['', ''],
       });
 
-      expect(result.html).toBe('<div %grow="binding:0"></div>');
+      expect(result.html).toBe('<div data-b0></div>');
     });
   });
 
@@ -366,21 +365,21 @@ describe('TemplateParser', () => {
 
       expect(result.bindings).toHaveLength(2);
       expectBinding(result.bindings[0], {
-        type: BindingType.Attribute,
+        type: BindingType.Class,
         name: 'class',
         index: 0,
-        groupStart: 0,
         partIndex: 0,
+        groupStart: 0,
         strings: ['btn ', ' size-', ''],
       });
       expectBinding(result.bindings[1], {
-        type: BindingType.Attribute,
+        type: BindingType.Class,
         name: 'class',
         index: 1,
         groupStart: 0,
         partIndex: 1,
       });
-      expect(result.html).toBe('<div class="binding:0"></div>');
+      expect(result.html).toBe('<div data-b0></div>');
     });
   });
 
@@ -397,7 +396,17 @@ describe('TemplateParser', () => {
         partIndex: 0,
         groupStart: 0,
       });
-      expect(result.html).toBe('<div #if="binding:0">Shown</div>');
+      expect(result.html).toBe('<div data-b0 data-d="#if">Shown</div>');
+    });
+
+    it('handles static directives (#else) without expressions', () => {
+      const result = parser.parse(createTemplateStrings(['<div #else>Shown</div>']));
+      expect(result.html).toBe('<div data-d="#else">Shown</div>');
+    });
+
+    it('handles static references (#box) without expressions', () => {
+      const result = parser.parse(createTemplateStrings(['<div #box>Content</div>']));
+      expect(result.html).toBe('<div data-r="#box">Content</div>');
     });
   });
 
@@ -414,6 +423,7 @@ describe('TemplateParser', () => {
         partIndex: 0,
         groupStart: 0,
       });
+      expect(result.html).toBe('<div data-b0></div>');
     });
 
     it('treats :style as a normal style binding', () => {
@@ -428,6 +438,7 @@ describe('TemplateParser', () => {
         partIndex: 0,
         groupStart: 0,
       });
+      expect(result.html).toBe('<div data-b0></div>');
     });
   });
 });

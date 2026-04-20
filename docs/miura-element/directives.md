@@ -61,6 +61,7 @@ These are loaded **on demand**—only if you use them in your template. This kee
 ## Creating Custom Directives
 
 ### Using Decorators
+
 ```typescript
 import { directive, lazyDirective, BaseDirective } from '@miurajs/render';
 
@@ -78,6 +79,7 @@ export class MyLazyDirective extends BaseDirective {
 ```
 
 ### Manual Registration
+
 ```typescript
 import { DirectiveManager } from '@miurajs/render';
 DirectiveManager.register('my-directive', MyDirective);

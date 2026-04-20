@@ -76,9 +76,9 @@ export class IfDirective extends StructuralDirective {
             if (sibling.nodeType === Node.ELEMENT_NODE) {
                 const el = sibling as Element;
 
-                if (el.hasAttribute('#else')) {
+                if (el.hasAttribute('data-d') && el.getAttribute('data-d') === '#else') {
                     debugLog('if', 'Found #else sibling');
-                    el.removeAttribute('#else');
+                    el.removeAttribute('data-d');
                     const elseComment = document.createComment('else');
                     const nextSibling = sibling.nextSibling;
                     sibling.parentNode!.replaceChild(elseComment, sibling);
@@ -91,7 +91,7 @@ export class IfDirective extends StructuralDirective {
                         condition: true, // else is always "true" as fallback
                     });
                     break; // #else is always last
-                } else if (el.hasAttribute('#elseif') || el.getAttribute('#elseif') !== null) {
+                } else if (el.hasAttribute('data-d') && el.getAttribute('data-d') === '#elseif') {
                     // Skip — ElseIfDirective will register itself
                     sibling = sibling.nextSibling;
                     continue;
@@ -204,9 +204,9 @@ export class ElseIfDirective extends StructuralDirective {
         this.content = element;
         this.comment = document.createComment('elseif');
 
-        // Remove the static #elseif attribute if present
-        if (element.hasAttribute('#elseif')) {
-            element.removeAttribute('#elseif');
+        // Remove the static #elseif attribute if present (new unified marker)
+        if (element.hasAttribute('data-d') && element.getAttribute('data-d') === '#elseif') {
+            element.removeAttribute('data-d');
         }
 
         // Scan backward to find the parent IfDirective's comment

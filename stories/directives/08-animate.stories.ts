@@ -1,4 +1,4 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
 
 class AnimateDirectiveDemo extends MiuraElement {
@@ -228,19 +228,19 @@ class AnimateDirectiveDemo extends MiuraElement {
     triggerAnimation = (animationType: string) => {
         this.animationCount++;
         this.isAnimating = true;
-        
+
         // Show notification
         const notification = document.createElement('div');
         notification.className = 'notification';
         notification.textContent = `🎬 ${animationType} animation triggered!`;
         document.body.appendChild(notification);
-        
+
         setTimeout(() => notification.classList.add('show'), 100);
         setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => document.body.removeChild(notification), 300);
         }, 2000);
-        
+
         setTimeout(() => this.isAnimating = false, 1000);
     };
 
@@ -282,11 +282,11 @@ class AnimateDirectiveDemo extends MiuraElement {
                         <div 
                             class="animation-item"
                             #animate=${{
-                                trigger: 'click',
-                                animation: 'bounce',
-                                duration: '0.6s',
-                                onStart: () => this.triggerAnimation('Bounce')
-                            }}
+                trigger: 'click',
+                animation: 'bounce',
+                duration: '0.6s',
+                onStart: () => this.triggerAnimation('Bounce')
+            }}
                         >
                             Bounce
                         </div>
@@ -294,11 +294,11 @@ class AnimateDirectiveDemo extends MiuraElement {
                         <div 
                             class="animation-item"
                             #animate=${{
-                                trigger: 'click',
-                                animation: 'fadeIn',
-                                duration: '0.8s',
-                                onStart: () => this.triggerAnimation('Fade In')
-                            }}
+                trigger: 'click',
+                animation: 'fadeIn',
+                duration: '0.8s',
+                onStart: () => this.triggerAnimation('Fade In')
+            }}
                         >
                             Fade In
                         </div>
@@ -306,11 +306,11 @@ class AnimateDirectiveDemo extends MiuraElement {
                         <div 
                             class="animation-item"
                             #animate=${{
-                                trigger: 'click',
-                                animation: 'slideInLeft',
-                                duration: '0.7s',
-                                onStart: () => this.triggerAnimation('Slide Left')
-                            }}
+                trigger: 'click',
+                animation: 'slideInLeft',
+                duration: '0.7s',
+                onStart: () => this.triggerAnimation('Slide Left')
+            }}
                         >
                             Slide Left
                         </div>
@@ -318,11 +318,11 @@ class AnimateDirectiveDemo extends MiuraElement {
                         <div 
                             class="animation-item"
                             #animate=${{
-                                trigger: 'click',
-                                animation: 'rotate',
-                                duration: '1s',
-                                onStart: () => this.triggerAnimation('Rotate')
-                            }}
+                trigger: 'click',
+                animation: 'rotate',
+                duration: '1s',
+                onStart: () => this.triggerAnimation('Rotate')
+            }}
                         >
                             Rotate
                         </div>
@@ -330,11 +330,11 @@ class AnimateDirectiveDemo extends MiuraElement {
                         <div 
                             class="animation-item"
                             #animate=${{
-                                trigger: 'click',
-                                animation: 'scale',
-                                duration: '0.5s',
-                                onStart: () => this.triggerAnimation('Scale')
-                            }}
+                trigger: 'click',
+                animation: 'scale',
+                duration: '0.5s',
+                onStart: () => this.triggerAnimation('Scale')
+            }}
                         >
                             Scale
                         </div>
@@ -342,11 +342,11 @@ class AnimateDirectiveDemo extends MiuraElement {
                         <div 
                             class="animation-item"
                             #animate=${{
-                                trigger: 'click',
-                                animation: 'shake',
-                                duration: '0.6s',
-                                onStart: () => this.triggerAnimation('Shake')
-                            }}
+                trigger: 'click',
+                animation: 'shake',
+                duration: '0.6s',
+                onStart: () => this.triggerAnimation('Shake')
+            }}
                         >
                             Shake
                         </div>
@@ -365,12 +365,12 @@ class AnimateDirectiveDemo extends MiuraElement {
                                 <div 
                                     class="progress-fill"
                                     #animate=${{
-                                        trigger: 'visible',
-                                        animation: 'progress',
-                                        duration: '2s',
-                                        delay: '0.5s',
-                                        onStart: () => this.triggerAnimation('Progress Bar')
-                                    }}
+                trigger: 'visible',
+                animation: 'progress',
+                duration: '2s',
+                delay: '0.5s',
+                onStart: () => this.triggerAnimation('Progress Bar')
+            }}
                                     style="width: 0%"
                                 ></div>
                             </div>
@@ -382,11 +382,11 @@ class AnimateDirectiveDemo extends MiuraElement {
                             <div 
                                 class="animated-element"
                                 #animate=${{
-                                    trigger: 'hover',
-                                    animation: 'pulse',
-                                    duration: '0.3s',
-                                    onStart: () => this.triggerAnimation('Hover Pulse')
-                                }}
+                trigger: 'hover',
+                animation: 'pulse',
+                duration: '0.3s',
+                onStart: () => this.triggerAnimation('Hover Pulse')
+            }}
                             >
                                 Hover Me!
                             </div>
@@ -398,12 +398,12 @@ class AnimateDirectiveDemo extends MiuraElement {
                             <div 
                                 class="animated-element"
                                 #animate=${{
-                                    trigger: 'visible',
-                                    animation: 'slideInUp',
-                                    duration: '1s',
-                                    threshold: 0.5,
-                                    onStart: () => this.triggerAnimation('Scroll Animation')
-                                }}
+                trigger: 'visible',
+                animation: 'slideInUp',
+                duration: '1s',
+                threshold: 0.5,
+                onStart: () => this.triggerAnimation('Scroll Animation')
+            }}
                             >
                                 Scroll to Animate
                             </div>
@@ -416,32 +416,32 @@ class AnimateDirectiveDemo extends MiuraElement {
                                 <div 
                                     style="width: 30px; height: 30px; background: #ff6b6b; border-radius: 50%;"
                                     #animate=${{
-                                        trigger: 'visible',
-                                        animation: 'bounce',
-                                        duration: '0.6s',
-                                        delay: '0s',
-                                        onStart: () => this.triggerAnimation('Stagger 1')
-                                    }}
+                trigger: 'visible',
+                animation: 'bounce',
+                duration: '0.6s',
+                delay: '0s',
+                onStart: () => this.triggerAnimation('Stagger 1')
+            }}
                                 ></div>
                                 <div 
                                     style="width: 30px; height: 30px; background: #4ecdc4; border-radius: 50%;"
                                     #animate=${{
-                                        trigger: 'visible',
-                                        animation: 'bounce',
-                                        duration: '0.6s',
-                                        delay: '0.1s',
-                                        onStart: () => this.triggerAnimation('Stagger 2')
-                                    }}
+                trigger: 'visible',
+                animation: 'bounce',
+                duration: '0.6s',
+                delay: '0.1s',
+                onStart: () => this.triggerAnimation('Stagger 2')
+            }}
                                 ></div>
                                 <div 
                                     style="width: 30px; height: 30px; background: #45b7d1; border-radius: 50%;"
                                     #animate=${{
-                                        trigger: 'visible',
-                                        animation: 'bounce',
-                                        duration: '0.6s',
-                                        delay: '0.2s',
-                                        onStart: () => this.triggerAnimation('Stagger 3')
-                                    }}
+                trigger: 'visible',
+                animation: 'bounce',
+                duration: '0.6s',
+                delay: '0.2s',
+                onStart: () => this.triggerAnimation('Stagger 3')
+            }}
                                 ></div>
                             </div>
                         </div>
@@ -488,12 +488,12 @@ class AnimateDirectiveDemo extends MiuraElement {
                 <button 
                     class="floating-button"
                     #animate=${{
-                        trigger: 'visible',
-                        animation: 'slideInUp',
-                        duration: '0.8s',
-                        delay: '1s',
-                        onStart: () => this.triggerAnimation('Floating Button')
-                    }}
+                trigger: 'visible',
+                animation: 'slideInUp',
+                duration: '0.8s',
+                delay: '1s',
+                onStart: () => this.triggerAnimation('Floating Button')
+            }}
                 >
                     ⭐
                 </button>

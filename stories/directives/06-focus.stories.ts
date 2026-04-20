@@ -1,6 +1,9 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css, component } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
 
+@component({
+    tag: 'focus-directive-demo',
+})
 class FocusDirectiveDemo extends MiuraElement {
     // Property declarations for TypeScript
     declare focusCount: number;
@@ -185,9 +188,9 @@ class FocusDirectiveDemo extends MiuraElement {
                     <div 
                         class="focusable-element"
                         #focus=${{
-                            onFocus: this.handleFocus('element-1'),
-                            onBlur: this.handleBlur('element-1')
-                        }}
+                onFocus: this.handleFocus('element-1'),
+                onBlur: this.handleBlur('element-1')
+            }}
                     >
                         Element 1
                     </div>
@@ -195,9 +198,9 @@ class FocusDirectiveDemo extends MiuraElement {
                     <div 
                         class="focusable-element"
                         #focus=${{
-                            onFocus: this.handleFocus('element-2'),
-                            onBlur: this.handleBlur('element-2')
-                        }}
+                onFocus: this.handleFocus('element-2'),
+                onBlur: this.handleBlur('element-2')
+            }}
                     >
                         Element 2
                     </div>
@@ -205,9 +208,9 @@ class FocusDirectiveDemo extends MiuraElement {
                     <div 
                         class="focusable-element"
                         #focus=${{
-                            onFocus: this.handleFocus('element-3'),
-                            onBlur: this.handleBlur('element-3')
-                        }}
+                onFocus: this.handleFocus('element-3'),
+                onBlur: this.handleBlur('element-3')
+            }}
                     >
                         Element 3
                     </div>
@@ -226,18 +229,18 @@ class FocusDirectiveDemo extends MiuraElement {
                             type="text"
                             placeholder="This input has autofocus"
                             #focus=${{
-                                autofocus: this.autofocusEnabled,
-                                onFocus: this.handleFocus('autofocus-input'),
-                                onBlur: this.handleBlur('autofocus-input')
-                            }}
+                autofocus: this.autofocusEnabled,
+                onFocus: this.handleFocus('autofocus-input'),
+                onBlur: this.handleBlur('autofocus-input')
+            }}
                         />
                         
                         <button 
                             #focus=${{
-                                autofocus: this.autofocusEnabled,
-                                onFocus: this.handleFocus('autofocus-button'),
-                                onBlur: this.handleBlur('autofocus-button')
-                            }}
+                autofocus: this.autofocusEnabled,
+                onFocus: this.handleFocus('autofocus-button'),
+                onBlur: this.handleBlur('autofocus-button')
+            }}
                         >
                             Autofocus Button
                         </button>
@@ -253,34 +256,34 @@ class FocusDirectiveDemo extends MiuraElement {
                             type="text"
                             placeholder="First Name"
                             #focus=${{
-                                onFocus: this.handleFocus('first-name'),
-                                onBlur: this.handleBlur('first-name')
-                            }}
+                onFocus: this.handleFocus('first-name'),
+                onBlur: this.handleBlur('first-name')
+            }}
                         />
                         
                         <input 
                             type="text"
                             placeholder="Last Name"
                             #focus=${{
-                                onFocus: this.handleFocus('last-name'),
-                                onBlur: this.handleBlur('last-name')
-                            }}
+                onFocus: this.handleFocus('last-name'),
+                onBlur: this.handleBlur('last-name')
+            }}
                         />
                         
                         <input 
                             type="email"
                             placeholder="Email"
                             #focus=${{
-                                onFocus: this.handleFocus('email'),
-                                onBlur: this.handleBlur('email')
-                            }}
+                onFocus: this.handleFocus('email'),
+                onBlur: this.handleBlur('email')
+            }}
                         />
                         
                         <button 
                             #focus=${{
-                                onFocus: this.handleFocus('submit-btn'),
-                                onBlur: this.handleBlur('submit-btn')
-                            }}
+                onFocus: this.handleFocus('submit-btn'),
+                onBlur: this.handleBlur('submit-btn')
+            }}
                         >
                             Submit
                         </button>
@@ -292,7 +295,7 @@ class FocusDirectiveDemo extends MiuraElement {
                     <p>Elements that can be dynamically focused:</p>
                     
                     <button 
-                        @click="${() => this.shadowRoot?.querySelector('#dynamic-element')?.focus()}"
+                        @click="${() => (this.shadowRoot?.querySelector('#dynamic-element') as HTMLElement)?.focus()}"
                     >
                         Focus Dynamic Element
                     </button>
@@ -302,9 +305,9 @@ class FocusDirectiveDemo extends MiuraElement {
                         class="focusable-element"
                         tabindex="0"
                         #focus=${{
-                            onFocus: this.handleFocus('dynamic-element'),
-                            onBlur: this.handleBlur('dynamic-element')
-                        }}
+                onFocus: this.handleFocus('dynamic-element'),
+                onBlur: this.handleBlur('dynamic-element')
+            }}
                     >
                         Dynamic Element
                     </div>
@@ -313,8 +316,6 @@ class FocusDirectiveDemo extends MiuraElement {
         `;
     }
 }
-
-customElements.define('focus-directive-demo', FocusDirectiveDemo);
 
 const meta: Meta<FocusDirectiveDemo> = {
     title: 'Miura/Directives/Utility/07. Focus',

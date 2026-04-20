@@ -49,30 +49,29 @@ function collectRefs(frag, count) {
                 }
             }
         } else if (node.nodeType === 1) {
-            for (const attr of Array.from(node.attributes)) {
-                if (attr.value.startsWith(MARKER)) {
-                    const idx = parseInt(attr.value.slice(MARKER.length).split(':')[0]);
-                    if (!isNaN(idx)) {
-                        refs[idx] = refs[idx] || {};
-                        refs[idx].el = node;
-                        node.removeAttribute(attr.name);
-                    }
-                }
-            }
-            // Also check for data-bN marker attributes (SVG/MathML context)
-            const dataAttrs = Array.from(node.attributes).filter(a => a.name.startsWith('data-b'));
+            const el = node;
+            // Unified Data-Marker System:
+            // Scan for data-bN and data-eN markers
+            const dataAttrs = Array.from(el.attributes).filter(a => 
+                a.name.startsWith('data-b') || a.name.startsWith('data-e')
+            );
+            
             for (const da of dataAttrs) {
-                const idx = parseInt(da.name.slice(7).split(':')[0]);
+                const isEvent = da.name.startsWith('data-e');
+                const idx = parseInt(da.name.slice(6));
                 if (!isNaN(idx)) {
                     refs[idx] = refs[idx] || {};
-                    refs[idx].el = node;
-                    node.removeAttribute(da.name);
-                    // Remove the empty-value placeholder attribute too
-                    if (idx < count) {
-                        // The placeholder attr name is stored in the binding metadata;
-                        // we can't access it here, so we'll clean it up in the update code.
-                    }
+                    refs[idx].el = el;
+                    el.removeAttribute(da.name);
                 }
+            }
+
+            // Also clean up any static data-d (directive) or data-r (reference) markers
+            const staticMarkers = Array.from(el.attributes).filter(a => 
+                a.name.startsWith('data-d') || a.name.startsWith('data-r')
+            );
+            for (const sm of staticMarkers) {
+                el.removeAttribute(sm.name);
             }
         }
         node = walker.nextNode();
@@ -219,17 +218,17 @@ function _updateCode(b: TemplateBinding, _ri: number): string {
 
         case BindingType.Property: {
             const prop = _stripPrefix(b.name);
-            return `if (${r}.prev !== ${v}) { ${r}.prev = ${v}; ${r}.el.${prop} = ${v}; }`;
+            return `if (${r} && ${r}.prev !== ${v}) { ${r}.prev = ${v}; ${r}.el.${prop} = ${v}; }`;
         }
 
         case BindingType.Boolean: {
             const attr = JSON.stringify(_stripPrefix(b.name));
-            return `if (${r}.prev !== ${v}) { ${r}.prev = ${v}; ${v} ? ${r}.el.setAttribute(${attr}, '') : ${r}.el.removeAttribute(${attr}); }`;
+            return `if (${r} && ${r}.prev !== ${v}) { ${r}.prev = ${v}; ${v} ? ${r}.el.setAttribute(${attr}, '') : ${r}.el.removeAttribute(${attr}); }`;
         }
 
         case BindingType.Class: {
             return `
-                if (${r}.prev !== ${v}) {
+                if (${r} && ${r}.prev !== ${v}) {
                     const _next = ${v};
                     if (typeof _next === 'string') {
                         ${r}.el.className = _next;
@@ -244,7 +243,7 @@ function _updateCode(b: TemplateBinding, _ri: number): string {
 
         case BindingType.Style:
             return `
-                if (${r}.prev !== ${v}) {
+                if (${r} && ${r}.prev !== ${v}) {
                     const _next = ${v};
                     if (typeof _next === 'string') {
                         ${r}.el.style.cssText = _next;
@@ -269,9 +268,9 @@ function _updateCode(b: TemplateBinding, _ri: number): string {
                         ? `${JSON.stringify(s)} + ${val}` 
                         : JSON.stringify(s);
                 }).join(' + ');
-                return `if (${rPrev} !== ${v}) { ${rPrev} = ${v}; ${r}.el.setAttribute(${attrName}, ${parts}); }`;
+                return `if (${r} && ${rPrev} !== ${v}) { ${rPrev} = ${v}; ${r}.el.setAttribute(${attrName}, ${parts}); }`;
             }
-            return `if (${rPrev} !== ${v}) { ${rPrev} = ${v}; ${r}.el.setAttribute(${attrName}, ${v} == null ? '' : String(${v})); }`;
+            return `if (${r} && ${rPrev} !== ${v}) { ${rPrev} = ${v}; ${r}.el.setAttribute(${attrName}, ${v} == null ? '' : String(${v})); }`;
         }
 
         case BindingType.Event:
@@ -280,12 +279,12 @@ function _updateCode(b: TemplateBinding, _ri: number): string {
 
         case BindingType.ObjectClass:
             return `
-                { const _next = ${v}||{}; setObjectClass(${r}.el, ${r}.prev && typeof ${r}.prev === 'object' ? ${r}.prev : null, _next); ${r}.prev = _next; }
+                if (${r}) { const _next = ${v}||{}; setObjectClass(${r}.el, ${r}.prev && typeof ${r}.prev === 'object' ? ${r}.prev : null, _next); ${r}.prev = _next; }
             `;
 
         case BindingType.ObjectStyle:
             return `
-                if (${r}.prev !== ${v}) {
+                if (${r} && ${r}.prev !== ${v}) {
                     const _next = ${v} || {};
                     if (typeof ${r}.prev === 'string') ${r}.el.style.cssText = '';
                     ${r}.styleKeys = setObjectStyle(${r}.el, ${r}.styleKeys, _next);
@@ -294,25 +293,25 @@ function _updateCode(b: TemplateBinding, _ri: number): string {
             `;
 
         case BindingType.Spread:
-            return `if (${r}.prev !== ${v}) { ${r}.prev = ${v}; Object.assign(${r}.el, ${v}||{}); }`;
+            return `if (${r} && ${r}.prev !== ${v}) { ${r}.prev = ${v}; Object.assign(${r}.el, ${v}||{}); }`;
 
         case BindingType.Async: {
             const asyncProp = _stripPrefix(b.name);
-            return `if (${r}.prev !== ${v}) { ${r}.prev = ${v}; Promise.resolve(${v}).then(rv => { ${r}.el.${asyncProp} = rv; }); }`;
+            return `if (${r} && ${r}.prev !== ${v}) { ${r}.prev = ${v}; Promise.resolve(${v}).then(rv => { ${r}.el.${asyncProp} = rv; }); }`;
         }
 
         case BindingType.Bind: {
             const propName = JSON.stringify(_stripPrefix(b.name));
-            return `if (${r}.prev !== ${v}) { ${r}.prev = ${v}; ${r}.el[${propName}] = ${v}; }`;
+            return `if (${r} && ${r}.prev !== ${v}) { ${r}.prev = ${v}; ${r}.el[${propName}] = ${v}; }`;
         }
 
         case BindingType.Utility: {
             const utilityName = JSON.stringify(b.name);
-            return `if (${r}.prev !== ${v}) { ${r}.prev = ${v}; ${r}.utilityState = applyUtilityValue(${r}.el, ${utilityName}, ${v}, ${r}.utilityState); }`;
+            return `if (${r} && ${r}.prev !== ${v}) { ${r}.prev = ${v}; ${r}.utilityState = applyUtilityValue(${r}.el, ${utilityName}, ${v}, ${r}.utilityState); }`;
         }
 
         case BindingType.Reference:
-            return `if (${v} && typeof ${v} === 'object') { ${v}.value = ${r}.el; }`;
+            return `if (${v} && typeof ${v} === 'object' && ${r}) { ${v}.value = ${r}.el; }`;
 
         case BindingType.Directive:
             return `/* directive handled at runtime */`;
@@ -367,9 +366,9 @@ function _renderEventCode(b: TemplateBinding, _ri: number): string {
     `
         : v;
     return `
-        if (${r}.listener) ${r}.el.removeEventListener(${evt}, ${r}.listener, ${removeOptions});
-        ${r}.listener = ${v} ? ${wrappedHandler} : null;
-        if (${r}.listener) ${r}.el.addEventListener(${evt}, ${r}.listener, ${options});
+        if (${r} && ${r}.listener) ${r}.el.removeEventListener(${evt}, ${r}.listener, ${removeOptions});
+        if (${r}) ${r}.listener = ${v} ? ${wrappedHandler} : null;
+        if (${r} && ${r}.listener) ${r}.el.addEventListener(${evt}, ${r}.listener, ${options});
     `;
 }
 

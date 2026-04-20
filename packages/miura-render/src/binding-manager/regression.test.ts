@@ -13,16 +13,16 @@ describe('Textarea and Diagnostic Regressions', () => {
         expect(result.bindings.length).toBe(2);
         expect(result.bindings[1].type).toBe(BindingType.Property);
         expect(result.bindings[1].name).toBe('.value');
-        expect(result.html).toContain('<textarea @input="binding:0" placeholder="foo" .value="binding:1">');
+        expect(result.html).toContain('<textarea data-b0 placeholder="foo" data-b1>');
     });
 
     it('automatically promotes style and title interpolation (Smart Upgrade)', async () => {
         const styleResult = parser.parse(['<style>', '</style>'] as unknown as TemplateStringsArray);
-        expect(styleResult.html).toContain('<style .textContent="binding:0">');
+        expect(styleResult.html).toContain('<style data-b0>');
         expect(styleResult.bindings[0].name).toBe('.textContent');
 
         const titleResult = parser.parse(['<title>', '</title>'] as unknown as TemplateStringsArray);
-        expect(titleResult.html).toContain('<title .textContent="binding:0">');
+        expect(titleResult.html).toContain('<title data-b0>');
         expect(titleResult.bindings[0].name).toBe('.textContent');
     });
 
@@ -65,7 +65,7 @@ describe('Textarea and Diagnostic Regressions', () => {
         // The parser should now automatically add .value="binding:0" to the open tag
         const result = parser.parse(strings);
 
-        expect(result.html).toContain('<textarea .value="binding:0">');
+        expect(result.html).toContain('<textarea data-b0>');
         expect(result.html).not.toContain('<!--binding:0-->');
         expect(result.bindings[0].type).toBe(BindingType.Property);
         expect(result.bindings[0].name).toBe('.value');

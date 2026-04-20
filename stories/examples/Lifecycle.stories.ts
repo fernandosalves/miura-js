@@ -1,7 +1,7 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { component } from '@miurajs/miura-element';
-import { PropertyValues } from '@miurajs/miura-element';
+import { component } from '../../packages/miura-element';
+import type { PropertyValues } from '../../packages/miura-element';
 
 // ── Lifecycle Demo ──────────────────────────────────────
 
@@ -145,9 +145,9 @@ class LifecycleDemo extends MiuraElement {
                     <button @click="${this.clearLog}">Clear Log</button>
                     <div class="log">
                         ${this._log.length === 0
-                            ? html`<div class="log-entry" style="color: #6c7086;">No events yet. Click the counter buttons.</div>`
-                            : this._log.map(entry => html`<div class="log-entry">${entry}</div>`)
-                        }
+                ? html`<div class="log-entry" style="color: #6c7086;">No events yet. Click the counter buttons.</div>`
+                : this._log.map(entry => html`<div class="log-entry">${entry}</div>`)
+            }
                     </div>
                 </div>
             </div>

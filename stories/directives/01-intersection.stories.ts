@@ -1,10 +1,9 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css, component } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { component } from '@miurajs/miura-element';
+
 
 @component({
     tag: 'intersection-demo',
-    
 })
 class IntersectionDemo extends MiuraElement {
     declare isVisible: boolean;
@@ -67,8 +66,8 @@ class IntersectionDemo extends MiuraElement {
             background: this.isVisible ? '#4CAF50' : '#f5f5f5',
             border: `2px solid ${this.isVisible ? '#2E7D32' : '#ddd'}`,
             transform: `scale(${this.isVisible ? '1.05' : '1'})`,
-            boxShadow: this.isVisible ? 
-                '0 4px 8px rgba(0,0,0,0.2)' : 
+            boxShadow: this.isVisible ?
+                '0 4px 8px rgba(0,0,0,0.2)' :
                 '0 2px 4px rgba(0,0,0,0.1)'
         };
 

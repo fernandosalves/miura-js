@@ -1,4 +1,4 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
 
 class ValidateDirectiveDemo extends MiuraElement {
@@ -14,13 +14,15 @@ class ValidateDirectiveDemo extends MiuraElement {
     declare isSubmitting: boolean;
 
     static properties = {
-        formData: { type: Object, default: () => ({
-            email: '',
-            password: '',
-            age: '',
-            website: '',
-            phone: ''
-        }), state: true },
+        formData: {
+            type: Object, default: () => ({
+                email: '',
+                password: '',
+                age: '',
+                website: '',
+                phone: ''
+            }), state: true
+        },
         validationErrors: { type: Object, default: () => ({}), state: true },
         isValid: { type: Boolean, default: false, state: true },
         isSubmitting: { type: Boolean, default: false, state: true }
@@ -278,18 +280,18 @@ class ValidateDirectiveDemo extends MiuraElement {
 
     validateForm = () => {
         this.isSubmitting = true;
-        
+
         // Simulate validation delay
         setTimeout(() => {
             const errors: Record<string, string[]> = {};
-            
+
             // Email validation
             if (!this.formData.email) {
                 errors.email = ['Email is required'];
             } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.formData.email)) {
                 errors.email = ['Please enter a valid email address'];
             }
-            
+
             // Password validation
             if (!this.formData.password) {
                 errors.password = ['Password is required'];
@@ -298,7 +300,7 @@ class ValidateDirectiveDemo extends MiuraElement {
             } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(this.formData.password)) {
                 errors.password = ['Password must contain uppercase, lowercase, and number'];
             }
-            
+
             // Age validation
             if (this.formData.age) {
                 const age = parseInt(this.formData.age);
@@ -306,21 +308,21 @@ class ValidateDirectiveDemo extends MiuraElement {
                     errors.age = ['Age must be between 13 and 120'];
                 }
             }
-            
+
             // Website validation
             if (this.formData.website && !/^https?:\/\/.+/.test(this.formData.website)) {
                 errors.website = ['Please enter a valid URL starting with http:// or https://'];
             }
-            
+
             // Phone validation
             if (this.formData.phone && !/^[\+]?[1-9][\d]{0,15}$/.test(this.formData.phone.replace(/\s/g, ''))) {
                 errors.phone = ['Please enter a valid phone number'];
             }
-            
+
             this.validationErrors = errors;
             this.isValid = Object.keys(errors).length === 0;
             this.isSubmitting = false;
-            
+
             if (this.isValid) {
                 console.log('Form is valid!', this.formData);
             }
@@ -373,11 +375,11 @@ class ValidateDirectiveDemo extends MiuraElement {
                     <div class="error-summary">
                         <h4>❌ Validation Errors</h4>
                         <ul class="error-list">
-                            ${Object.entries(this.validationErrors).map(([field, errors]) => 
-                                errors.map(error => html`
+                            ${Object.entries(this.validationErrors).map(([field, errors]) =>
+            errors.map(error => html`
                                     <li>• ${field.charAt(0).toUpperCase() + field.slice(1)}: ${error}</li>
                                 `)
-                            )}
+        )}
                         </ul>
                     </div>
                 ` : ''}
@@ -397,30 +399,30 @@ class ValidateDirectiveDemo extends MiuraElement {
                                 .value="${this.formData.email}"
                                 @input="${this.handleInputChange('email')}"
                                 #validate=${{
-                                    rules: [
-                                        { required: true, message: 'Email is required' },
-                                        { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Please enter a valid email address' }
-                                    ],
-                                    validateOn: 'blur',
-                                    onValidation: (errors: string[]) => {
-                                        if (errors.length > 0) {
-                                            this.validationErrors = { ...this.validationErrors, email: errors };
-                                        } else {
-                                            const { email, ...rest } = this.validationErrors;
-                                            this.validationErrors = rest;
-                                        }
-                                    }
-                                }}
+                rules: [
+                    { required: true, message: 'Email is required' },
+                    { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Please enter a valid email address' }
+                ],
+                validateOn: 'blur',
+                onValidation: (errors: string[]) => {
+                    if (errors.length > 0) {
+                        this.validationErrors = { ...this.validationErrors, email: errors };
+                    } else {
+                        const { email, ...rest } = this.validationErrors;
+                        this.validationErrors = rest;
+                    }
+                }
+            }}
                                 class="${this.getFieldStatus('email')}"
                             />
                             <div class="field-status">
                                 <span class="status-indicator ${this.getFieldStatus('email')}"></span>
-                                ${this.validationErrors.email ? 
-                                    html`<span class="error-message">❌ ${this.validationErrors.email[0]}</span>` :
-                                    this.formData.email ? 
-                                        html`<span class="success-message">✅ Email is valid</span>` :
-                                        html`<span>⏳ Enter your email</span>`
-                                }
+                                ${this.validationErrors.email ?
+                html`<span class="error-message">❌ ${this.validationErrors.email[0]}</span>` :
+                this.formData.email ?
+                    html`<span class="success-message">✅ Email is valid</span>` :
+                    html`<span>⏳ Enter your email</span>`
+            }
                             </div>
                         </div>
 
@@ -433,31 +435,31 @@ class ValidateDirectiveDemo extends MiuraElement {
                                 .value="${this.formData.password}"
                                 @input="${this.handleInputChange('password')}"
                                 #validate=${{
-                                    rules: [
-                                        { required: true, message: 'Password is required' },
-                                        { minLength: 8, message: 'Password must be at least 8 characters long' },
-                                        { pattern: /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, message: 'Password must contain uppercase, lowercase, and number' }
-                                    ],
-                                    validateOn: 'blur',
-                                    onValidation: (errors: string[]) => {
-                                        if (errors.length > 0) {
-                                            this.validationErrors = { ...this.validationErrors, password: errors };
-                                        } else {
-                                            const { password, ...rest } = this.validationErrors;
-                                            this.validationErrors = rest;
-                                        }
-                                    }
-                                }}
+                rules: [
+                    { required: true, message: 'Password is required' },
+                    { minLength: 8, message: 'Password must be at least 8 characters long' },
+                    { pattern: /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, message: 'Password must contain uppercase, lowercase, and number' }
+                ],
+                validateOn: 'blur',
+                onValidation: (errors: string[]) => {
+                    if (errors.length > 0) {
+                        this.validationErrors = { ...this.validationErrors, password: errors };
+                    } else {
+                        const { password, ...rest } = this.validationErrors;
+                        this.validationErrors = rest;
+                    }
+                }
+            }}
                                 class="${this.getFieldStatus('password')}"
                             />
                             <div class="field-status">
                                 <span class="status-indicator ${this.getFieldStatus('password')}"></span>
-                                ${this.validationErrors.password ? 
-                                    html`<span class="error-message">❌ ${this.validationErrors.password[0]}</span>` :
-                                    this.formData.password ? 
-                                        html`<span class="success-message">✅ Password meets requirements</span>` :
-                                        html`<span>⏳ Enter your password</span>`
-                                }
+                                ${this.validationErrors.password ?
+                html`<span class="error-message">❌ ${this.validationErrors.password[0]}</span>` :
+                this.formData.password ?
+                    html`<span class="success-message">✅ Password meets requirements</span>` :
+                    html`<span>⏳ Enter your password</span>`
+            }
                             </div>
                         </div>
 
@@ -470,29 +472,29 @@ class ValidateDirectiveDemo extends MiuraElement {
                                 .value="${this.formData.age}"
                                 @input="${this.handleInputChange('age')}"
                                 #validate=${{
-                                    rules: [
-                                        { range: [13, 120], message: 'Age must be between 13 and 120' }
-                                    ],
-                                    validateOn: 'blur',
-                                    onValidation: (errors: string[]) => {
-                                        if (errors.length > 0) {
-                                            this.validationErrors = { ...this.validationErrors, age: errors };
-                                        } else {
-                                            const { age, ...rest } = this.validationErrors;
-                                            this.validationErrors = rest;
-                                        }
-                                    }
-                                }}
+                rules: [
+                    { range: [13, 120], message: 'Age must be between 13 and 120' }
+                ],
+                validateOn: 'blur',
+                onValidation: (errors: string[]) => {
+                    if (errors.length > 0) {
+                        this.validationErrors = { ...this.validationErrors, age: errors };
+                    } else {
+                        const { age, ...rest } = this.validationErrors;
+                        this.validationErrors = rest;
+                    }
+                }
+            }}
                                 class="${this.getFieldStatus('age')}"
                             />
                             <div class="field-status">
                                 <span class="status-indicator ${this.getFieldStatus('age')}"></span>
-                                ${this.validationErrors.age ? 
-                                    html`<span class="error-message">❌ ${this.validationErrors.age[0]}</span>` :
-                                    this.formData.age ? 
-                                        html`<span class="success-message">✅ Age is valid</span>` :
-                                        html`<span>⏳ Optional field</span>`
-                                }
+                                ${this.validationErrors.age ?
+                html`<span class="error-message">❌ ${this.validationErrors.age[0]}</span>` :
+                this.formData.age ?
+                    html`<span class="success-message">✅ Age is valid</span>` :
+                    html`<span>⏳ Optional field</span>`
+            }
                             </div>
                         </div>
 
@@ -505,29 +507,29 @@ class ValidateDirectiveDemo extends MiuraElement {
                                 .value="${this.formData.website}"
                                 @input="${this.handleInputChange('website')}"
                                 #validate=${{
-                                    rules: [
-                                        { pattern: /^https?:\/\/.+/, message: 'Please enter a valid URL starting with http:// or https://' }
-                                    ],
-                                    validateOn: 'blur',
-                                    onValidation: (errors: string[]) => {
-                                        if (errors.length > 0) {
-                                            this.validationErrors = { ...this.validationErrors, website: errors };
-                                        } else {
-                                            const { website, ...rest } = this.validationErrors;
-                                            this.validationErrors = rest;
-                                        }
-                                    }
-                                }}
+                rules: [
+                    { pattern: /^https?:\/\/.+/, message: 'Please enter a valid URL starting with http:// or https://' }
+                ],
+                validateOn: 'blur',
+                onValidation: (errors: string[]) => {
+                    if (errors.length > 0) {
+                        this.validationErrors = { ...this.validationErrors, website: errors };
+                    } else {
+                        const { website, ...rest } = this.validationErrors;
+                        this.validationErrors = rest;
+                    }
+                }
+            }}
                                 class="${this.getFieldStatus('website')}"
                             />
                             <div class="field-status">
                                 <span class="status-indicator ${this.getFieldStatus('website')}"></span>
-                                ${this.validationErrors.website ? 
-                                    html`<span class="error-message">❌ ${this.validationErrors.website[0]}</span>` :
-                                    this.formData.website ? 
-                                        html`<span class="success-message">✅ URL is valid</span>` :
-                                        html`<span>⏳ Optional field</span>`
-                                }
+                                ${this.validationErrors.website ?
+                html`<span class="error-message">❌ ${this.validationErrors.website[0]}</span>` :
+                this.formData.website ?
+                    html`<span class="success-message">✅ URL is valid</span>` :
+                    html`<span>⏳ Optional field</span>`
+            }
                             </div>
                         </div>
 
@@ -540,29 +542,29 @@ class ValidateDirectiveDemo extends MiuraElement {
                                 .value="${this.formData.phone}"
                                 @input="${this.handleInputChange('phone')}"
                                 #validate=${{
-                                    rules: [
-                                        { pattern: /^[\+]?[1-9][\d]{0,15}$/, message: 'Please enter a valid phone number' }
-                                    ],
-                                    validateOn: 'blur',
-                                    onValidation: (errors: string[]) => {
-                                        if (errors.length > 0) {
-                                            this.validationErrors = { ...this.validationErrors, phone: errors };
-                                        } else {
-                                            const { phone, ...rest } = this.validationErrors;
-                                            this.validationErrors = rest;
-                                        }
-                                    }
-                                }}
+                rules: [
+                    { pattern: /^[\+]?[1-9][\d]{0,15}$/, message: 'Please enter a valid phone number' }
+                ],
+                validateOn: 'blur',
+                onValidation: (errors: string[]) => {
+                    if (errors.length > 0) {
+                        this.validationErrors = { ...this.validationErrors, phone: errors };
+                    } else {
+                        const { phone, ...rest } = this.validationErrors;
+                        this.validationErrors = rest;
+                    }
+                }
+            }}
                                 class="${this.getFieldStatus('phone')}"
                             />
                             <div class="field-status">
                                 <span class="status-indicator ${this.getFieldStatus('phone')}"></span>
-                                ${this.validationErrors.phone ? 
-                                    html`<span class="error-message">❌ ${this.validationErrors.phone[0]}</span>` :
-                                    this.formData.phone ? 
-                                        html`<span class="success-message">✅ Phone number is valid</span>` :
-                                        html`<span>⏳ Optional field</span>`
-                                }
+                                ${this.validationErrors.phone ?
+                html`<span class="error-message">❌ ${this.validationErrors.phone[0]}</span>` :
+                this.formData.phone ?
+                    html`<span class="success-message">✅ Phone number is valid</span>` :
+                    html`<span>⏳ Optional field</span>`
+            }
                             </div>
                         </div>
 

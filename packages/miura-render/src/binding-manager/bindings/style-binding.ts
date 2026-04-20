@@ -4,79 +4,132 @@ import { debugLog } from '../../utils/debug';
 type StyleObject = { [key: string]: string | number | null | undefined };
 
 export class StyleBinding implements Binding {
-    private previousValue: StyleObject | string | null = null;
     private previousKeys: Set<string> = new Set();
+    private partValues: unknown[];
+    private strings: string[];
+    private hasStaticText = false;
 
     constructor(
-        private element: Element
+        private element: Element,
+        strings?: string[]
     ) {
+        this.strings = strings || ['', ''];
+        this.partValues = new Array(this.strings.length - 1).fill('');
+        this.hasStaticText = this.strings.some(s => s.trim().length > 0);
         debugLog('styleBinding', 'Created style binding', {
-            element: element.tagName
+            element: element.tagName,
+            strings: this.strings
         });
     }
 
+    setPartValue(partIndex: number, value: unknown): void {
+        this.partValues[partIndex] = value;
+        this.commit();
+    }
+
     setValue(value: unknown): void {
-        if (typeof value === 'string') {
-            if (this.previousValue === value) return;
-            this.clear();
-            (this.element as HTMLElement).style.cssText = value;
-            this.previousValue = value;
-            return;
-        }
+        this.setPartValue(0, value);
+    }
 
-        if (!value || typeof value !== 'object') {
-            this.clear();
-            return;
-        }
-
-        const styleObj = value as StyleObject;
+    private commit(): void {
         const element = this.element as HTMLElement;
-        const nextKeys = new Set(Object.keys(styleObj));
+        const nextKeys = new Set<string>();
+        const nextStyles: Record<string, string> = {};
 
-        // Skip if unchanged
-        if (JSON.stringify(styleObj) === JSON.stringify(this.previousValue)) {
-            return;
-        }
-
-        debugLog('styleBinding', 'Setting styles', {
-            element: element.tagName,
-            styles: styleObj
-        });
-
-        if (typeof this.previousValue === 'string') {
-            element.style.cssText = '';
-        } else {
-            for (const key of this.previousKeys) {
-                if (!nextKeys.has(key)) {
-                    element.style[key as any] = '';
+        // 1. Process static and dynamic parts into a consolidated style object
+        // If we have static text or multiple expressions, we treat it as a composite string
+        if (this.hasStaticText || this.strings.length > 2) {
+            let composite = '';
+            for (let i = 0; i < this.strings.length; i++) {
+                composite += this.strings[i];
+                if (i < this.partValues.length) {
+                    const v = this.partValues[i];
+                    if (typeof v === 'object' && v !== null) {
+                        // Inline object in a composite string: serialize it
+                        composite += Object.entries(v as StyleObject)
+                            .map(([k, val]) => `${this.camelToKebab(k)}: ${typeof val === 'number' ? val + 'px' : val}`)
+                            .join('; ');
+                    } else if (typeof v === 'number') {
+                        // Smart units for numeric values even in strings
+                        const match = composite.match(/([a-z-]+)\s*:\s*$/i);
+                        const prop = match ? match[1].replace(/-./g, x => x[1].toUpperCase()) : '';
+                        if (prop && !this.isUnitless(prop)) {
+                            composite += `${v}px`;
+                        } else {
+                            composite += String(v);
+                        }
+                    } else {
+                        composite += v ?? '';
+                    }
                 }
             }
+            element.style.cssText = composite;
+            // We don't track individual keys for cssText updates to avoid overhead
+            this.previousKeys.clear();
+        } else {
+            // Single expression, no static text: use direct property updates for performance
+            const value = this.partValues[0];
+            if (typeof value === 'string') {
+                element.style.cssText = value;
+                this.previousKeys.clear();
+            } else if (typeof value === 'object' && value !== null) {
+                const styleObj = value as StyleObject;
+                
+                // Clear old keys
+                for (const key of this.previousKeys) {
+                    if (!(key in styleObj)) {
+                        element.style[key as any] = '';
+                    }
+                }
+
+                // Apply new keys
+                for (const [key, val] of Object.entries(styleObj)) {
+                    const cssValue = typeof val === 'number' ? `${val}px` : (val ?? '');
+                    element.style[key as any] = cssValue;
+                    nextKeys.add(key);
+                }
+                this.previousKeys = nextKeys;
+            } else {
+                element.style.cssText = '';
+                this.previousKeys.clear();
+            }
         }
+    }
 
-        // Apply new styles
-        Object.entries(styleObj).forEach(([key, nextValue]) => {
-            const cssValue = typeof nextValue === 'number' ? `${nextValue}px` : (nextValue ?? '');
-            element.style[key as any] = cssValue;
-        });
+    private camelToKebab(str: string): string {
+        return str.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
+    }
 
-        this.previousKeys = nextKeys;
-        this.previousValue = { ...styleObj };
+    private isUnitless(property: string): boolean {
+        return /^(columnCount|fillOpacity|flex|flexGrow|flexShrink|fontWeight|lineHeight|opacity|order|orphans|widows|zIndex|zoom)$/.test(property);
     }
 
     clear(): void {
         const element = this.element as HTMLElement;
-        if (typeof this.previousValue === 'string') {
-            element.style.cssText = '';
-        } else {
-            for (const key of this.previousKeys) {
-                element.style[key as any] = '';
-            }
-        }
-        this.previousValue = null;
-        this.previousKeys = new Set();
+        element.style.cssText = '';
+        this.previousKeys.clear();
+        this.partValues.fill('');
     }
 
     disconnect(): void {
         this.clear();
     }
-} 
+}
+
+/**
+ * Part wrapper for multi-part style attributes.
+ */
+export class StylePartBinding implements Binding {
+    constructor(
+        private parent: StyleBinding,
+        private partIndex: number
+    ) {}
+
+    setValue(value: unknown): void {
+        this.parent.setPartValue(this.partIndex, value);
+    }
+
+    clear(): void {}
+    disconnect(): void {}
+}
+ 

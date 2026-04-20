@@ -15,8 +15,8 @@
 | `.` | Property | `.value=${this.text}` | Sets DOM property directly |
 | `?` | Boolean | `?disabled=${this.off}` | `setAttribute` / `removeAttribute` |
 | `&` | Two-way | `&value=${this.bind('x')}` | Property set + event listener |
-| `:class` | ObjectClass | `:class=${{ active: bool }}` | Object map → `classList` |
-| `:style` | ObjectStyle | `:style=${{ color: 'red' }}` | Object map → `el.style` |
+| `class` | Class map | `class=${{ active: true }}` | Object map or string |
+| `style` | Style map | `style=${{ color: 'red' }}` | Object map or string |
 | `...` | Spread | `...=${propsObj}` | `Object.assign(el, propsObj)` |
 | `~` | Async | `~src=${promise}` | Auto-unwraps Promise/Observable |
 | `#` | Directive / Ref | `#if=${cond}`, `#ref=${el}` | Structural directives or element refs |

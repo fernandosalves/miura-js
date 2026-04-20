@@ -8,7 +8,7 @@ export type TemplateExpression = Function | ((context: unknown) => unknown);
  */
 export const TRUSTED_SYMBOL = Symbol('miura:trusted');
 
-export interface TrustedValue {
+export type TrustedValue = {
     [TRUSTED_SYMBOL]: true;
     value: string;
 }
@@ -46,7 +46,7 @@ export enum BindingType {
     Boolean = 'boolean',
     /** A binding that represents a class attribute */
     Class = 'class',
-    Style = "Style",
+    Style = 'style',
     Directive = 'directive',
     /** A binding that represents a generic attribute value (single or multi-expression) */
     Attribute = 'attribute',

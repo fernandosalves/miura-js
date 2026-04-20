@@ -287,7 +287,7 @@ Template string → TemplateParser → ParsedTemplate (HTML + TemplateBinding[])
 
 | Binding kind | Compiled code | External manager |
 |---|---|---|
-| Property / Boolean / Event / Class / Style / ObjectClass / ObjectStyle / Spread / Bind / Async / Reference | ✅ Inlined in generated JS | — |
+| Property / Boolean / Event / Class / Style / Spread / Bind / Async / Reference | ✅ Inlined in generated JS | — |
 | **Node** (text, `TemplateResult`, `repeat()`) | — | `NodeBinding` instance per ref |
 | **Directive** (`#if`, `#for`, `#switch`, custom) | — | `DirectiveBinding` instance per ref |
 

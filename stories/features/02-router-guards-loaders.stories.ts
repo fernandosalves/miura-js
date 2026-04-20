@@ -1,8 +1,8 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
-import { component } from '@miurajs/miura-element';
+import { MiuraElement, html, css } from '../../packages/miura-element';
+import { component } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { createRouter } from '@miurajs/miura-router';
-import type { RouteRecord, RouteRenderContext, RouterInstance } from '@miurajs/miura-router';
+import { createRouter } from '../../packages/miura-router';
+import type { RouteRecord, RouteRenderContext, RouterInstance } from '../../packages/miura-router';
 
 interface DemoLog {
     level: 'info' | 'warn' | 'error';

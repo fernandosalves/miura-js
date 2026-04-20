@@ -1,10 +1,9 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css, component } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { component } from '@miurajs/miura-element';
 
 @component({
     tag: 'mutation-demo',
-    
+
 })
 class MutationDemo extends MiuraElement {
     declare changes: string[];
@@ -103,10 +102,10 @@ class MutationDemo extends MiuraElement {
                     <div 
                         #mutation=${this.handleMutation}
                         .options="${{
-                            attributes: this.observeAttributes,
-                            childList: this.observeChildren,
-                            subtree: true
-                        }}"
+                attributes: this.observeAttributes,
+                childList: this.observeChildren,
+                subtree: true
+            }}"
                     >
                         <div class="target-attributes" data-color="blue">
                             Observe attribute changes

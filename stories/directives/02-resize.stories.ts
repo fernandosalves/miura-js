@@ -1,10 +1,9 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css, component } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { component } from '@miurajs/miura-element';
 
 @component({
     tag: 'resize-demo',
-    
+
 })
 class ResizeDemo extends MiuraElement {
     declare displayWidth: number;

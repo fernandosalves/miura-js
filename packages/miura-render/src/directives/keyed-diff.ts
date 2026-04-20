@@ -87,7 +87,7 @@ export class KeyedListState {
      *    that can stay in place (the longest already-ordered run).
      * 4. Move only the items not in the LIS.
      */
-    async update(result: RepeatResult): Promise<void> {
+    async update(result: RepeatResult, context?: unknown): Promise<void> {
         const { items: newData, keyFn, templateFn } = result;
         const parent = this.endMarker.parentNode!;
 
@@ -131,7 +131,7 @@ export class KeyedListState {
             if (existing) {
                 // Reuse — update values
                 const templateResult = templateFn(newData[i], i);
-                await existing.instance.update(templateResult.values, { item: newData[i], index: i });
+                await existing.instance.update(templateResult.values, context);
                 newItemsList[i] = existing;
                 positions[i] = oldKeyToIndex.get(key) ?? -1;
             } else {
@@ -139,7 +139,7 @@ export class KeyedListState {
                 const templateResult = templateFn(newData[i], i);
                 createPromises.push({
                     idx: i,
-                    promise: this.processor.createInstance(templateResult, { item: newData[i], index: i })
+                    promise: this.processor.createInstance(templateResult, context)
                 });
                 positions[i] = -1; // new item
             }

@@ -1,6 +1,9 @@
-import { MiuraElement, html, css } from '@miurajs/miura-element';
+import { MiuraElement, html, css, component } from '../../packages/miura-element';
 import type { Meta, StoryObj } from '@storybook/web-components';
 
+@component({
+    tag: 'lazy-directive-demo',
+})
 class LazyDirectiveDemo extends MiuraElement {
     declare lazyLoadCount: number;
     declare loadedImages: string[];
@@ -199,12 +202,12 @@ class LazyDirectiveDemo extends MiuraElement {
                         <div class="lazy-item">
                             <img 
                                 #lazy=${{
-                                    threshold: 0.1,
-                                    rootMargin: '50px',
-                                    placeholder: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+',
-                                    onLoad: this.handleLazyLoad('Nature Scene 1'),
-                                    onError: this.handleLazyError('Nature Scene 1')
-                                }}
+                threshold: 0.1,
+                rootMargin: '50px',
+                placeholder: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+',
+                onLoad: this.handleLazyLoad('Nature Scene 1'),
+                onError: this.handleLazyError('Nature Scene 1')
+            }}
                                 data-src="https://picsum.photos/400/200?random=1"
                                 alt="Nature Scene 1"
                                 class="lazy-image"
@@ -217,12 +220,12 @@ class LazyDirectiveDemo extends MiuraElement {
                         <div class="lazy-item">
                             <img 
                                 #lazy=${{
-                                    threshold: 0.1,
-                                    rootMargin: '50px',
-                                    placeholder: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+',
-                                    onLoad: this.handleLazyLoad('City View 2'),
-                                    onError: this.handleLazyError('City View 2')
-                                }}
+                threshold: 0.1,
+                rootMargin: '50px',
+                placeholder: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+',
+                onLoad: this.handleLazyLoad('City View 2'),
+                onError: this.handleLazyError('City View 2')
+            }}
                                 data-src="https://picsum.photos/400/200?random=2"
                                 alt="City View 2"
                                 class="lazy-image"
@@ -235,12 +238,12 @@ class LazyDirectiveDemo extends MiuraElement {
                         <div class="lazy-item">
                             <img 
                                 #lazy=${{
-                                    threshold: 0.1,
-                                    rootMargin: '50px',
-                                    placeholder: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+',
-                                    onLoad: this.handleLazyLoad('Mountain Landscape 3'),
-                                    onError: this.handleLazyError('Mountain Landscape 3')
-                                }}
+                threshold: 0.1,
+                rootMargin: '50px',
+                placeholder: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+',
+                onLoad: this.handleLazyLoad('Mountain Landscape 3'),
+                onError: this.handleLazyError('Mountain Landscape 3')
+            }}
                                 data-src="https://picsum.photos/400/200?random=3"
                                 alt="Mountain Landscape 3"
                                 class="lazy-image"
@@ -253,12 +256,12 @@ class LazyDirectiveDemo extends MiuraElement {
                         <div class="lazy-item">
                             <img 
                                 #lazy=${{
-                                    threshold: 0.1,
-                                    rootMargin: '50px',
-                                    placeholder: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+',
-                                    onLoad: this.handleLazyLoad('Ocean View 4'),
-                                    onError: this.handleLazyError('Ocean View 4')
-                                }}
+                threshold: 0.1,
+                rootMargin: '50px',
+                placeholder: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+',
+                onLoad: this.handleLazyLoad('Ocean View 4'),
+                onError: this.handleLazyError('Ocean View 4')
+            }}
                                 data-src="https://picsum.photos/400/200?random=4"
                                 alt="Ocean View 4"
                                 class="lazy-image"
@@ -271,12 +274,12 @@ class LazyDirectiveDemo extends MiuraElement {
                         <div class="lazy-item">
                             <img 
                                 #lazy=${{
-                                    threshold: 0.1,
-                                    rootMargin: '50px',
-                                    placeholder: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+',
-                                    onLoad: this.handleLazyLoad('Forest Scene 5'),
-                                    onError: this.handleLazyError('Forest Scene 5')
-                                }}
+                threshold: 0.1,
+                rootMargin: '50px',
+                placeholder: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+',
+                onLoad: this.handleLazyLoad('Forest Scene 5'),
+                onError: this.handleLazyError('Forest Scene 5')
+            }}
                                 data-src="https://picsum.photos/400/200?random=5"
                                 alt="Forest Scene 5"
                                 class="lazy-image"
@@ -292,20 +295,18 @@ class LazyDirectiveDemo extends MiuraElement {
                 <div class="demo-section">
                     <h3>Loaded Images</h3>
                     <div class="loaded-list">
-                        ${this.loadedImages.length > 0 ? 
-                            this.loadedImages.map(image => html`
+                        ${this.loadedImages.length > 0 ?
+                this.loadedImages.map(image => html`
                                 <div class="loaded-item">✅ ${image}</div>
-                            `) : 
-                            html`<p style="color: #999; font-style: italic;">No images loaded yet. Scroll down to see lazy loading in action!</p>`
-                        }
+                            `) :
+                html`<p style="color: #999; font-style: italic;">No images loaded yet. Scroll down to see lazy loading in action!</p>`
+            }
                     </div>
                 </div>
             </div>
         `;
     }
 }
-
-customElements.define('lazy-directive-demo', LazyDirectiveDemo);
 
 const meta: Meta<LazyDirectiveDemo> = {
     title: 'Miura/Directives/Utility/08. Lazy Loading',
