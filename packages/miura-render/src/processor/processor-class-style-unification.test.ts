@@ -10,7 +10,7 @@ describe('TemplateProcessor class/style unification', () => {
       <div
         id="box"
         class=${{ active: true, hidden: false }}
-        style=${{ width: 12, color: 'red' }}
+        style=${{ width: '12px', color: 'red' }}
       ></div>
     `;
 
@@ -25,7 +25,7 @@ describe('TemplateProcessor class/style unification', () => {
 
     await instance.update([
       { active: false, hidden: true },
-      { height: 20, color: 'blue' },
+      { height: '20px', color: 'blue' },
     ]);
 
     expect(box.classList.contains('active')).toBe(false);

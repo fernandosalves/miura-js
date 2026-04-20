@@ -47,17 +47,8 @@ export class StyleBinding implements Binding {
                     if (typeof v === 'object' && v !== null) {
                         // Inline object in a composite string: serialize it
                         composite += Object.entries(v as StyleObject)
-                            .map(([k, val]) => `${this.camelToKebab(k)}: ${typeof val === 'number' ? val + 'px' : val}`)
+                            .map(([k, val]) => `${this.camelToKebab(k)}: ${val ?? ''}`)
                             .join('; ');
-                    } else if (typeof v === 'number') {
-                        // Smart units for numeric values even in strings
-                        const match = composite.match(/([a-z-]+)\s*:\s*$/i);
-                        const prop = match ? match[1].replace(/-./g, x => x[1].toUpperCase()) : '';
-                        if (prop && !this.isUnitless(prop)) {
-                            composite += `${v}px`;
-                        } else {
-                            composite += String(v);
-                        }
                     } else {
                         composite += v ?? '';
                     }
@@ -84,7 +75,7 @@ export class StyleBinding implements Binding {
 
                 // Apply new keys
                 for (const [key, val] of Object.entries(styleObj)) {
-                    const cssValue = typeof val === 'number' ? `${val}px` : (val ?? '');
+                    const cssValue = (val ?? '') as any;
                     element.style[key as any] = cssValue;
                     nextKeys.add(key);
                 }
@@ -98,10 +89,6 @@ export class StyleBinding implements Binding {
 
     private camelToKebab(str: string): string {
         return str.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
-    }
-
-    private isUnitless(property: string): boolean {
-        return /^(columnCount|fillOpacity|flex|flexGrow|flexShrink|fontWeight|lineHeight|opacity|order|orphans|widows|zIndex|zoom)$/.test(property);
     }
 
     clear(): void {

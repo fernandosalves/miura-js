@@ -32,8 +32,8 @@ describe('MiuraJS Rendering Ergonomics', () => {
         
         // Mixed static and dynamic styles
         const color = 'red';
-        const padding = 10;
-        const template = html`<div style="color: ${color}; padding: ${padding}; ${ { marginTop: 5, marginLeft: '2px' } }"></div>`;
+        const padding = '10px';
+        const template = html`<div style="color: ${color}; padding: ${padding}; ${ { marginTop: '5px', marginLeft: '2px' } }"></div>`;
         
         const instance = await processor.createInstance(template);
         const div = instance.getFragment().firstElementChild as HTMLElement;
@@ -45,7 +45,7 @@ describe('MiuraJS Rendering Ergonomics', () => {
         expect(div.style.marginLeft).toBe('2px');
 
         // Updates
-        await instance.update(['blue', 20, { marginTop: 0 }]);
+        await instance.update(['blue', '20px', { marginTop: '0px' }]);
         expect(div.style.color).toBe('blue');
         expect(div.style.padding).toBe('20px');
         expect(div.style.marginTop).toBe('0px');
