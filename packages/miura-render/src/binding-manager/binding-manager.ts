@@ -529,13 +529,12 @@ export class BindingManager {
                 if (typeof value === 'function' && 
                     bindingDef.type !== BindingType.Event && 
                     bindingDef.type !== BindingType.Directive &&
-                    bindingDef.type !== BindingType.Reference) {
+                    bindingDef.type !== BindingType.Reference &&
+                    bindingDef.type !== BindingType.Property) { 
                     
-                    // Only auto-invoke if it's a Node content binding or Expression.
-                    // NEVER auto-invoke for Property bindings as they expect function references.
-                    if (bindingDef.type === BindingType.Node || bindingDef.type === BindingType.Expression) {
-                        finalValue = (value as any)(context);
-                    }
+                    // Auto-invoke functions for content, attributes, styles, etc.
+                    // to support context-aware expressions (ctx => ctx.val).
+                    finalValue = (value as any)(context);
                 }
 
                 // Set value — always await to handle both sync and async setValue methods

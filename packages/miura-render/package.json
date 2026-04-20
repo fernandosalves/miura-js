@@ -1,6 +1,6 @@
 {
     "name": "@miurajs/miura-render",
-    "version": "0.3.20",
+    "version": "0.3.21",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
