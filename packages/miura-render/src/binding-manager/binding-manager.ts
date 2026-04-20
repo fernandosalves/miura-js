@@ -472,7 +472,6 @@ export class BindingManager {
             try {
                 const bindingDef = bindingDefs[i];
                 const value = values[i];
-                if (value === undefined) return;
 
                 if (_isSignal(value)) {
                     // Already subscribed to this exact signal — skip (idempotent)
