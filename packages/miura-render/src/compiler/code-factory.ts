@@ -174,22 +174,37 @@ function setNodeBinding(ref, value) {
 
 /** Toggle classes from an object map { className: boolean }. */
 function setObjectClass(el, prev, next) {
-    if (prev) Object.keys(prev).forEach(k => { if (!next[k]) el.classList.remove(k); });
-    Object.entries(next).forEach(([k, v]) => { v ? el.classList.add(k) : el.classList.remove(k); });
+    if (prev && typeof prev === 'object') Object.keys(prev).forEach(k => { if (!next[k]) el.classList.remove(k); });
+    Object.entries(next || {}).forEach(([k, v]) => { v ? el.classList.add(k) : el.classList.remove(k); });
+}
+
+/** Sync a Set of classes to an element (additive/diffing). */
+function syncClasses(el, ref, nextSet) {
+    const prev = ref.prevSet || new Set();
+    prev.forEach(c => { if (!nextSet.has(c)) el.classList.remove(c); });
+    nextSet.forEach(c => { if (!prev.has(c)) el.classList.add(c); });
+    ref.prevSet = nextSet;
 }
 
 /** Apply a style object map { property: value }. */
-function setObjectStyle(el, prevKeys, next) {
-    const nextKeys = new Set(Object.keys(next));
-    if (prevKeys) {
-        prevKeys.forEach((key) => {
-            if (!nextKeys.has(key)) el.style[key] = '';
-        });
-    }
-    Object.entries(next).forEach(([k, v]) => {
+function setObjectStyle(el, ref, next) {
+    const prevKeys = ref.styleKeys || new Set();
+    const nextKeys = new Set(Object.keys(next || {}));
+    prevKeys.forEach((key) => {
+        if (!nextKeys.has(key)) el.style[key] = '';
+    });
+    Object.entries(next || {}).forEach(([k, v]) => {
         el.style[k] = typeof v === 'number' ? \`\${v}px\` : (v == null ? '' : String(v));
     });
-    return nextKeys;
+    ref.styleKeys = nextKeys;
+}
+
+/** Sync a composite style string (including static parts) to cssText. */
+function syncStyleText(el, ref, nextText) {
+    if (ref.prev === nextText) return;
+    el.style.cssText = nextText;
+    ref.prev = nextText;
+    ref.styleKeys = null; // Clear object-style tracking
 }
 `;
 
@@ -227,34 +242,67 @@ function _updateCode(b: TemplateBinding, _ri: number): string {
         }
 
         case BindingType.Class: {
+            const strings = b.strings || ['', ''];
+            const startIdx = b.groupStart ?? b.index;
+            const partIndices = Array.from({ length: strings.length - 1 }, (_, k) => startIdx + k);
+            
             return `
-                if (${r} && ${r}.prev !== ${v}) {
-                    const _next = ${v};
-                    if (typeof _next === 'string') {
-                        ${r}.el.className = _next;
-                    } else {
-                        if (typeof ${r}.prev === 'string') ${r}.el.className = '';
-                        setObjectClass(${r}.el, ${r}.prev && typeof ${r}.prev === 'object' ? ${r}.prev : null, _next || {});
-                    }
-                    ${r}.prev = _next;
+                if (${r}) {
+                    const _next = new Set();
+                    ${strings.map((s, i) => {
+                        let step = '';
+                        if (s.trim()) {
+                            step += `${JSON.stringify(s)}.split(/\\s+/).filter(Boolean).forEach(c => _next.add(c));\n`;
+                        }
+                        if (i < partIndices.length) {
+                            const vIdx = partIndices[i];
+                            step += `
+                                {
+                                    const _v = values[${vIdx}];
+                                    if (typeof _v === 'string') {
+                                        _v.split(/\\s+/).filter(Boolean).forEach(c => _next.add(c));
+                                    } else if (typeof _v === 'object' && _v !== null) {
+                                        Object.entries(_v).forEach(([k, v]) => { if (v) _next.add(k); });
+                                    }
+                                }
+                            `;
+                        }
+                        return step;
+                    }).join('')}
+                    syncClasses(${r}.el, ${r}, _next);
                 }
             `;
         }
 
-        case BindingType.Style:
-            return `
-                if (${r} && ${r}.prev !== ${v}) {
-                    const _next = ${v};
-                    if (typeof _next === 'string') {
-                        ${r}.el.style.cssText = _next;
-                        ${r}.styleKeys = null;
-                    } else {
-                        if (typeof ${r}.prev === 'string') ${r}.el.style.cssText = '';
-                        ${r}.styleKeys = setObjectStyle(${r}.el, ${r}.styleKeys, _next || {});
+        case BindingType.Style: {
+            const strings = b.strings || ['', ''];
+            const startIdx = b.groupStart ?? b.index;
+            const isSingle = strings.length === 2 && strings[0] === '' && strings[1] === '';
+            
+            if (isSingle) {
+                return `
+                    if (${r}) {
+                        const _v = ${v};
+                        if (typeof _v === 'string') {
+                            syncStyleText(${r}.el, ${r}, _v);
+                        } else {
+                            setObjectStyle(${r}.el, ${r}, _v);
+                        }
                     }
-                    ${r}.prev = _next;
-                }
-            `;
+                `;
+            }
+
+            const styleParts = strings.map((s, i) => {
+                const valIdx = startIdx + i;
+                const vPart = `values[${valIdx}]`;
+                const processed = `(typeof ${vPart} === 'object' && ${vPart} !== null ? Object.entries(${vPart}).map(([k, val]) => (k.replace(/[A-Z]/g, l => '-' + l.toLowerCase()) + ': ' + (val ?? ''))).join('; ') : (${vPart} == null ? '' : ${vPart}))`;
+                return i < strings.length - 1 
+                    ? `${JSON.stringify(s)} + ${processed}` 
+                    : JSON.stringify(s);
+            }).join(' + ');
+
+            return `if (${r}) { syncStyleText(${r}.el, ${r}, ${styleParts}); }`;
+        }
 
         case BindingType.Attribute: {
             const attrName = JSON.stringify(b.name);
@@ -278,19 +326,10 @@ function _updateCode(b: TemplateBinding, _ri: number): string {
             return `/* event: ${b.name} — set at render */`;
 
         case BindingType.ObjectClass:
-            return `
-                if (${r}) { const _next = ${v}||{}; setObjectClass(${r}.el, ${r}.prev && typeof ${r}.prev === 'object' ? ${r}.prev : null, _next); ${r}.prev = _next; }
-            `;
+            return `if (${r}) { setObjectClass(${r}.el, ${r}.prev, ${v}); ${r}.prev = ${v}; }`;
 
         case BindingType.ObjectStyle:
-            return `
-                if (${r} && ${r}.prev !== ${v}) {
-                    const _next = ${v} || {};
-                    if (typeof ${r}.prev === 'string') ${r}.el.style.cssText = '';
-                    ${r}.styleKeys = setObjectStyle(${r}.el, ${r}.styleKeys, _next);
-                    ${r}.prev = _next;
-                }
-            `;
+            return `if (${r}) { setObjectStyle(${r}.el, ${r}, ${v}); }`;
 
         case BindingType.Spread:
             return `if (${r} && ${r}.prev !== ${v}) { ${r}.prev = ${v}; Object.assign(${r}.el, ${v}||{}); }`;

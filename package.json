@@ -30,7 +30,7 @@
         "vitest": "^3.2.3"
     },
     "dependencies": {
-        "@miurajs/miura": "^2.4.33",
+        "@miurajs/miura": "^2.4.35",
         "@storybook/web-components": "8.6.18",
         "acorn-walk": "^8.3.5"
     }
