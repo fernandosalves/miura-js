@@ -51,6 +51,11 @@ type TemplateReadRecord = {
     matched: boolean;
 };
 
+type AotSignalSubscription = {
+    signal: Signal<unknown> | ReadonlySignal<unknown>;
+    unsubscribe: () => void;
+};
+
 const TEMPLATE_READ_COLLECTOR = Symbol.for('miura:template-read-collector');
 
 type MiuraSourceError = Error & {
@@ -290,6 +295,10 @@ export class MiuraElement extends HTMLElement {
     private _fineGrainedTemplateProps = new Set<string>();
     /** Signal reads collected during the current template() call. */
     private _templateReadRecords: TemplateReadRecord[] = [];
+    /** Latest AOT values after signal unwrapping. */
+    private _aotValues: unknown[] = [];
+    /** Per-binding signal subscriptions for AOT templates. */
+    private _aotSignalSubscriptions = new Map<number, AotSignalSubscription>();
 
     /**
      * Gets the computed value for a property, using cache if available.
@@ -562,17 +571,7 @@ export class MiuraElement extends HTMLElement {
             this.templateInstance = null;
         }
 
-        // Clean up AOT path
-        if (this._aotNodeBindings) {
-            for (const nb of this._aotNodeBindings) nb.disconnect();
-            this._aotNodeBindings = null;
-        }
-        if (this._aotDirectiveBindings) {
-            for (const db of this._aotDirectiveBindings) db.disconnect();
-            this._aotDirectiveBindings = null;
-        }
-        this._aotRefs = null;
-        this._aotCompiled = null;
+        this.disconnectAotBindings();
         this._templateStrings = null;
 
         this.cleanupObservers();
@@ -853,7 +852,8 @@ export class MiuraElement extends HTMLElement {
             if (shouldRecreate) {
                 this.disconnectAotBindings();
                 this.clearRenderedRegion();
-                const { fragment, refs } = compiled.render(template.values);
+                const initialValues = this.prepareAotValues(template.values, compiled);
+                const { fragment, refs } = compiled.render(initialValues);
                 this._aotRefs = refs;
                 this._renderEnd.parentNode?.insertBefore(fragment, this._renderEnd);
                 this._templateStrings = template.strings;
@@ -869,7 +869,7 @@ export class MiuraElement extends HTMLElement {
                         this._processor
                     );
                     this._aotNodeBindings.push(nb);
-                    await nb.setValue(template.values[ri]);
+                    await nb.setValue(initialValues[ri]);
                 }
 
                 // Create DirectiveBinding instances for every Directive-type ref
@@ -878,28 +878,13 @@ export class MiuraElement extends HTMLElement {
                     const ref = refs[refIndex] as any;
                     const db = new DirectiveBinding(ref.el, name);
                     this._aotDirectiveBindings.push(db);
-                    await db.setValue(template.values[refIndex]);
+                    await db.setValue(initialValues[refIndex]);
                 }
             } else {
                 // Generated code handles all non-Node, non-Directive bindings
-                const values: unknown[] = template.values == null ? [] : template.values;
+                const values = this.prepareAotValues(template.values, compiled);
                 compiled.update((this._aotRefs ?? []) as unknown[], values);
-
-                // NodeBindings handle complex node content
-                if (this._aotNodeBindings) {
-                    for (let i = 0; i < compiled.nodeBindingIndices.length; i++) {
-                        const ri = compiled.nodeBindingIndices[i];
-                        await this._aotNodeBindings[i].setValue(template.values[ri]);
-                    }
-                }
-
-                // DirectiveBindings handle structural directives
-                if (this._aotDirectiveBindings) {
-                    for (let i = 0; i < compiled.directiveBindingInfos.length; i++) {
-                        const { refIndex } = compiled.directiveBindingInfos[i];
-                        await this._aotDirectiveBindings[i].setValue(template.values[refIndex]);
-                    }
-                }
+                await this.updateAotRuntimeBindings(values, compiled);
             }
         } else {
             // ── JIT path (default) ──────────────────────────────────────────────
@@ -917,6 +902,80 @@ export class MiuraElement extends HTMLElement {
                 this._templateStrings = template.strings;
             } else {
                 await this.templateInstance.update(template.values, this);
+            }
+        }
+    }
+
+    private prepareAotValues(values: unknown[], compiled: CompiledTemplate): unknown[] {
+        const prepared = values == null ? [] : values.slice();
+        this._aotValues = prepared;
+
+        for (let i = 0; i < prepared.length; i++) {
+            const value = prepared[i];
+            if (value && typeof value === 'function' && (value as any).__isSignal === true) {
+                const signalValue = value as Signal<unknown> | ReadonlySignal<unknown>;
+                prepared[i] = signalValue.peek();
+                this.ensureAotSignalSubscription(i, signalValue, compiled);
+                continue;
+            }
+
+            const existing = this._aotSignalSubscriptions.get(i);
+            if (existing) {
+                existing.unsubscribe();
+                this._aotSignalSubscriptions.delete(i);
+            }
+        }
+
+        return prepared;
+    }
+
+    private ensureAotSignalSubscription(
+        index: number,
+        signalValue: Signal<unknown> | ReadonlySignal<unknown>,
+        compiled: CompiledTemplate
+    ): void {
+        const existing = this._aotSignalSubscriptions.get(index);
+        if (existing?.signal === signalValue) {
+            return;
+        }
+
+        existing?.unsubscribe();
+        const unsubscribe = signalValue.subscribe((nextValue) => {
+            void this.applyAotSignalValue(index, nextValue, compiled);
+        });
+        this._aotSignalSubscriptions.set(index, { signal: signalValue, unsubscribe });
+    }
+
+    private async applyAotSignalValue(
+        index: number,
+        value: unknown,
+        compiled: CompiledTemplate
+    ): Promise<void> {
+        if (!this._aotRefs) return;
+
+        this._aotValues[index] = value;
+        compiled.update(this._aotRefs as unknown[], this._aotValues);
+        await this.updateAotRuntimeBindings(this._aotValues, compiled, index);
+    }
+
+    private async updateAotRuntimeBindings(
+        values: unknown[],
+        compiled: CompiledTemplate,
+        changedIndex?: number
+    ): Promise<void> {
+        if (this._aotNodeBindings) {
+            for (let i = 0; i < compiled.nodeBindingIndices.length; i++) {
+                const ri = compiled.nodeBindingIndices[i];
+                if (changedIndex !== undefined && ri !== changedIndex) continue;
+                await this._aotNodeBindings[i].setValue(values[ri]);
+            }
+        }
+
+        if (this._aotDirectiveBindings) {
+            for (let i = 0; i < compiled.directiveBindingInfos.length; i++) {
+                const { refIndex } = compiled.directiveBindingInfos[i];
+                if (changedIndex !== undefined && refIndex !== changedIndex) continue;
+                await this._aotDirectiveBindings[i].setValue(values[refIndex]);
             }
         }
     }
@@ -939,6 +998,11 @@ export class MiuraElement extends HTMLElement {
             for (const db of this._aotDirectiveBindings) db.disconnect();
             this._aotDirectiveBindings = null;
         }
+        for (const { unsubscribe } of this._aotSignalSubscriptions.values()) {
+            unsubscribe();
+        }
+        this._aotSignalSubscriptions.clear();
+        this._aotValues = [];
         this._aotRefs = null;
         this._aotCompiled = null;
     }
