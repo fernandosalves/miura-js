@@ -24,9 +24,33 @@ export function createLoggerMiddleware(): StoreMiddleware {
 }
 
 /**
- * Persistence middleware for localStorage
+ * Persistence middleware for Web Storage.
  */
-export function createPersistenceMiddleware(keys: string[], storageKey = 'miura-store'): StoreMiddleware {
+export interface PersistenceMiddlewareOptions {
+  storageKey?: string;
+  storage?: Storage;
+}
+
+function resolvePersistenceOptions(storageKeyOrOptions?: string | PersistenceMiddlewareOptions): Required<PersistenceMiddlewareOptions> {
+  if (typeof storageKeyOrOptions === 'string') {
+    return {
+      storageKey: storageKeyOrOptions,
+      storage: localStorage
+    };
+  }
+
+  return {
+    storageKey: storageKeyOrOptions?.storageKey ?? 'miura-store',
+    storage: storageKeyOrOptions?.storage ?? localStorage
+  };
+}
+
+export function createPersistenceMiddleware(
+  keys: string[],
+  storageKeyOrOptions: string | PersistenceMiddlewareOptions = 'miura-store'
+): StoreMiddleware {
+  const options = resolvePersistenceOptions(storageKeyOrOptions);
+
   return {
     name: 'persistence',
     after: (action, args, state) => {
@@ -38,7 +62,7 @@ export function createPersistenceMiddleware(keys: string[], storageKey = 'miura-
             toPersist[key] = state[key];
           }
         });
-        localStorage.setItem(storageKey, JSON.stringify(toPersist));
+        options.storage.setItem(options.storageKey, JSON.stringify(toPersist));
       } catch (error) {
         console.warn('Failed to persist state:', error);
       }
@@ -52,9 +76,14 @@ export function createPersistenceMiddleware(keys: string[], storageKey = 'miura-
  *   const persisted = loadPersistedState(['user', 'theme']);
  *   const store = new Store({ ...defaults, ...persisted });
  */
-export function loadPersistedState(keys: string[], storageKey = 'miura-store'): Partial<StoreState> {
+export function loadPersistedState(
+  keys: string[],
+  storageKeyOrOptions: string | PersistenceMiddlewareOptions = 'miura-store'
+): Partial<StoreState> {
+  const options = resolvePersistenceOptions(storageKeyOrOptions);
+
   try {
-    const persisted = localStorage.getItem(storageKey);
+    const persisted = options.storage.getItem(options.storageKey);
     if (persisted) {
       const parsed = JSON.parse(persisted);
       const result: Partial<StoreState> = {};
