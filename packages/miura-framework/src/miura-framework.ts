@@ -500,11 +500,6 @@ export abstract class MiuraFramework extends MiuraElement {
 
         const routeKey = zoneElement.dataset.routerZone || zoneElement.id || 'default';
         const previousElement = this._activeRouteElements.get(routeKey);
-        if (previousElement) {
-            previousElement.remove();
-            this._activeRouteElements.delete(routeKey);
-        }
-
         const component = this.componentRegistry.get(context.route.component);
         if (!component) {
             reportWarning({
@@ -517,16 +512,24 @@ export abstract class MiuraFramework extends MiuraElement {
             return;
         }
 
-        const element = new component();
+        let element = previousElement?.tagName.toLowerCase() === context.route.component.toLowerCase()
+            ? previousElement
+            : null;
+
+        const reused = Boolean(element);
+        if (!element) {
+            previousElement?.remove();
+            this._activeRouteElements.delete(routeKey);
+            element = new component() as HTMLElement;
+            zoneElement.appendChild(element);
+            this._activeRouteElements.set(routeKey, element);
+        }
+
         this._injectRouteData(element, context);
-        zoneElement.appendChild(element);
-        this._activeRouteElements.set(routeKey, element as HTMLElement);
 
-        // Allow one render tick for the component to initialise its shadow DOM
-        // This fixes the timing issue where components try to render before framework is ready
-        await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+        await this._waitForRouteElementReady(element);
 
-        this.eventBus.emit('router:rendered', { route: context.route, element }, 5);
+        this.eventBus.emit('router:rendered', { route: context.route, element, reused }, 5);
     }
 
     private _findOutlet(parent: Element, targetName?: string): any | null {
@@ -580,6 +583,16 @@ export abstract class MiuraFramework extends MiuraElement {
             query: Object.fromEntries(context.query.entries()),
             hash: context.hash,
         }));
+    }
+
+    private async _waitForRouteElementReady(element: Element): Promise<void> {
+        const updateComplete = (element as { updateComplete?: Promise<unknown> }).updateComplete;
+        if (updateComplete && typeof updateComplete.then === 'function') {
+            await updateComplete.catch(() => undefined);
+            return;
+        }
+
+        await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     }
 
     private _applyRouteMeta(context: RouteRenderContext): void {

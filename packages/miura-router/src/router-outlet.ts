@@ -46,9 +46,13 @@ export class RouterOutlet extends HTMLElement {
      * Called by MiuraRouter when the matched route targets this outlet.
      */
     renderRoute(record: RouteRecord, context: RouteContext): HTMLElement {
-        this._clearCurrent();
+        if (this._current?.tagName.toLowerCase() === record.component.toLowerCase()) {
+            this._injectContext(this._current, context);
+            return this._current;
+        }
 
         const element = document.createElement(record.component);
+        this._clearCurrent();
         this._injectContext(element, context);
         this.appendChild(element);
         this._current = element as HTMLElement;
