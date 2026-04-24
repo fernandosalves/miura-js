@@ -79,75 +79,6 @@ function collectRefs(frag, count) {
     return refs;
 }
 
-/** Fix namespace for foreign-content elements (SVG, MathML) parsed via innerHTML. */
-const _NS_MAP = { svg: 'http://www.w3.org/2000/svg', math: 'http://www.w3.org/1998/Math/MathML' };
-const _HTML_NS = 'http://www.w3.org/1999/xhtml';
-const _SVG_CHILD_TAGS = new Set([
-    'g', 'path', 'circle', 'rect', 'line', 'text', 'ellipse',
-    'polygon', 'polyline', 'defs', 'clippath', 'use', 'symbol',
-    'image', 'tspan', 'foreignobject', 'lineargradient',
-    'radialgradient', 'stop', 'filter', 'fegaussianblur',
-    'desc', 'title', 'metadata', 'marker', 'pattern', 'mask',
-    'animate', 'animatetransform', 'animatemotion', 'set',
-]);
-function fixNamespaces(root) {
-    for (const [tag, ns] of Object.entries(_NS_MAP)) {
-        for (const el of root.querySelectorAll(tag)) {
-            if (el.namespaceURI === ns) continue;
-            if (el.parentElement && el.parentElement.namespaceURI === ns) continue;
-            el.parentNode.replaceChild(recreateNS(el, ns), el);
-        }
-    }
-    // Also fix standalone SVG child elements from sub-templates
-    const toFix = [];
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
-    let node;
-    while ((node = walker.nextNode())) {
-        if (node.namespaceURI === _HTML_NS && _SVG_CHILD_TAGS.has(node.tagName.toLowerCase())) {
-            toFix.push(node);
-        }
-    }
-    for (let i = toFix.length - 1; i >= 0; i--) {
-        const el = toFix[i];
-        el.parentNode.replaceChild(recreateNS(el, _NS_MAP.svg), el);
-    }
-}
-const _SVG_VOID = new Set(['circle','ellipse','line','path','polygon','polyline','rect','stop','use','image']);
-function recreateNS(src, ns) {
-    const el = document.createElementNS(ns, src.tagName.toLowerCase());
-    const BINDING_RE = /^binding:(\d+)$/;
-    for (const attr of Array.from(src.attributes)) {
-        const m = BINDING_RE.exec(attr.value);
-        if (m && attr.name.startsWith('@')) { el.setAttribute('data-e' + m[1], ''); }
-        else if (m) { el.setAttribute('data-b' + m[1], ''); }
-        else if (attr.name.startsWith('@')) { el.setAttribute('data-e-' + attr.name.slice(1), attr.value); }
-        else { el.setAttributeNS(attr.namespaceURI, attr.name, attr.value); }
-    }
-    const isVoid = ns === _NS_MAP.svg && _SVG_VOID.has(src.tagName.toLowerCase());
-    const hoisted = [];
-    for (const child of Array.from(src.childNodes)) {
-        const fixed = child.nodeType === 1 ? recreateNS(child, ns) : child.cloneNode(true);
-        if (isVoid) { hoisted.push(fixed); }
-        else { el.appendChild(fixed); }
-    }
-    if (hoisted.length) { el._hoistedSiblings = hoisted; }
-    return el;
-}
-function insertHoisted(root) {
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
-    const toInsert = [];
-    let node;
-    while ((node = walker.nextNode())) {
-        if (node._hoistedSiblings) { toInsert.push(node); }
-    }
-    for (const el of toInsert) {
-        const sibs = el._hoistedSiblings;
-        delete el._hoistedSiblings;
-        let before = el.nextSibling;
-        for (const s of sibs) { el.parentNode.insertBefore(s, before); }
-    }
-}
-
 /** Update a single Node binding (replaces nodes between comment markers). */
 function setNodeBinding(ref, value) {
     if (!ref) return;
@@ -441,18 +372,14 @@ export class CodeFactory {
 
         const src = /* js */`
             ${HELPERS}
-            const _tpl = document.createElement('template');
-            _tpl.innerHTML = html;
-            const fragment = _tpl.content.cloneNode(true);
-            fixNamespaces(fragment);
-            insertHoisted(fragment);
+            const fragment = createDOMFragment(html);
             const refs = collectRefs(fragment, ${count});
             ${updateLines}
             return { fragment, refs };
         `;
 
         // eslint-disable-next-line no-new-func
-        return new Function('html', 'values', 'applyUtilityValue', 'clearAppliedUtilities', src) as CompiledRenderFn;
+        return new Function('html', 'values', 'applyUtilityValue', 'clearAppliedUtilities', 'createDOMFragment', src) as CompiledRenderFn;
     }
 
     /**
@@ -484,6 +411,7 @@ export type CompiledRenderFn = (
     values: unknown[],
     applyUtilityValue: (...args: any[]) => any,
     clearAppliedUtilities: (...args: any[]) => any,
+    createDOMFragment: (html: string) => DocumentFragment,
 ) => { fragment: DocumentFragment; refs: RefSlot[] };
 
 export type CompiledUpdateFn = (

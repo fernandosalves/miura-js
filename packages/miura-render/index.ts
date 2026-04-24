@@ -1,6 +1,7 @@
 export * from './src/processor/template-result';
 export * from './src/processor/processor';
 export * from './src/processor/types';
+export * from './src/processor/dom-fragment';
 export * from './src/css-result';
 export * from './src/utils/debug';
 export * from './src/utils/performance';

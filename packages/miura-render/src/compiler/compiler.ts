@@ -1,8 +1,8 @@
 import { TemplateResult, BindingType } from '../processor/template-result';
 import { TemplateParser, ParsedTemplate } from '../processor/parser';
 import { CodeFactory, CompiledRenderFn, CompiledUpdateFn } from './code-factory';
-import { applyStaticUtilities } from '../utilities/apply-static-utilities';
 import { applyUtilityValue, clearAppliedUtilities } from '../utilities/utility-resolver';
+import { createDOMFragment } from '../processor/dom-fragment';
 
 /**
  * A compiled template — owns the generated render/update functions and
@@ -96,8 +96,7 @@ export class TemplateCompiler {
             nodeBindingIndices,
             directiveBindingInfos,
             render(values) {
-                const rendered = renderFn(parsed.html, values, applyUtilityValue, clearAppliedUtilities);
-                applyStaticUtilities(rendered.fragment);
+                const rendered = renderFn(parsed.html, values, applyUtilityValue, clearAppliedUtilities, createDOMFragment);
                 updateFn(rendered.refs as any, values, applyUtilityValue, clearAppliedUtilities);
                 return rendered;
             },
