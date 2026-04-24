@@ -5,6 +5,9 @@ import { debugLog } from '../../utils/debug';
 export class EventBinding implements Binding {
     private handler: EventListener | null = null;
     private modifiers: EventModifier[] = [];
+    private listenerOptions: AddEventListenerOptions | boolean | undefined;
+    private previousValue: unknown;
+    private previousContext: unknown;
 
     constructor(
         private element: Element,
@@ -13,6 +16,7 @@ export class EventBinding implements Binding {
     ) {
         // Parse modifiers from event name (e.g., "click.prevent.stop")
         this.parseModifiers(modifiers);
+        this.listenerOptions = this.getListenerOptions(modifiers);
     }
 
     private parseModifiers(modifiers: string[]) {
@@ -56,10 +60,27 @@ export class EventBinding implements Binding {
         };
     }
 
+    private getListenerOptions(modifiers: string[]): AddEventListenerOptions | undefined {
+        let capture = false;
+        let passive = false;
+
+        for (const modifier of modifiers) {
+            const [name] = modifier.split(':');
+            if (name === 'capture') capture = true;
+            if (name === 'passive') passive = true;
+        }
+
+        return capture || passive ? { capture, passive } : undefined;
+    }
+
     setValue(value: unknown, context?: unknown): void {
+        if (value === this.previousValue && context === this.previousContext) {
+            return;
+        }
+
         // Remove old handler
         if (this.handler) {
-            this.element.removeEventListener(this.eventName, this.handler);
+            this.element.removeEventListener(this.eventName, this.handler, this.listenerOptions);
             this.handler = null;
         }
 
@@ -67,15 +88,20 @@ export class EventBinding implements Binding {
         if (typeof value === 'function') {
             const boundHandler = value.bind(context);
             this.handler = this.createHandler(boundHandler);
-            this.element.addEventListener(this.eventName, this.handler);
+            this.element.addEventListener(this.eventName, this.handler, this.listenerOptions);
         }
+
+        this.previousValue = value;
+        this.previousContext = context;
     }
 
     clear(): void {
         if (this.handler) {
-            this.element.removeEventListener(this.eventName, this.handler);
+            this.element.removeEventListener(this.eventName, this.handler, this.listenerOptions);
             this.handler = null;
         }
+        this.previousValue = undefined;
+        this.previousContext = undefined;
     }
 
     disconnect(): void {

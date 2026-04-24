@@ -21,6 +21,10 @@ import { reportDiagnostic } from '@miurajs/miura-debugger';
 
 type SignalLike = { peek(): unknown; subscribe(fn: (v: unknown) => void): () => void };
 type MultipartBinding = AttributeBinding | UtilityBinding | ClassBinding | StyleBinding;
+type BindingMarkerIndex = {
+    elements: Map<number, Element>;
+    nodeMarkers: Map<number, [Comment | null, Comment | null]>;
+};
 
 function _isSignal(v: unknown): v is SignalLike {
     return Boolean(
@@ -91,6 +95,7 @@ export class BindingManager {
     ): Binding[] {
         debugLog('bindingManager', 'Creating bindings', { bindingsCount: bindings.length });
         const bindingInstances: Binding[] = [];
+        const markerIndex = this.createMarkerIndex(fragment);
 
         // Caches for multi-part attribute groups
         const elementCache = new Map<number, Element>();
@@ -99,7 +104,7 @@ export class BindingManager {
         bindings.forEach(binding => {
             try {
                 if (binding.type === BindingType.Node) {
-                    const [startMarker, endMarker] = this.findNodeMarkers(fragment, binding.index, binding.debugLabel);
+                    const [startMarker, endMarker] = this.findNodeMarkers(markerIndex, binding.index, binding.debugLabel, fragment);
                     const markerHost =
                         startMarker.parentElement ||
                         endMarker.parentElement ||
@@ -127,7 +132,7 @@ export class BindingManager {
 
                     if (groupStart === binding.index) {
                         // First part in the group — find element via marker
-                        element = this.findBindingElement(fragment, binding.index, binding.debugLabel);
+                        element = this.findBindingElement(markerIndex, binding.index);
                         if (element) {
                             elementCache.set(groupStart, element);
                             // Clean up SVG/MathML data-bN marker attribute
@@ -187,7 +192,7 @@ export class BindingManager {
                 }
 
                 // Non-attribute bindings — original logic
-                const element = this.findBindingElement(fragment, binding.index, binding.debugLabel);
+                const element = this.findBindingElement(markerIndex, binding.index);
                 if (!element) {
                     throw new Error(`Could not find element for ${binding.debugLabel ?? `binding:${binding.index}`}. The element was likely removed from the DOM manually or by a directive.`);
                 }
@@ -221,6 +226,51 @@ export class BindingManager {
         });
 
         return bindingInstances;
+    }
+
+    private static createMarkerIndex(fragment: DocumentFragment): BindingMarkerIndex {
+        const elements = new Map<number, Element>();
+        const nodeMarkers = new Map<number, [Comment | null, Comment | null]>();
+        const walker = document.createTreeWalker(
+            fragment,
+            NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_ELEMENT
+        );
+
+        let node: Node | null;
+        while ((node = walker.nextNode())) {
+            if (node.nodeType === Node.COMMENT_NODE) {
+                const comment = node as Comment;
+                const value = comment.nodeValue || '';
+                let index: number | null = null;
+                let slot: 0 | 1 | null = null;
+
+                if (value.startsWith('binding:')) {
+                    index = Number.parseInt(value.slice(8).split(':', 1)[0], 10);
+                    slot = 0;
+                    if (comment.parentElement) elements.set(index, comment.parentElement);
+                } else if (value.startsWith('/binding:')) {
+                    index = Number.parseInt(value.slice(9).split(':', 1)[0], 10);
+                    slot = 1;
+                }
+
+                if (index !== null && slot !== null && !Number.isNaN(index)) {
+                    const pair = nodeMarkers.get(index) ?? [null, null];
+                    pair[slot] = comment;
+                    nodeMarkers.set(index, pair);
+                }
+                continue;
+            }
+
+            const element = node as Element;
+            for (const attr of Array.from(element.attributes)) {
+                const markerIndex = this.getBindingIndexFromMarkerAttribute(attr);
+                if (markerIndex !== null && !elements.has(markerIndex)) {
+                    elements.set(markerIndex, element);
+                }
+            }
+        }
+
+        return { elements, nodeMarkers };
     }
 
     private static createBindingForType(
@@ -316,109 +366,27 @@ export class BindingManager {
     }
 
     private static findBindingElement(
-        fragment: DocumentFragment,
-        index: number,
-        label?: string
+        markerIndex: BindingMarkerIndex,
+        index: number
     ): Element | null {
-        const walker = document.createTreeWalker(
-            fragment,
-            NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_ELEMENT
-        );
-
-        let node: Node | null;
-        while ((node = walker.nextNode())) {
-            if (node.nodeType === Node.COMMENT_NODE) {
-                const comment = node as Comment;
-                if (this.isBindingMarker(comment, index)) {
-                    return comment.parentElement;
-                }
-            } else if (node.nodeType === Node.ELEMENT_NODE) {
-                const element = node as Element;
-                if (this.hasBindingAttribute(element, index)) {
-                    return element;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private static findMarkers(
-        element: Element,
-        index: number,
-        label?: string
-    ): [Comment, Comment] {
-        const walker = document.createTreeWalker(
-            element.parentElement || element,
-            NodeFilter.SHOW_COMMENT
-        );
-
-        let startMarker: Comment | null = null;
-        let endMarker: Comment | null = null;
-        let foundStart = false;
-
-        let node: Node | null;
-        while ((node = walker.nextNode())) {
-            const comment = node as Comment;
-            const value = comment.nodeValue || '';
-
-            if (!foundStart && value === `binding:${index}`) {
-                startMarker = comment;
-                foundStart = true;
-            } else if (foundStart && value === `/binding:${index}`) {
-                endMarker = comment;
-                break;
-            }
-        }
-
-        if (!startMarker || !endMarker) {
-            debugLog('bindingManager', 'Failed to find markers', {
-                index,
-                label,
-                element,
-                parentHTML: element.parentElement?.innerHTML
-            });
-            throw new Error(`Could not find marker comments (<!--binding:x-->) for ${label ?? `binding:${index}`}. The marker nodes were likely removed or corrupted by manual DOM manipulation.`);
-        }
-
-        return [startMarker, endMarker];
+        return markerIndex.elements.get(index) ?? null;
     }
 
     private static findNodeMarkers(
-        fragment: DocumentFragment,
+        markerIndex: BindingMarkerIndex,
         index: number,
-        label?: string
+        label?: string,
+        fragment?: DocumentFragment
     ): [Comment, Comment] {
-        const walker = document.createTreeWalker(
-            fragment,
-            NodeFilter.SHOW_COMMENT
-        );
-
-        let startMarker: Comment | null = null;
-        let endMarker: Comment | null = null;
-        let foundStart = false;
-
-        let node: Node | null;
-        while ((node = walker.nextNode())) {
-            const comment = node as Comment;
-            const value = comment.nodeValue || '';
-
-            if (!foundStart && value === `binding:${index}`) {
-                startMarker = comment;
-                foundStart = true;
-            } else if (foundStart && value === `/binding:${index}`) {
-                endMarker = comment;
-                break;
-            }
-        }
+        const [startMarker, endMarker] = markerIndex.nodeMarkers.get(index) ?? [null, null];
 
         if (!startMarker || !endMarker) {
             debugLog('bindingManager', 'Failed to find node markers in fragment', {
                 index,
                 label,
-                fragmentHtml: Array.from(fragment.childNodes)
+                fragmentHtml: fragment ? Array.from(fragment.childNodes)
                     .map(node => node.nodeType === Node.ELEMENT_NODE ? (node as Element).outerHTML : node.textContent)
-                    .join('')
+                    .join('') : ''
             });
             throw new Error(`Could not find marker comments (<!--binding:x-->) for ${label ?? `binding:${index}`}. The marker nodes were likely removed or swallowed by the browser (see Diagnostic Catalog in README).`);
         }
@@ -426,23 +394,18 @@ export class BindingManager {
         return [startMarker, endMarker];
     }
 
-    private static isBindingMarker(comment: Comment, index: number): boolean {
-        return comment.nodeValue === `binding:${index}`;
-    }
-
-    private static hasBindingAttribute(element: Element, index: number): boolean {
-        // Modern: data-bN or data-eN
-        if (element.hasAttribute(`data-b${index}`) || element.hasAttribute(`data-e${index}`)) {
-            return true;
+    private static getBindingIndexFromMarkerAttribute(attr: Attr): number | null {
+        if (attr.name.startsWith('data-b') || attr.name.startsWith('data-e')) {
+            const index = Number.parseInt(attr.name.slice(6), 10);
+            return Number.isNaN(index) ? null : index;
         }
 
-        // Legacy: attr="binding:index"
-        const legacyMarker = `binding:${index}`;
-        for (const attr of Array.from(element.attributes)) {
-            if (attr.value === legacyMarker) return true;
+        if (attr.value.startsWith('binding:')) {
+            const index = Number.parseInt(attr.value.slice(8).split(':', 1)[0], 10);
+            return Number.isNaN(index) ? null : index;
         }
 
-        return false;
+        return null;
     }
 
     private static removeDataBindingMarker(element: Element, index: number): boolean {
@@ -496,19 +459,42 @@ export class BindingManager {
             valuesCount: values.length
         });
 
-        const promises = bindings.map(async (binding, i) => {
-            if (!binding) return;
+        const asyncUpdates: Promise<unknown>[] = [];
+        const trackAsync = (result: unknown, index: number) => {
+            if (result && typeof (result as any).then === 'function') {
+                asyncUpdates.push((result as Promise<unknown>).catch((error) => {
+                    const def = bindingDefs[index];
+                    reportDiagnostic({
+                        subsystem: 'render',
+                        stage: 'update',
+                        severity: 'error',
+                        message: `Error updating ${this.formatBindingContext(def, index)}`,
+                        summary: error instanceof Error ? error.message : String(error),
+                        bindingIndex: index,
+                        bindingLabel: def?.debugLabel ?? undefined,
+                        bindingKind: def ? this.getBindingKind(def.type) : 'unknown',
+                        error,
+                    });
+                    console.error(`Error initializing ${this.formatBindingContext(def, index)}:`, error);
+                    throw error;
+                }));
+            }
+        };
+
+        for (let i = 0; i < bindings.length; i++) {
+            const binding = bindings[i];
+            if (!binding) continue;
             try {
                 const bindingDef = bindingDefs[i];
                 if (!bindingDef) {
                     console.warn(`[miura][bindingManager] No binding definition for binding at index ${i}`);
-                    return;
+                    continue;
                 }
                 const value = values[i];
 
                 if (_isSignal(value)) {
                     // Already subscribed to this exact signal — skip (idempotent)
-                    if ((binding as any).__lastSignal === value) return;
+                    if ((binding as any).__lastSignal === value) continue;
 
                     // Cancel previous subscription if the signal instance changed
                     const prev = (binding as any).__signalUnsub;
@@ -520,8 +506,8 @@ export class BindingManager {
                     });
 
                     // Set current value immediately (no full re-render needed)
-                    await binding.setValue(value.peek(), context);
-                    return;
+                    trackAsync(binding.setValue(value.peek(), context), i);
+                    continue;
                 }
 
                 // Handle function values: differentiate between content (auto-invoke) and properties (pass-through)
@@ -538,7 +524,7 @@ export class BindingManager {
                 }
 
                 // Set value — always await to handle both sync and async setValue methods
-                await (binding.setValue as any)(finalValue, context);
+                trackAsync((binding.setValue as any)(finalValue, context), i);
             } catch (error) {
                 const def = bindingDefs[i];
                 reportDiagnostic({
@@ -555,9 +541,11 @@ export class BindingManager {
                 console.error(`Error initializing ${this.formatBindingContext(def, i)}:`, error);
                 throw error;
             }
-        });
+        }
 
-        await Promise.all(promises);
+        if (asyncUpdates.length > 0) {
+            await Promise.all(asyncUpdates);
+        }
         this.metrics.initTime = performance.now() - startTime;
     }
 }

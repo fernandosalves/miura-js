@@ -26,7 +26,7 @@ interface ProcessingMetrics {
  * 4. Caching parsed templates for better performance
  */
 export class TemplateProcessor {
-    private templateCache = new WeakMap<TemplateStringsArray, ParsedTemplate>();
+    private static sharedTemplateCache = new WeakMap<TemplateStringsArray, ParsedTemplate>();
     private parser = new TemplateParser();
 
     constructor() {
@@ -68,7 +68,7 @@ export class TemplateProcessor {
      * Clear template cache to free memory
      */
     clearCache(): void {
-        this.templateCache = new WeakMap<TemplateStringsArray, ParsedTemplate>();
+        TemplateProcessor.sharedTemplateCache = new WeakMap<TemplateStringsArray, ParsedTemplate>();
         debugLog('processor', 'Template cache cleared');
     }
 
@@ -109,11 +109,11 @@ export class TemplateProcessor {
 
     private getOrCreateParsedTemplate(result: TemplateResult): ParsedTemplate {
         const startTime = performance.now();
-        let template = this.templateCache.get(result.strings);
+        let template = TemplateProcessor.sharedTemplateCache.get(result.strings);
         if (!template) {
             this.metrics.cacheMisses++;
             template = this.parser.parse(result.strings);
-            this.templateCache.set(result.strings, template);
+            TemplateProcessor.sharedTemplateCache.set(result.strings, template);
             debugLog('processor', 'Created new template', { template });
         } else {
             this.metrics.cacheHits++;
