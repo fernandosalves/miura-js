@@ -4,6 +4,37 @@ import { CodeFactory, CompiledRenderFn, CompiledUpdateFn } from './code-factory'
 import { applyUtilityValue, clearAppliedUtilities } from '../utilities/utility-resolver';
 import { createDOMFragment } from '../processor/dom-fragment';
 
+type SignalLike = {
+    peek(): unknown;
+    subscribe(fn: (value: unknown) => void): () => void;
+    __isSignal: true;
+};
+
+function isSignal(value: unknown): value is SignalLike {
+    return Boolean(
+        value &&
+        (typeof value === 'function' || typeof value === 'object') &&
+        typeof (value as any).peek === 'function' &&
+        typeof (value as any).subscribe === 'function' &&
+        (value as any).__isSignal === true
+    );
+}
+
+function unwrapSignalValues(values: unknown[]): unknown[] {
+    if (!values?.length) return values ?? [];
+
+    let unwrapped: unknown[] | null = null;
+    for (let i = 0; i < values.length; i++) {
+        const value = values[i];
+        if (!isSignal(value)) continue;
+
+        unwrapped ??= values.slice();
+        unwrapped[i] = value.peek();
+    }
+
+    return unwrapped ?? values;
+}
+
 /**
  * A compiled template — owns the generated render/update functions and
  * a `refs` cache (populated on first render, reused on subsequent updates).
@@ -96,11 +127,14 @@ export class TemplateCompiler {
             nodeBindingIndices,
             directiveBindingInfos,
             render(values) {
-                const rendered = renderFn(parsed.html, values, applyUtilityValue, clearAppliedUtilities, createDOMFragment);
-                updateFn(rendered.refs as any, values, applyUtilityValue, clearAppliedUtilities);
+                const safeValues = unwrapSignalValues(values);
+                const rendered = renderFn(parsed.html, safeValues, applyUtilityValue, clearAppliedUtilities, createDOMFragment);
+                updateFn(rendered.refs as any, safeValues, applyUtilityValue, clearAppliedUtilities);
                 return rendered;
             },
-            update(refs, values) { updateFn(refs as any, values, applyUtilityValue, clearAppliedUtilities); },
+            update(refs, values) {
+                updateFn(refs as any, unwrapSignalValues(values), applyUtilityValue, clearAppliedUtilities);
+            },
         };
 
         this._compileCache.set(result.strings, compiled);
