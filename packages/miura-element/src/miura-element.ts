@@ -44,6 +44,15 @@ type DebugRouteRegistration = {
     signal: RouteSignalLike<unknown>;
 };
 
+type TemplateReadRecord = {
+    name: string;
+    signal: Signal<unknown> | ReadonlySignal<unknown>;
+    value: unknown;
+    matched: boolean;
+};
+
+const TEMPLATE_READ_COLLECTOR = Symbol.for('miura:template-read-collector');
+
 type MiuraSourceError = Error & {
     miuraSourceElement?: HTMLElement | null;
     miuraComponentTag?: string;
@@ -277,6 +286,10 @@ export class MiuraElement extends HTMLElement {
     private _templateStrings: TemplateStringsArray | null = null;
     /** Tracks whether firstUpdated has been invoked. */
     private _hasCalledFirstUpdated = false;
+    /** Properties whose template reads were promoted to direct binding signals. */
+    private _fineGrainedTemplateProps = new Set<string>();
+    /** Signal reads collected during the current template() call. */
+    private _templateReadRecords: TemplateReadRecord[] = [];
 
     /**
      * Gets the computed value for a property, using cache if available.
@@ -649,7 +662,7 @@ export class MiuraElement extends HTMLElement {
                 // Clear error state on successful re-render attempt
                 this._hasError = false;
 
-                const template = this.template();
+                const template = this._evaluateTemplateWithDependencyCollection();
                 // Duck-typing check for TemplateResult to handle multiple module instances
                 const isTemplate = template && 
                                 typeof template === 'object' && 
@@ -657,7 +670,7 @@ export class MiuraElement extends HTMLElement {
                                 'values' in template;
 
                 if (isTemplate) {
-                    await this.renderTemplateInstance(template as TemplateResult);
+                    await this.renderTemplateInstance(this._promoteDirectTemplateReads(template as TemplateResult));
                 }
 
                 const isFirstRender = !this._hasRendered;
@@ -733,6 +746,85 @@ export class MiuraElement extends HTMLElement {
         this.updateComplete = new Promise((resolve) => {
             this.updateResolver = resolve;
         });
+    }
+
+    private _evaluateTemplateWithDependencyCollection(): TemplateResult | void {
+        this._templateReadRecords = [];
+        const previousCollector = (globalThis as any)[TEMPLATE_READ_COLLECTOR];
+        (globalThis as any)[TEMPLATE_READ_COLLECTOR] = (
+            instance: unknown,
+            name: string,
+            signalRef: Signal<unknown> | ReadonlySignal<unknown>,
+            value: unknown
+        ) => {
+            if (instance === this) {
+                this._templateReadRecords.push({
+                    name,
+                    signal: signalRef,
+                    value,
+                    matched: false,
+                });
+                return;
+            }
+
+            if (typeof previousCollector === 'function') {
+                previousCollector(instance, name, signalRef, value);
+            }
+        };
+
+        try {
+            return this.template();
+        } finally {
+            if (previousCollector === undefined) {
+                delete (globalThis as any)[TEMPLATE_READ_COLLECTOR];
+            } else {
+                (globalThis as any)[TEMPLATE_READ_COLLECTOR] = previousCollector;
+            }
+        }
+    }
+
+    private _promoteDirectTemplateReads(template: TemplateResult): TemplateResult {
+        if (this._templateReadRecords.length === 0 || template.values.length === 0) {
+            this._fineGrainedTemplateProps.clear();
+            return template;
+        }
+
+        const values = template.values.slice();
+        const readsByName = new Map<string, TemplateReadRecord[]>();
+
+        for (const read of this._templateReadRecords) {
+            const group = readsByName.get(read.name);
+            if (group) {
+                group.push(read);
+            } else {
+                readsByName.set(read.name, [read]);
+            }
+        }
+
+        for (let valueIndex = 0; valueIndex < values.length; valueIndex++) {
+            const value = values[valueIndex];
+            if (value && typeof value === 'function' && (value as any).__isSignal === true) {
+                continue;
+            }
+
+            const read = this._templateReadRecords.find((candidate) =>
+                !candidate.matched && Object.is(candidate.value, value)
+            );
+
+            if (read) {
+                read.matched = true;
+                values[valueIndex] = read.signal;
+            }
+        }
+
+        this._fineGrainedTemplateProps.clear();
+        for (const [name, reads] of readsByName) {
+            if (reads.length > 0 && reads.every((read) => read.matched)) {
+                this._fineGrainedTemplateProps.add(name);
+            }
+        }
+
+        return new TemplateResult(template.strings, values);
     }
 
     /**
@@ -1731,6 +1823,9 @@ export class MiuraElement extends HTMLElement {
             if (sig && typeof sig.subscribe === 'function') {
                 const unsub = sig.subscribe(() => {
                     this._invalidateComputedCache(name);
+                    if (this._fineGrainedTemplateProps.has(name)) {
+                        return;
+                    }
                     this.requestUpdate(name);
                 });
                 this._propSignalUnsubs.push(unsub);

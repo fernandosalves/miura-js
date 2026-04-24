@@ -48,6 +48,71 @@ describe('MiuraElement reactivity regressions', () => {
     expect(element.shadowRoot?.querySelector('.value')?.textContent).toBe('2');
   });
 
+  it('promotes direct property reads to fine-grained binding updates', async () => {
+    const tagName = `fine-grained-${crypto.randomUUID()}`;
+
+    class FineGrainedElement extends MiuraElement {
+      static override properties = {
+        value: { type: Number, default: 0 },
+      };
+
+      declare value: number;
+      renderCount = 0;
+
+      protected override template() {
+        this.renderCount++;
+        return html`<div class="value">${this.value}</div>`;
+      }
+    }
+
+    customElements.define(tagName, FineGrainedElement);
+
+    const element = document.createElement(tagName) as FineGrainedElement;
+    document.body.appendChild(element);
+
+    await waitForUpdate(element);
+    expect(element.shadowRoot?.querySelector('.value')?.textContent).toBe('0');
+    expect(element.renderCount).toBe(1);
+
+    element.value = 3;
+    await Promise.resolve();
+
+    expect(element.shadowRoot?.querySelector('.value')?.textContent).toBe('3');
+    expect(element.renderCount).toBe(1);
+  });
+
+  it('keeps re-rendering transformed property reads', async () => {
+    const tagName = `transformed-read-${crypto.randomUUID()}`;
+
+    class TransformedReadElement extends MiuraElement {
+      static override properties = {
+        value: { type: Number, default: 0 },
+      };
+
+      declare value: number;
+      renderCount = 0;
+
+      protected override template() {
+        this.renderCount++;
+        return html`<div class="value">${this.value + 1}</div>`;
+      }
+    }
+
+    customElements.define(tagName, TransformedReadElement);
+
+    const element = document.createElement(tagName) as TransformedReadElement;
+    document.body.appendChild(element);
+
+    await waitForUpdate(element);
+    expect(element.shadowRoot?.querySelector('.value')?.textContent).toBe('1');
+
+    element.value = 3;
+    await waitForUpdate(element);
+
+    expect(element.shadowRoot?.querySelector('.value')?.textContent).toBe('4');
+    expect(element.renderCount).toBe(2);
+  });
+
   it('keeps default slot content rendered when toggling a preceding #if block', async () => {
     const tagName = `conditional-slot-${crypto.randomUUID()}`;
 

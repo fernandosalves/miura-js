@@ -26,6 +26,15 @@ export interface PropertyDeclarations {
 export const SIGNAL_KEY_PREFIX = '__sig_';
 export const LOCAL_SIGNAL_KEY_PREFIX = '__local_sig_';
 
+const TEMPLATE_READ_COLLECTOR = Symbol.for('miura:template-read-collector');
+
+function reportTemplateRead(instance: any, name: string, signal: Signal<unknown>, value: unknown): void {
+    const collector = (globalThis as any)[TEMPLATE_READ_COLLECTOR];
+    if (typeof collector === 'function') {
+        collector(instance, name, signal, value);
+    }
+}
+
 /**
  * Creates signal-backed property accessors for `static properties`.
  *
@@ -102,7 +111,10 @@ function _createSignalProperty(
     // Property accessor — getter returns PLAIN VALUE, setter writes to signal
     Object.defineProperty(instance, name, {
         get() {
-            return (this as any)[sigKey].peek();
+            const s = (this as any)[sigKey] as Signal<unknown>;
+            const value = s.peek();
+            reportTemplateRead(this, name, s, value);
+            return value;
         },
         set(rawValue: unknown) {
             const converted = convertValue(rawValue, options.type);
@@ -164,7 +176,10 @@ export function createLocalSignalProperties(
 
         Object.defineProperty(instance, name, {
             get() {
-                return (this as any)[sigKey].peek();
+                const s = (this as any)[sigKey] as Signal<unknown>;
+                const value = s.peek();
+                reportTemplateRead(this, name, s, value);
+                return value;
             },
             set(rawValue: unknown) {
                 const converted = convertValue(rawValue, options.type);

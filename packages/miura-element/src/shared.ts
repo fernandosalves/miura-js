@@ -2,6 +2,7 @@ import { signal, type Signal } from './signals.js';
 
 const sharedSignals = new Map<string, Signal<unknown>>();
 export const GLOBAL_SIGNAL_KEY_PREFIX = '__global_sig_';
+const TEMPLATE_READ_COLLECTOR = Symbol.for('miura:template-read-collector');
 
 export type SharedKeyPart = string | number;
 export type SharedKey = string | readonly SharedKeyPart[];
@@ -69,7 +70,13 @@ export function createGlobalProperties(
 
         Object.defineProperty(instance, name, {
             get() {
-                return (this as any)[sigKey].peek();
+                const s = (this as any)[sigKey] as Signal<unknown>;
+                const value = s.peek();
+                const collector = (globalThis as any)[TEMPLATE_READ_COLLECTOR];
+                if (typeof collector === 'function') {
+                    collector(this, name, s, value);
+                }
+                return value;
             },
             set(value: unknown) {
                 (this as any)[sigKey](value);
