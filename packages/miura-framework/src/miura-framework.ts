@@ -21,7 +21,8 @@ import { PluginManager } from './plugin-manager.js';
 const DEFAULT_ROUTER_ZONE_SELECTORS = [
     '[data-router-zone="primary"]',
     '[data-router-zone="default"]',
-    '[data-router-zone]'
+    '[data-router-zone]',
+    'miura-router-outlet'
 ];
 
 // Type for the constructor with static properties
@@ -529,8 +530,27 @@ export abstract class MiuraFramework extends MiuraElement {
                 return;
             }
 
-            const renderedChild = outlet.renderRoute(record, context);
-            parentEl = renderedChild;
+            const component = await this._resolveComponent(record.component);
+            if (!component) {
+                reportWarning({
+                    subsystem: 'framework',
+                    stage: 'navigation',
+                    message: `Component ${record.component} not resolved for child route ${record.path}`,
+                    routePath: record.path,
+                });
+                return;
+            }
+            const element = new component() as HTMLElement;
+            
+            // Clear outlet and append
+            while (outlet.firstChild) outlet.removeChild(outlet.firstChild);
+            outlet.appendChild(element);
+            
+            this._injectRouteData(element, context);
+            await this._waitForRouteElementReady(element);
+            await this._callRouteEnter(element, context);
+
+            parentEl = element;
         }
 
         this.eventBus.emit('router:rendered', { route: context.route, matched }, 5);
@@ -593,15 +613,23 @@ export abstract class MiuraFramework extends MiuraElement {
         this.eventBus.emit('router:rendered', { route: context.route, element, reused }, 5);
     }
 
-    private _findOutlet(parent: Element, targetName?: string): any | null {
-        const name = targetName || 'default';
-        const shadowOutlet = parent.shadowRoot?.querySelector(
-            `miura-router-outlet[name="${name}"], miura-router-outlet:not([name])`
-        );
-        if (shadowOutlet) return shadowOutlet;
-        return parent.querySelector(
-            `miura-router-outlet[name="${name}"], miura-router-outlet:not([name])`
-        );
+    private _findOutlet(parent: Element, targetName?: string): HTMLElement | null {
+        const name = targetName || 'primary';
+        const selectors = [
+            `[data-router-zone="${name}"]`,
+            `miura-router-outlet[name="${name}"]`,
+            'miura-router-outlet:not([name])',
+            '[data-router-zone]'
+        ];
+
+        for (const selector of selectors) {
+            const shadowMatch = parent.shadowRoot?.querySelector(selector) as HTMLElement | null;
+            if (shadowMatch) return shadowMatch;
+            const lightMatch = parent.querySelector(selector) as HTMLElement | null;
+            if (lightMatch) return lightMatch;
+        }
+
+        return null;
     }
 
     private _resolveRouteZone(selector: string): HTMLElement | null {
