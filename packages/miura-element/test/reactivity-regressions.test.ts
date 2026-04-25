@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { MiuraElement, html } from '../index.js';
+import { MiuraElement, html, trustedHTML } from '../index.js';
 
 const waitForUpdate = async (element: MiuraElement, timeoutMs = 150) => {
   await Promise.race([
@@ -153,5 +153,53 @@ describe('MiuraElement reactivity regressions', () => {
     expect(updatedSlot).toBe(initialSlot);
     expect(updatedSlot?.assignedElements({ flatten: true })).toEqual([projected]);
     expect(element.shadowRoot?.querySelector('.lead')?.textContent).toBe('Lead');
+  });
+
+  it('renders trustedHTML in AOT templates and runs afterRender on fine-grained updates', async () => {
+    const tagName = `aot-trusted-html-${crypto.randomUUID()}`;
+    const afterRenderRoots: Array<Element | DocumentFragment> = [];
+
+    class AotTrustedHtmlElement extends MiuraElement {
+      static override compiler = 'AOT' as const;
+      static override properties = {
+        content: { type: String, default: '<span data-version="one">One</span>' },
+      };
+
+      declare content: string;
+      renderCount = 0;
+
+      protected override template() {
+        this.renderCount++;
+        return html`
+          <article id="trusted-host">
+            ${trustedHTML(this.content, {
+              afterRender(root) {
+                afterRenderRoots.push(root);
+              },
+            })}
+          </article>
+        `;
+      }
+    }
+
+    customElements.define(tagName, AotTrustedHtmlElement);
+
+    const element = document.createElement(tagName) as AotTrustedHtmlElement;
+    document.body.appendChild(element);
+
+    await waitForUpdate(element);
+
+    const host = element.shadowRoot?.querySelector('#trusted-host') as HTMLElement;
+    expect(host.querySelector('[data-version="one"]')?.textContent).toBe('One');
+    expect(afterRenderRoots).toEqual([host]);
+    expect(element.renderCount).toBe(1);
+
+    element.content = '<strong data-version="two">Two</strong>';
+    await Promise.resolve();
+
+    expect(host.querySelector('[data-version="one"]')).toBeNull();
+    expect(host.querySelector('[data-version="two"]')?.textContent).toBe('Two');
+    expect(afterRenderRoots).toEqual([host, host]);
+    expect(element.renderCount).toBe(1);
   });
 });

@@ -6,15 +6,26 @@ export interface HtmlOptions {
   compiledMode?: boolean;
 }
 
+export interface TrustedHTMLOptions {
+  afterRender?: (root: DocumentFragment | Element) => void;
+}
+
 /**
- * Marks a string as trusted HTML to bypass character escaping
+ * Marks a string as trusted HTML for raw subtree rendering.
+ *
+ * Use this only with already-sanitized HTML. Miura will insert the value as
+ * DOM nodes and will call `afterRender` after those nodes are mounted.
  */
-export function trustHTML(value: string): TrustedValue {
+export function trustedHTML(value: string, options: TrustedHTMLOptions = {}): TrustedValue {
     return {
         [TRUSTED_SYMBOL]: true,
-        value: String(value)
+        value: String(value),
+        afterRender: options.afterRender
     };
 }
+
+/** Backwards-compatible alias for trustedHTML(). */
+export const trustHTML = trustedHTML;
 
 /**
  * Performance tracking for html function

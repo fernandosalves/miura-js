@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { TemplateProcessor } from './processor';
-import { html } from '../html';
+import { html, trustedHTML, trustHTML } from '../html';
 import { signal } from '../../../miura-element/src/signals';
 
 describe('MiuraJS Rendering Ergonomics', () => {
@@ -95,5 +95,40 @@ describe('MiuraJS Rendering Ergonomics', () => {
         document.body.appendChild(instance.getFragment());
         
         expect(document.body.textContent).toContain('Context: secret');
+    });
+
+    it('renders trustedHTML as DOM and calls afterRender with the containing element', async () => {
+        const processor = new TemplateProcessor();
+        let afterRenderRoot: Element | DocumentFragment | null = null;
+
+        const template = html`
+            <section id="trusted-root">
+                ${trustedHTML('<strong data-kind="trusted">Trusted</strong>', {
+                    afterRender(root) {
+                        afterRenderRoot = root;
+                    }
+                })}
+            </section>
+        `;
+
+        const instance = await processor.createInstance(template);
+        document.body.innerHTML = '';
+        document.body.appendChild(instance.getFragment());
+
+        const root = document.getElementById('trusted-root') as HTMLElement;
+        expect(root.querySelector('[data-kind="trusted"]')?.textContent).toBe('Trusted');
+        expect(root.textContent).not.toContain('data-kind');
+        expect(afterRenderRoot).toBe(root);
+    });
+
+    it('keeps trustHTML as a backwards-compatible alias', async () => {
+        const processor = new TemplateProcessor();
+        const template = html`<div>${trustHTML('<span id="legacy-trusted">Legacy</span>')}</div>`;
+        const instance = await processor.createInstance(template);
+
+        document.body.innerHTML = '';
+        document.body.appendChild(instance.getFragment());
+
+        expect(document.getElementById('legacy-trusted')?.textContent).toBe('Legacy');
     });
 });

@@ -130,8 +130,13 @@ export class NodeBinding implements Binding {
             temp.innerHTML = html;
             const fragment = document.importNode(temp.content, true);
             this.insert(fragment);
-            // We don't cache textNode for trusted HTML as it can be multiple nodes
-            this.prevKind = PrevKind.Node; 
+            const afterRender = (value as any).afterRender;
+            if (typeof afterRender === 'function') {
+                const root = this.startMarker.parentElement ?? this.element;
+                afterRender(root);
+            }
+            // We don't cache textNode for trusted HTML as it can be multiple nodes.
+            this.prevKind = PrevKind.Node;
             this.previousValue = value;
             return;
         }

@@ -6,11 +6,13 @@ export type TemplateExpression = Function | ((context: unknown) => unknown);
 /**
  * Symbol used to mark strings as trusted/safe for raw HTML injection
  */
-export const TRUSTED_SYMBOL = Symbol('miura:trusted');
+export const TRUSTED_SYMBOL = Symbol.for('miura:trusted');
 
 export type TrustedValue = {
     [TRUSTED_SYMBOL]: true;
     value: string;
+    afterRender?: (root: DocumentFragment | Element) => void;
+    sourceSignal?: unknown;
 }
 
 /**

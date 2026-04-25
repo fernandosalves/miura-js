@@ -96,6 +96,15 @@ function setNodeBinding(ref, value) {
         cur = next;
     }
     if (value == null || value === '') return;
+    if (value && typeof value === 'object' && value[Symbol.for('miura:trusted')]) {
+        const temp = document.createElement('template');
+        temp.innerHTML = String(value.value ?? '');
+        parent.insertBefore(document.importNode(temp.content, true), end);
+        if (typeof value.afterRender === 'function') {
+            value.afterRender(start.parentElement || parent);
+        }
+        return;
+    }
     if (value instanceof DocumentFragment || value instanceof Node) {
         parent.insertBefore(value, end);
     } else {

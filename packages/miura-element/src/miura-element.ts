@@ -11,7 +11,7 @@ import { createForm, Form, FormOptions } from './form.js';
 import { createResource, resourceKey, Resource, ResourceKey, ResourceOptions } from './resource.js';
 import { useBeacon, usePulse, type Beacon, type Pulse } from './channels.js';
 
-import { TemplateResult, CSSResult, debugLog } from '@miurajs/miura-render';
+import { TemplateResult, CSSResult, TRUSTED_SYMBOL, debugLog } from '@miurajs/miura-render';
 import { TemplateProcessor, TemplateCompiler, NodeBinding, DirectiveBinding, ensureUtilityStylesInRoot } from '@miurajs/miura-render';
 import type { CompiledTemplate } from '@miurajs/miura-render';
 
@@ -54,9 +54,14 @@ type TemplateReadRecord = {
 type AotSignalSubscription = {
     signal: Signal<unknown> | ReadonlySignal<unknown>;
     unsubscribe: () => void;
+    mapValue?: (value: unknown) => unknown;
 };
 
 const TEMPLATE_READ_COLLECTOR = Symbol.for('miura:template-read-collector');
+
+function _isTrustedValue(value: unknown): value is { value: unknown; afterRender?: unknown; sourceSignal?: unknown } {
+    return Boolean(value && typeof value === 'object' && (value as any)[TRUSTED_SYMBOL] === true);
+}
 
 type MiuraSourceError = Error & {
     miuraSourceElement?: HTMLElement | null;
@@ -813,6 +818,21 @@ export class MiuraElement extends HTMLElement {
             if (read) {
                 read.matched = true;
                 values[valueIndex] = read.signal;
+                continue;
+            }
+
+            if (_isTrustedValue(value)) {
+                const trustedRead = this._templateReadRecords.find((candidate) =>
+                    !candidate.matched && Object.is(candidate.value, value.value)
+                );
+
+                if (trustedRead) {
+                    trustedRead.matched = true;
+                    values[valueIndex] = {
+                        ...value,
+                        sourceSignal: trustedRead.signal,
+                    };
+                }
             }
         }
 
@@ -919,6 +939,19 @@ export class MiuraElement extends HTMLElement {
                 continue;
             }
 
+            if (_isTrustedValue(value) && value.sourceSignal && typeof (value.sourceSignal as any).peek === 'function') {
+                const signalValue = value.sourceSignal as Signal<unknown> | ReadonlySignal<unknown>;
+                prepared[i] = {
+                    ...value,
+                    value: signalValue.peek(),
+                };
+                this.ensureAotSignalSubscription(i, signalValue, compiled, (nextValue) => ({
+                    ...value,
+                    value: nextValue,
+                }));
+                continue;
+            }
+
             const existing = this._aotSignalSubscriptions.get(i);
             if (existing) {
                 existing.unsubscribe();
@@ -932,18 +965,19 @@ export class MiuraElement extends HTMLElement {
     private ensureAotSignalSubscription(
         index: number,
         signalValue: Signal<unknown> | ReadonlySignal<unknown>,
-        compiled: CompiledTemplate
+        compiled: CompiledTemplate,
+        mapValue?: (value: unknown) => unknown
     ): void {
         const existing = this._aotSignalSubscriptions.get(index);
-        if (existing?.signal === signalValue) {
+        if (existing?.signal === signalValue && existing.mapValue === mapValue) {
             return;
         }
 
         existing?.unsubscribe();
         const unsubscribe = signalValue.subscribe((nextValue) => {
-            void this.applyAotSignalValue(index, nextValue, compiled);
+            void this.applyAotSignalValue(index, mapValue ? mapValue(nextValue) : nextValue, compiled);
         });
-        this._aotSignalSubscriptions.set(index, { signal: signalValue, unsubscribe });
+        this._aotSignalSubscriptions.set(index, { signal: signalValue, unsubscribe, mapValue });
     }
 
     private async applyAotSignalValue(
