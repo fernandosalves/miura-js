@@ -8,6 +8,7 @@ import type {
     RouteContext,
     RouteLifecycleHooks,
     NavigationOptions,
+    PrefetchOptions,
 } from '@miurajs/miura-router';
 import { AppLifecycle } from './lifecycle.js';
 import { ComponentRegistry } from './component-registry.js';
@@ -392,6 +393,21 @@ export abstract class MiuraFramework extends MiuraElement {
             return Promise.resolve();
         }
         return this.router.replace(to, options);
+    }
+
+    protected prefetchRoute(to: string, options?: PrefetchOptions) {
+        if (!this.router) {
+            reportWarning({
+                subsystem: 'framework',
+                stage: 'navigation',
+                message: 'Router not initialized. Prefetch request ignored.',
+                componentTag: this.localName,
+                componentClass: this.constructor.name,
+            });
+            console.warn('Router not initialized. Prefetch request ignored.');
+            return Promise.resolve();
+        }
+        return this.router.prefetch(to, options);
     }
 
     protected goBack() {

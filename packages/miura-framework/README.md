@@ -275,8 +275,17 @@ Both `install` and `uninstall` hooks can return promises; the framework awaits t
 
 - `this.navigate('/path', options)` – push navigation (hash/history/memory aware)
 - `this.replaceRoute('/path')` – replace current entry
+- `this.prefetchRoute('/path', { force?: boolean })` – run route guards/loaders and cache loader state without rendering
 - `this.goBack()` / `this.goForward()` – history traversal
-- Router events emitted on the framework `eventBus`: `router:setup`, `router:navigating`, `router:navigated`, `router:blocked`, `router:not-found`, `router:error`, and `router:rendered` (includes DOM element reference).
+- Router events emitted on the framework `eventBus`: `router:setup`, `router:navigating`, `router:navigated`, `router:prefetched`, `router:blocked`, `router:not-found`, `router:error`, and `router:rendered` (includes DOM element reference).
+
+```ts
+class AppShell extends MiuraFramework {
+  warmProfile(id: string) {
+    return this.prefetchRoute(`/profile/${id}`);
+  }
+}
+```
 
 ### Route Context Injection
 
@@ -482,7 +491,7 @@ class MyApp extends MiuraFramework {
 }
 ```
 
-`meta.title` is applied automatically by `MiuraFramework`, and named loaders are exposed under `routeContext.data.<key>` with per-loader state in `routeContext.loaders`.
+`meta.title` is applied automatically by `MiuraFramework`, and named loaders are exposed under `routeContext.data.<key>` with per-loader state in `routeContext.loaders`. Use `this.prefetchRoute('/path')` from app components to warm those loaders before the user navigates.
 
 ## 📊 Performance Monitoring
 

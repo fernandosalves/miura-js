@@ -97,6 +97,19 @@ const routes = [
 
 Access inside the render callback or component via `context.data.profile`, `context.data.perms`, etc.
 
+### Route Prefetch
+
+Use `router.prefetch(path)` to run the same route matching, redirect, guard, and loader pipeline without rendering or changing browser history. Loader state is cached by `fullPath` and the next navigation to that path reuses it.
+
+```typescript
+await router.prefetch('/profile/42');
+await router.navigate('/profile/42'); // renders with prefetched loader data
+
+await router.prefetch('/profile/42', { force: true }); // refresh cached data
+```
+
+Prefetch is useful for link hover/focus, viewport-based warming, or preparing an expensive route before a transition. Guards still run again during the real navigation, so access decisions stay current.
+
 ---
 
 ## Nested Routes & Layout Outlets
@@ -199,6 +212,7 @@ await router.start();                           // begin listening to navigation
 
 const result = await router.navigate('/path');  // push + navigate
 const result = await router.replace('/path');   // replace + navigate
+const warm = await router.prefetch('/path');     // guards + loaders, no render
 router.back();                                  // history.back()
 router.forward();                               // history.forward()
 
@@ -215,6 +229,15 @@ if (result.ok) {
   console.log(result.context.route.component);
 } else {
   console.log(result.reason); // 'blocked' | 'not-found' | 'error'
+}
+```
+
+`prefetch()` returns `Promise<PrefetchResult>`. On success, `cached` tells you whether an existing prefetched loader state was reused:
+
+```typescript
+const result = await router.prefetch('/dashboard');
+if (result.ok && !result.cached) {
+  console.log('dashboard data warmed');
 }
 ```
 

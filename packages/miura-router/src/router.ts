@@ -5,7 +5,10 @@ import type {
     RouteContext,
     RouteRenderContext,
     NavigationOptions,
+    NavigationFailure,
     NavigationResult,
+    PrefetchOptions,
+    PrefetchResult,
     RouteLoaderConfig,
     RouteLoaderState,
 } from './types.js';
@@ -43,6 +46,12 @@ const EMPTY_LOADER_STATE: RouteLoaderState = {
     entries: {},
 };
 
+type PreparedRoute = {
+    context: RouteRenderContext;
+    location: LocationParts;
+    cached: boolean;
+};
+
 export class MiuraRouter implements RouterInstance {
     private readonly mode: RouterMode;
     private readonly base: string;
@@ -51,6 +60,7 @@ export class MiuraRouter implements RouterInstance {
     private running = false;
     private suppressHashChange = false;
     private listeners: Array<() => void> = [];
+    private prefetchedLoaders = new Map<string, RouteLoaderState>();
     private memoryLocation: LocationParts = {
         pathname: '/',
         search: '',
@@ -86,6 +96,7 @@ export class MiuraRouter implements RouterInstance {
     destroy(): void {
         this.stop();
         this.listeners = [];
+        this.prefetchedLoaders.clear();
         this.current = undefined;
         this.previous = null;
         this.currentSignal(undefined);
@@ -109,6 +120,44 @@ export class MiuraRouter implements RouterInstance {
     async replace(target: string, options: NavigationOptions = {}): Promise<NavigationResult> {
         const location = this.resolveTarget(target);
         return this.handleNavigation(location, { ...options, replace: true });
+    }
+
+    async prefetch(target: string, options: PrefetchOptions = {}): Promise<PrefetchResult> {
+        const location = this.resolveTarget(target);
+
+        try {
+            const prepared = await this.prepareRouteContext(location, { silent: true }, options.force === true, false);
+            if (!prepared.ok) return prepared;
+            if (prepared.cached && !options.force) {
+                return { ok: true, context: prepared.context, cached: true };
+            }
+
+            this.prefetchedLoaders.set(prepared.location.fullPath, prepared.context.loaders);
+            this.emit('router:prefetched', { context: prepared.context });
+            reportTimelineEvent({
+                subsystem: 'router',
+                stage: 'loader',
+                message: `Route prefetched for ${location.fullPath}`,
+                routePath: location.pathname,
+                values: {
+                    loaderStatus: prepared.context.loaders.status,
+                    cached: prepared.cached,
+                },
+            });
+            return { ok: true, context: prepared.context, cached: false };
+        } catch (error) {
+            reportDiagnostic({
+                subsystem: 'router',
+                stage: 'loader',
+                severity: 'error',
+                message: `Router prefetch failed for ${location.fullPath}`,
+                summary: error instanceof Error ? error.message : String(error),
+                routePath: location.pathname,
+                error,
+            });
+            this.emit('router:error', { error, location });
+            return { ok: false, reason: 'error', error: error as Error };
+        }
     }
 
     back(): void {
@@ -175,85 +224,26 @@ export class MiuraRouter implements RouterInstance {
                     redirectedFrom: options.redirectedFrom,
                 },
             });
-            const match = matchRoute(location.pathname, this.compiledRoutes);
 
-            if (!match) {
-                if (this.fallback && location.pathname !== this.fallback) {
-                    if (options.depth && options.depth > MAX_REDIRECT_DEPTH) {
-                        return { ok: false, reason: 'error', error: new Error('Router redirect overflow') };
-                    }
-                    return this.handleNavigation(this.resolveTarget(this.fallback), {
-                        replace: true,
-                        ...options,
-                        depth: (options.depth || 0) + 1,
+            const prepared = await this.prepareRouteContext(location, options, false, true);
+            if (!prepared.ok) {
+                if (prepared.reason === 'not-found') {
+                    this.emit('router:not-found', { location });
+                }
+                if (prepared.reason === 'blocked') {
+                    reportTimelineEvent({
+                        subsystem: 'router',
+                        stage: 'navigation',
+                        severity: 'warning',
+                        message: `Navigation blocked for ${location.fullPath}`,
+                        routePath: location.pathname,
                     });
+                    this.emit('router:blocked', { to: prepared.context, from: this.current });
                 }
-                this.emit('router:not-found', { location });
-                return { ok: false, reason: 'not-found' };
+                return prepared;
             }
-
-            if (match.record.paramsSchema) {
-                const result = match.record.paramsSchema.safeParse(match.params);
-                if (!result.success) {
-                    const msg = (result as any).error?.message ?? 'Invalid route params';
-                    return { ok: false, reason: 'error', error: new Error(`[miura-router] Param validation failed: ${msg}`) };
-                }
-                match.params = (result as any).data;
-            }
-
-            const baseContext: RouteContext = {
-                route: match.record,
-                matched: match.matched,
-                pathname: location.pathname,
-                fullPath: location.fullPath,
-                params: match.params,
-                query: parseQuery(location.search),
-                hash: location.hash,
-                data: {},
-                loaders: { ...EMPTY_LOADER_STATE, data: {}, entries: {} },
-                timestamp: Date.now(),
-            };
-
-            const redirectTarget = await this.resolveRedirect(baseContext, options);
-            if (redirectTarget) {
-                this.assertRedirectDepth(options.depth);
-                return this.handleNavigation(this.resolveTarget(redirectTarget), {
-                    ...options,
-                    replace: options.replace ?? true,
-                    depth: (options.depth || 0) + 1,
-                    redirectedFrom: location.fullPath,
-                });
-            }
-
-            const renderContext: RouteRenderContext = {
-                ...baseContext,
-                previous: this.current ?? null,
-            };
-
-            const guardResult = await this.runGuards(renderContext);
-            if (typeof guardResult === 'string') {
-                this.assertRedirectDepth(options.depth);
-                return this.handleNavigation(this.resolveTarget(guardResult), {
-                    ...options,
-                    replace: options.replace ?? true,
-                    depth: (options.depth || 0) + 1,
-                    redirectedFrom: location.fullPath,
-                });
-            }
-            if (guardResult === false) {
-                reportTimelineEvent({
-                    subsystem: 'router',
-                    stage: 'navigation',
-                    severity: 'warning',
-                    message: `Navigation blocked for ${location.fullPath}`,
-                    routePath: location.pathname,
-                });
-                this.emit('router:blocked', { to: renderContext, from: this.current });
-                return { ok: false, reason: 'blocked' };
-            }
-
-            renderContext.loaders = await this.loadData(renderContext);
-            renderContext.data = renderContext.loaders.data;
+            const renderContext = prepared.context;
+            const finalLocation = prepared.location;
 
             if (!options.silent) {
                 this.emit('router:navigating', { to: renderContext, from: this.current });
@@ -274,13 +264,13 @@ export class MiuraRouter implements RouterInstance {
                 this.emit('router:navigated', { to: renderContext, from: this.previous });
             }
 
-            this.commitLocation(location, options);
+            this.commitLocation(finalLocation, options);
 
             reportTimelineEvent({
                 subsystem: 'router',
                 stage: 'navigation',
                 message: `Navigation completed for ${location.fullPath}`,
-                routePath: location.pathname,
+                routePath: finalLocation.pathname,
                 values: {
                     route: this.current?.route.path,
                     loaderStatus: renderContext.loaders.status,
@@ -316,6 +306,96 @@ export class MiuraRouter implements RouterInstance {
             });
             return { ok: false, reason: 'error', error: error as Error };
         }
+    }
+
+    private async prepareRouteContext(
+        location: LocationParts,
+        options: InternalNavigationOptions,
+        forceLoaders: boolean,
+        consumePrefetch: boolean
+    ): Promise<(PreparedRoute & { ok: true }) | (NavigationFailure & { context?: RouteRenderContext })> {
+        const match = matchRoute(location.pathname, this.compiledRoutes);
+
+        if (!match) {
+            if (this.fallback && location.pathname !== this.fallback) {
+                if (options.depth && options.depth > MAX_REDIRECT_DEPTH) {
+                    return { ok: false, reason: 'error', error: new Error('Router redirect overflow') };
+                }
+                return this.prepareRouteContext(this.resolveTarget(this.fallback), {
+                    replace: true,
+                    ...options,
+                    depth: (options.depth || 0) + 1,
+                }, forceLoaders, consumePrefetch);
+            }
+            return { ok: false, reason: 'not-found' };
+        }
+
+        if (match.record.paramsSchema) {
+            const result = match.record.paramsSchema.safeParse(match.params);
+            if (!result.success) {
+                const msg = (result as any).error?.message ?? 'Invalid route params';
+                return { ok: false, reason: 'error', error: new Error(`[miura-router] Param validation failed: ${msg}`) };
+            }
+            match.params = (result as any).data;
+        }
+
+        const baseContext: RouteContext = {
+            route: match.record,
+            matched: match.matched,
+            pathname: location.pathname,
+            fullPath: location.fullPath,
+            params: match.params,
+            query: parseQuery(location.search),
+            hash: location.hash,
+            data: {},
+            loaders: { ...EMPTY_LOADER_STATE, data: {}, entries: {} },
+            timestamp: Date.now(),
+        };
+
+        const redirectTarget = await this.resolveRedirect(baseContext, options);
+        if (redirectTarget) {
+            this.assertRedirectDepth(options.depth);
+            return this.prepareRouteContext(this.resolveTarget(redirectTarget), {
+                ...options,
+                replace: options.replace ?? true,
+                depth: (options.depth || 0) + 1,
+                redirectedFrom: location.fullPath,
+            }, forceLoaders, consumePrefetch);
+        }
+
+        const renderContext: RouteRenderContext = {
+            ...baseContext,
+            previous: this.current ?? null,
+        };
+
+        const guardResult = await this.runGuards(renderContext);
+        if (typeof guardResult === 'string') {
+            this.assertRedirectDepth(options.depth);
+            return this.prepareRouteContext(this.resolveTarget(guardResult), {
+                ...options,
+                replace: options.replace ?? true,
+                depth: (options.depth || 0) + 1,
+                redirectedFrom: location.fullPath,
+            }, forceLoaders, consumePrefetch);
+        }
+        if (guardResult === false) {
+            return { ok: false, reason: 'blocked', context: renderContext };
+        }
+
+        let cached = false;
+        const prefetched = !forceLoaders ? this.prefetchedLoaders.get(location.fullPath) : undefined;
+        if (prefetched) {
+            renderContext.loaders = prefetched;
+            if (consumePrefetch) {
+                this.prefetchedLoaders.delete(location.fullPath);
+            }
+            cached = true;
+        } else {
+            renderContext.loaders = await this.loadData(renderContext);
+        }
+        renderContext.data = renderContext.loaders.data;
+
+        return { ok: true, context: renderContext, location, cached };
     }
 
     private async runGuards(context: RouteRenderContext): Promise<boolean | string | void> {

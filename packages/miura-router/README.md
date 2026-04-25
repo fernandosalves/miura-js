@@ -6,6 +6,7 @@ Modern, declarative routing for miura applications. Built for Web Components, th
 
 - **Multiple navigation modes**: `hash`, `history`, or in-memory for tests.
 - **Guards & loaders**: resolve access/gate data before components render.
+- **Route prefetch**: warm guards and loader data before navigation, then reuse it on the next matching visit.
 - **Nested routes & redirects**: declarative tree definitions.
 - **Type-safe route params**: `defineRoute<TParams, TData>()` with typed params and loader data contracts.
 - **Runtime param validation**: optional Zod / Valibot / ArkType schema on any route.
@@ -114,6 +115,20 @@ Named loader results are exposed under `context.data.<key>`, and the full loader
 
 Optional loaders may fail without aborting navigation, which makes it easier to render partial route data.
 
+## ⚡ Route Prefetch
+
+`router.prefetch(path)` runs route matching, redirects, guards, and loaders without rendering or committing a navigation. Loader state is cached by `fullPath` and consumed by the next `navigate()` / `replace()` to that exact path.
+
+```ts
+link.addEventListener('pointerenter', () => {
+  router.prefetch('/profile/42');
+});
+
+await router.navigate('/profile/42'); // renders with prefetched loader data
+```
+
+Call `router.prefetch(path, { force: true })` to refresh an existing prefetched entry. Navigation still re-runs guards before consuming prefetched loader data, so auth and redirect decisions remain live.
+
 ## 🗂️ Nested Routes & Layout Outlets
 
 Define a `children` array on any route to create a parent/child hierarchy. The parent route acts as a layout shell; the matched child fills the `<miura-router-outlet>` inside it.
@@ -195,6 +210,7 @@ outlet clears or replaces the component.
 |--------|-------------|
 | `router.navigate(path, opts?)` | Push a new entry and navigate |
 | `router.replace(path, opts?)` | Replace current entry and navigate |
+| `router.prefetch(path, opts?)` | Run guards/loaders and cache loader state without rendering |
 | `router.back()` | Go back in history |
 | `router.forward()` | Go forward in history |
 | `router.current` | Current `RouteContext` |
@@ -212,6 +228,15 @@ outlet clears or replaces the component.
 ```ts
 const result = await router.navigate('/dashboard');
 if (!result.ok) console.log('blocked:', result.reason);
+```
+
+`prefetch()` returns `Promise<PrefetchResult>`:
+
+```ts
+const warmed = await router.prefetch('/dashboard');
+if (warmed.ok && warmed.cached) {
+  console.log('already warm');
+}
 ```
 
 ## 🔄 Reactive Route State

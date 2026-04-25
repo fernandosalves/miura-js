@@ -133,6 +133,14 @@ export interface NavigationOptions {
     state?: any;
 }
 
+export interface PrefetchOptions {
+    /**
+     * Replace an existing cached loader state for this full path.
+     * Defaults to false.
+     */
+    force?: boolean;
+}
+
 export interface NavigationSuccess {
     ok: true;
     context: RouteContext;
@@ -146,6 +154,14 @@ export interface NavigationFailure {
 
 export type NavigationResult = NavigationSuccess | NavigationFailure;
 
+export interface PrefetchSuccess {
+    ok: true;
+    context: RouteContext;
+    cached: boolean;
+}
+
+export type PrefetchResult = PrefetchSuccess | NavigationFailure;
+
 export interface Router {
     readonly current?: RouteContext;
     readonly previous?: RouteContext | null;
@@ -156,6 +172,7 @@ export interface Router {
     select<T>(selector: (context: RouteContext | undefined) => T): RouteSignal<T>;
     dataSignal<TData = RouteDataRecord>(): RouteSignal<TData | undefined>;
     dataSignal<T = unknown>(key: string, fallback?: T): RouteSignal<T | undefined>;
+    prefetch(target: string, options?: PrefetchOptions): Promise<PrefetchResult>;
     navigate(target: string, options?: NavigationOptions): Promise<NavigationResult>;
     replace(target: string, options?: NavigationOptions): Promise<NavigationResult>;
     back(): void;

@@ -152,6 +152,128 @@ describe('MiuraRouter guards and loaders', () => {
         router.destroy();
     });
 
+    it('prefetches loader data without rendering and reuses it on navigation', async () => {
+        const loader = vi.fn(({ params }: RouteRenderContext) => ({ id: params.id }));
+        const prefetchRouter = createRouter({
+            routes: [
+                { path: '/', component: 'prefetch-home' },
+                {
+                    path: '/profile/:id',
+                    component: 'prefetch-profile',
+                    loaders: [{ key: 'profile', load: loader }],
+                },
+            ],
+            mode: 'memory',
+            eventBus,
+            render: (context) => renderSpy(context),
+        });
+
+        await prefetchRouter.start();
+        renderSpy.mockClear();
+        (eventBus.emit as ReturnType<typeof vi.fn>).mockClear();
+
+        const prefetch = await prefetchRouter.prefetch('/profile/9');
+
+        expect(prefetch.ok).toBe(true);
+        if (prefetch.ok) {
+            expect(prefetch.cached).toBe(false);
+            expect(prefetch.context.data).toEqual({ profile: { id: '9' } });
+        }
+        expect(loader).toHaveBeenCalledTimes(1);
+        expect(renderSpy).not.toHaveBeenCalled();
+        expect((eventBus.emit as ReturnType<typeof vi.fn>).mock.calls.map(([type]) => type)).toContain('router:prefetched');
+
+        const cachedPrefetch = await prefetchRouter.prefetch('/profile/9');
+        expect(cachedPrefetch.ok).toBe(true);
+        if (cachedPrefetch.ok) {
+            expect(cachedPrefetch.cached).toBe(true);
+        }
+        expect(loader).toHaveBeenCalledTimes(1);
+
+        const result = await prefetchRouter.navigate('/profile/9');
+
+        expect(result.ok).toBe(true);
+        expect(loader).toHaveBeenCalledTimes(1);
+        expect(renderSpy).toHaveBeenCalledTimes(1);
+        expect(renderSpy.mock.calls[0][0].data).toEqual({ profile: { id: '9' } });
+
+        prefetchRouter.destroy();
+    });
+
+    it('can force a route prefetch to refresh cached loader data', async () => {
+        const loader = vi
+            .fn<(_: RouteRenderContext) => { value: number }>()
+            .mockReturnValueOnce({ value: 1 })
+            .mockReturnValueOnce({ value: 2 });
+        const prefetchRouter = createRouter({
+            routes: [
+                { path: '/', component: 'prefetch-home' },
+                {
+                    path: '/stats',
+                    component: 'prefetch-stats',
+                    loaders: [{ key: 'stats', load: loader }],
+                },
+            ],
+            mode: 'memory',
+            render: (context) => renderSpy(context),
+        });
+
+        await prefetchRouter.start();
+        renderSpy.mockClear();
+
+        await prefetchRouter.prefetch('/stats');
+        const refreshed = await prefetchRouter.prefetch('/stats', { force: true });
+
+        expect(refreshed.ok).toBe(true);
+        if (refreshed.ok) {
+            expect(refreshed.context.data).toEqual({ stats: { value: 2 } });
+        }
+        expect(loader).toHaveBeenCalledTimes(2);
+
+        await prefetchRouter.navigate('/stats');
+        expect(renderSpy.mock.calls.at(-1)?.[0].data).toEqual({ stats: { value: 2 } });
+        expect(loader).toHaveBeenCalledTimes(2);
+
+        prefetchRouter.destroy();
+    });
+
+    it('reuses prefetched loader data after redirects', async () => {
+        const loader = vi.fn(() => ({ loaded: true }));
+        const prefetchRouter = createRouter({
+            routes: [
+                { path: '/', component: 'prefetch-home' },
+                { path: '/old-stats', component: 'prefetch-old-stats', redirect: '/stats' },
+                {
+                    path: '/stats',
+                    component: 'prefetch-stats',
+                    loaders: [{ key: 'stats', load: loader }],
+                },
+            ],
+            mode: 'memory',
+            render: (context) => renderSpy(context),
+        });
+
+        await prefetchRouter.start();
+        renderSpy.mockClear();
+
+        const prefetched = await prefetchRouter.prefetch('/old-stats');
+        const cached = await prefetchRouter.prefetch('/old-stats');
+
+        expect(prefetched.ok).toBe(true);
+        expect(cached.ok).toBe(true);
+        if (cached.ok) {
+            expect(cached.cached).toBe(true);
+            expect(cached.context.fullPath).toBe('/stats');
+        }
+        expect(loader).toHaveBeenCalledTimes(1);
+
+        await prefetchRouter.navigate('/old-stats');
+        expect(loader).toHaveBeenCalledTimes(1);
+        expect(renderSpy.mock.calls.at(-1)?.[0].data).toEqual({ stats: { loaded: true } });
+
+        prefetchRouter.destroy();
+    });
+
     it('runs parent route guards when navigating to a child route', async () => {
         const guardFn = vi.fn<() => boolean | string>().mockReturnValue(true);
         const nestedRoutes: RouteRecord[] = [
