@@ -5,8 +5,8 @@ export * from './src/processor/dom-fragment';
 export * from './src/css-result';
 export * from './src/utils/debug';
 export * from './src/utils/performance';
-export { html, getHtmlMetrics, resetHtmlMetrics, trustHTML, trustedHTML } from './src/html';
-export type { TrustedHTMLOptions } from './src/html';
+export { html, getHtmlMetrics, resetHtmlMetrics, trustHTML, trustedHTML, enhance } from './src/html';
+export type { TrustedHTMLAfterRender, TrustedHTMLOptions } from './src/html';
 export { css, getCssMetrics, resetCssMetrics, clearCssCache, trustCSS } from './src/css';
 
 export * from './src/directives';

@@ -12,5 +12,5 @@ export * from './src/types.js';
 export { computed, isSignal } from './src/signals.js';
 export { signal as createSignal, computed as createComputed } from './src/signals.js';
 export type { Signal, ReadonlySignal } from './src/signals.js';
-export { html, css, trustHTML, trustedHTML, trustCSS, repeat, when, choose, resolveAsync, createAsyncTracker, computeVirtualSlice, VirtualScrollDirective, AsyncDirective, TemplateCompiler } from '@miurajs/miura-render';
-export type { AsyncTracker, VirtualScrollConfig, VirtualScrollResult, VirtualScrollDirectiveConfig, AsyncDirectiveConfig, CompiledTemplate, TrustedHTMLOptions } from '@miurajs/miura-render';
+export { html, css, trustHTML, trustedHTML, enhance, trustCSS, repeat, when, choose, resolveAsync, createAsyncTracker, computeVirtualSlice, VirtualScrollDirective, AsyncDirective, TemplateCompiler } from '@miurajs/miura-render';
+export type { AsyncTracker, VirtualScrollConfig, VirtualScrollResult, VirtualScrollDirectiveConfig, AsyncDirectiveConfig, CompiledTemplate, TrustedHTMLAfterRender, TrustedHTMLOptions } from '@miurajs/miura-render';

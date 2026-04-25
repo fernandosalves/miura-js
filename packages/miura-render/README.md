@@ -61,14 +61,15 @@ Prefer node bindings for rendered subtrees. For sanitized or framework-owned HTM
 `trustedHTML()` instead of assigning `.innerHTML` directly:
 
 ```typescript
-import { html, trustedHTML } from '@miurajs/miura-render';
+import { enhance, html, trustedHTML } from '@miurajs/miura-render';
 
 html`
   <article>
     ${trustedHTML(cleanHtml, {
-      afterRender: (root) => {
-        // Enhance the inserted subtree, e.g. render diagrams or mount embeds.
-      }
+      afterRender: enhance(
+        (root) => renderMermaid(root),
+        (root) => mountEmbeds(root)
+      )
     })}
   </article>
 `

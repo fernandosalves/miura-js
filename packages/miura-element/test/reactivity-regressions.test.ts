@@ -202,4 +202,50 @@ describe('MiuraElement reactivity regressions', () => {
     expect(afterRenderRoots).toEqual([host, host]);
     expect(element.renderCount).toBe(1);
   });
+
+  it('preserves trustedHTML DOM on AOT updates when html and enhancer are unchanged', async () => {
+    const tagName = `aot-trusted-html-stable-${crypto.randomUUID()}`;
+    let enhanceCount = 0;
+    const afterRender = () => {
+      enhanceCount++;
+    };
+
+    class StableAotTrustedHtmlElement extends MiuraElement {
+      static override compiler = 'AOT' as const;
+      static override properties = {
+        htmlText: { type: String, default: '<span id="stable-aot">Stable</span>' },
+        tick: { type: Number, default: 0 },
+      };
+
+      declare htmlText: string;
+      declare tick: number;
+
+      protected override template() {
+        return html`
+          <article id="stable-aot-host">
+            ${trustedHTML(this.htmlText, { afterRender })}
+            <span id="stable-aot-tick">${this.tick}</span>
+          </article>
+        `;
+      }
+    }
+
+    customElements.define(tagName, StableAotTrustedHtmlElement);
+
+    const element = document.createElement(tagName) as StableAotTrustedHtmlElement;
+    document.body.appendChild(element);
+
+    await waitForUpdate(element);
+
+    const stableNode = element.shadowRoot?.querySelector('#stable-aot');
+    expect(stableNode).not.toBeNull();
+    expect(enhanceCount).toBe(1);
+
+    element.tick = 1;
+    await Promise.resolve();
+
+    expect(element.shadowRoot?.querySelector('#stable-aot')).toBe(stableNode);
+    expect(element.shadowRoot?.querySelector('#stable-aot-tick')?.textContent).toBe('1');
+    expect(enhanceCount).toBe(1);
+  });
 });

@@ -83,6 +83,15 @@ function collectRefs(frag, count) {
 function setNodeBinding(ref, value) {
     if (!ref) return;
     if (ref.prev === value) return;
+    if (
+        value && typeof value === 'object' && value[Symbol.for('miura:trusted')] &&
+        ref.prev && typeof ref.prev === 'object' && ref.prev[Symbol.for('miura:trusted')] &&
+        ref.prev.value === value.value &&
+        ref.prev.afterRender === value.afterRender
+    ) {
+        ref.prev = value;
+        return;
+    }
     ref.prev = value;
     const start = ref.startComment;
     const end = ref.endComment;

@@ -10,6 +10,20 @@ export interface TrustedHTMLOptions {
   afterRender?: (root: DocumentFragment | Element) => void;
 }
 
+export type TrustedHTMLAfterRender = NonNullable<TrustedHTMLOptions['afterRender']>;
+
+/**
+ * Compose post-render HTML enhancers into a single afterRender callback.
+ */
+export function enhance(...enhancers: Array<TrustedHTMLAfterRender | null | undefined | false>): TrustedHTMLAfterRender {
+    const activeEnhancers = enhancers.filter((fn): fn is TrustedHTMLAfterRender => typeof fn === 'function');
+    return (root) => {
+        for (const enhancer of activeEnhancers) {
+            enhancer(root);
+        }
+    };
+}
+
 /**
  * Marks a string as trusted HTML for raw subtree rendering.
  *

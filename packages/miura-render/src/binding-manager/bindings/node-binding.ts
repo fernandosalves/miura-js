@@ -124,13 +124,25 @@ export class NodeBinding implements Binding {
 
         // ── Primitive (string / number / boolean / TrustedValue) ───────────────
         if (value && typeof value === 'object' && (value as any)[TRUSTED_SYMBOL]) {
+            const previous = this.previousValue as any;
+            const afterRender = (value as any).afterRender;
+            if (
+                previous &&
+                typeof previous === 'object' &&
+                previous[TRUSTED_SYMBOL] &&
+                previous.value === (value as any).value &&
+                previous.afterRender === afterRender
+            ) {
+                this.previousValue = value;
+                return;
+            }
+
             this.teardown();
             const html = (value as any).value;
             const temp = document.createElement('template');
             temp.innerHTML = html;
             const fragment = document.importNode(temp.content, true);
             this.insert(fragment);
-            const afterRender = (value as any).afterRender;
             if (typeof afterRender === 'function') {
                 const root = this.startMarker.parentElement ?? this.element;
                 afterRender(root);

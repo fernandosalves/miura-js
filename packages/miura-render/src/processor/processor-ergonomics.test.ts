@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { TemplateProcessor } from './processor';
-import { html, trustedHTML, trustHTML } from '../html';
+import { enhance, html, trustedHTML, trustHTML } from '../html';
 import { signal } from '../../../miura-element/src/signals';
 
 describe('MiuraJS Rendering Ergonomics', () => {
@@ -119,6 +119,81 @@ describe('MiuraJS Rendering Ergonomics', () => {
         expect(root.querySelector('[data-kind="trusted"]')?.textContent).toBe('Trusted');
         expect(root.textContent).not.toContain('data-kind');
         expect(afterRenderRoot).toBe(root);
+    });
+
+    it('composes trustedHTML enhancers', async () => {
+        const processor = new TemplateProcessor();
+        const calls: string[] = [];
+
+        const template = html`
+            <section id="enhanced-root">
+                ${trustedHTML('<span>Enhanced</span>', {
+                    afterRender: enhance(
+                        () => calls.push('first'),
+                        null,
+                        () => calls.push('second')
+                    )
+                })}
+            </section>
+        `;
+
+        const instance = await processor.createInstance(template);
+        document.body.innerHTML = '';
+        document.body.appendChild(instance.getFragment());
+
+        expect(calls).toEqual(['first', 'second']);
+    });
+
+    it('updates trustedHTML across empty and non-empty values', async () => {
+        const processor = new TemplateProcessor();
+        const template = html`<div id="trusted-cycle">${trustedHTML('')}</div>`;
+        const instance = await processor.createInstance(template);
+
+        document.body.innerHTML = '';
+        document.body.appendChild(instance.getFragment());
+
+        const root = document.getElementById('trusted-cycle') as HTMLElement;
+        expect(root.children.length).toBe(0);
+
+        await instance.update([trustedHTML('<span id="trusted-added">Added</span>')]);
+        expect(document.getElementById('trusted-added')?.textContent).toBe('Added');
+
+        await instance.update([trustedHTML('')]);
+        expect(document.getElementById('trusted-added')).toBeNull();
+        expect(root.children.length).toBe(0);
+    });
+
+    it('skips trustedHTML DOM replacement when html and enhancer are unchanged', async () => {
+        const processor = new TemplateProcessor();
+        let enhanceCount = 0;
+        const afterRender = () => {
+            enhanceCount++;
+        };
+
+        const template = html`
+            <div id="trusted-skip">
+                ${trustedHTML('<span id="stable-node">Stable</span>', { afterRender })}
+            </div>
+        `;
+        const instance = await processor.createInstance(template);
+
+        document.body.innerHTML = '';
+        document.body.appendChild(instance.getFragment());
+
+        const stableNode = document.getElementById('stable-node');
+        expect(stableNode).not.toBeNull();
+        expect(enhanceCount).toBe(1);
+
+        await instance.update([trustedHTML('<span id="stable-node">Stable</span>', { afterRender })]);
+
+        expect(document.getElementById('stable-node')).toBe(stableNode);
+        expect(enhanceCount).toBe(1);
+
+        await instance.update([trustedHTML('<span id="stable-node">Changed</span>', { afterRender })]);
+
+        expect(document.getElementById('stable-node')).not.toBe(stableNode);
+        expect(document.getElementById('stable-node')?.textContent).toBe('Changed');
+        expect(enhanceCount).toBe(2);
     });
 
     it('keeps trustHTML as a backwards-compatible alias', async () => {

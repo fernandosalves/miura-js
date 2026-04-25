@@ -75,6 +75,48 @@ component template to rerender.
 `trustHTML()` remains available as a compatibility alias, but `trustedHTML()` is
 the preferred name for new code.
 
+#### Markdown Renderer Recipe
+
+```typescript
+import { MiuraElement, html, trustedHTML, enhance } from '@miurajs/miura';
+import DOMPurify from 'dompurify';
+
+class MarkdownReader extends MiuraElement {
+  static properties = {
+    source: { type: String, default: '' },
+  };
+
+  private get renderedHtml() {
+    const rawHtml = parseMarkdown(this.source);
+    return DOMPurify.sanitize(rawHtml, {
+      ADD_TAGS: ['iframe', 'svg', 'path', 'pre', 'code'],
+      ADD_ATTR: ['src', 'class', 'data-url', 'viewBox', 'd'],
+    });
+  }
+
+  template() {
+    return html`
+      <article class="reader-content">
+        ${trustedHTML(this.renderedHtml, {
+          afterRender: enhance(
+            (root) => renderMermaidBlocks(root),
+            (root) => mountSandboxEmbeds(root)
+          )
+        })}
+      </article>
+    `;
+  }
+}
+```
+
+The pattern is:
+
+1. Parse markdown to HTML.
+2. Sanitize the HTML.
+3. Wrap only the sanitized result with `trustedHTML()`.
+4. Put DOM-dependent work like Mermaid, embeds, syntax decoration, or anchors in
+   `afterRender`.
+
 ---
 
 ## Functional Directives
