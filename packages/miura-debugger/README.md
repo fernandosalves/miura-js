@@ -69,6 +69,17 @@ These are used by `MiuraElement` to draw component borders and labels directly i
 
 When the overlay and layers are both enabled, clicking a layer opens a simple inspector view with the component label, current snapshot values, render metrics, any registered framework primitives such as resources, forms, or route signals, and the recent timeline events associated with that component. That makes it easier to understand what a component looked like and what it just did, even when there is no active runtime error.
 
+## Template Diagnostics
+
+Miura's render and element pipelines report developer warnings for common template mistakes before they become confusing DOM output:
+
+- function values reaching node text, usually a leaked signal or callback
+- signal-like functions from a second framework copy
+- ambiguous direct property reads with falsy fallback values
+- non-string values passed to `trustedHTML()`
+
+These diagnostics include `internalDetails.code` values such as `template-function-value`, `ambiguous-direct-read`, and `trusted-html-non-string`, plus advice shown in the overlay.
+
 ## Component-Level Debug Options
 
 Components can refine how they appear in the debugger with either `static debug` or the `@debug(...)` decorator:

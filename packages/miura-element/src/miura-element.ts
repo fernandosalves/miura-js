@@ -3,7 +3,7 @@ import { consumeContext, provideContext, type ContextKey } from './context.js';
 import { findIslandHost, readIslandProps, type MiuraIsland } from './miura-island.js';
 import { PropertyDeclarations, createLocalSignalProperties, createProperties, createStateProperties, LOCAL_SIGNAL_KEY_PREFIX, SIGNAL_KEY_PREFIX } from './properties';
 import type { RouteSignalLike, RouterBridgeLike } from './router-bridge.js';
-import { getComponentDebugOptions, registerDebugLayer, reportDiagnostic, reportTimelineEvent, unregisterDebugLayer } from '@miurajs/miura-debugger';
+import { getComponentDebugOptions, registerDebugLayer, reportDiagnostic, reportTimelineEvent, reportWarning, unregisterDebugLayer } from '@miurajs/miura-debugger';
 import { signal, computed, Signal, ReadonlySignal } from './signals.js';
 import { createFieldRef, type FieldRef } from './field-ref.js';
 import { shared, createGlobalProperties, GLOBAL_SIGNAL_KEY_PREFIX, type SharedKey } from './shared.js';
@@ -312,6 +312,8 @@ export class MiuraElement extends HTMLElement {
     private _aotValues: unknown[] = [];
     /** Per-binding signal subscriptions for AOT templates. */
     private _aotSignalSubscriptions = new Map<number, AotSignalSubscription>();
+    /** Dedupe template promotion diagnostics for this component instance. */
+    private _templateDiagnosticKeys = new Set<string>();
 
     /**
      * Gets the computed value for a property, using cache if available.
@@ -831,6 +833,32 @@ export class MiuraElement extends HTMLElement {
                 continue;
             }
 
+            if (!_isSafeDirectReadMatchValue(value)) {
+                const ambiguousRead = this._templateReadRecords.find((candidate) =>
+                    !candidate.matched && Object.is(candidate.value, value)
+                );
+                if (ambiguousRead) {
+                    this._reportTemplateDiagnosticOnce(
+                        `ambiguous-direct-read:${ambiguousRead.name}:${String(value)}`,
+                        {
+                            subsystem: 'element',
+                            stage: 'binding',
+                            message: `Skipped fine-grained promotion for ambiguous direct read "${ambiguousRead.name}".`,
+                            summary: 'Falsy values can match unrelated empty/false template placeholders, so Miura kept this update on the full component render path.',
+                            componentTag: this.localName || undefined,
+                            componentClass: this.constructor.name,
+                            propertyName: ambiguousRead.name,
+                            element: this,
+                            internalDetails: {
+                                code: 'ambiguous-direct-read',
+                                value,
+                                valueIndex,
+                            },
+                        }
+                    );
+                }
+            }
+
             if (_isTrustedValue(value)) {
                 const trustedRead = this._templateReadRecords.find((candidate) =>
                     !candidate.matched && Object.is(candidate.value, value.value)
@@ -854,6 +882,15 @@ export class MiuraElement extends HTMLElement {
         }
 
         return new TemplateResult(template.strings, values);
+    }
+
+    private _reportTemplateDiagnosticOnce(
+        key: string,
+        diagnostic: Parameters<typeof reportWarning>[0]
+    ): void {
+        if (this._templateDiagnosticKeys.has(key)) return;
+        this._templateDiagnosticKeys.add(key);
+        reportWarning(diagnostic);
     }
 
     /**

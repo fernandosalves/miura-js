@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { BindingManager } from './binding-manager';
 import { clearDiagnostics, getDiagnostics } from '@miurajs/miura-debugger';
 import { BindingType, type TemplateBinding } from '../processor/template-result';
+import { html, trustedHTML } from '../html';
+import { TemplateProcessor } from '../processor/processor';
 
 describe('BindingManager diagnostics', () => {
     beforeEach(() => {
@@ -47,5 +49,28 @@ describe('BindingManager diagnostics', () => {
 
         const diagnostic = getDiagnostics()[0];
         expect(diagnostic?.message).toContain('[binding:0] property .disabled for submit button');
+    });
+
+    it('warns when a function value reaches node content', async () => {
+        const processor = new TemplateProcessor();
+        const leaked = () => () => 'not text';
+
+        const instance = await processor.createInstance(html`<p>${leaked}</p>`);
+        document.body.appendChild(instance.getFragment());
+
+        const diagnostic = getDiagnostics()[0];
+        expect(diagnostic?.severity).toBe('warning');
+        expect(diagnostic?.message).toContain('Function value reached a render binding');
+        expect(diagnostic?.internalDetails?.code).toBe('template-function-value');
+        expect(diagnostic?.advice?.some((item) => item.title === 'Pass a value instead of a function')).toBe(true);
+    });
+
+    it('warns when trustedHTML receives non-string content', () => {
+        trustedHTML(42 as any);
+
+        const diagnostic = getDiagnostics()[0];
+        expect(diagnostic?.severity).toBe('warning');
+        expect(diagnostic?.message).toContain('trustedHTML() received a non-string value');
+        expect(diagnostic?.internalDetails?.code).toBe('trusted-html-non-string');
     });
 });

@@ -1,4 +1,5 @@
 import { TemplateResult, TRUSTED_SYMBOL, TrustedValue } from './processor/template-result';
+import { reportWarning } from '@miurajs/miura-debugger';
 export { TRUSTED_SYMBOL };
 export type { TrustedValue };
 
@@ -31,6 +32,20 @@ export function enhance(...enhancers: Array<TrustedHTMLAfterRender | null | unde
  * DOM nodes and will call `afterRender` after those nodes are mounted.
  */
 export function trustedHTML(value: string, options: TrustedHTMLOptions = {}): TrustedValue {
+    if (typeof value !== 'string') {
+        reportWarning({
+            subsystem: 'render',
+            stage: 'binding',
+            message: 'trustedHTML() received a non-string value.',
+            summary: `Received ${value === null ? 'null' : typeof value}; Miura will coerce it with String().`,
+            bindingKind: 'trustedHTML',
+            internalDetails: {
+                code: 'trusted-html-non-string',
+                valueType: value === null ? 'null' : typeof value,
+            },
+        });
+    }
+
     return {
         [TRUSTED_SYMBOL]: true,
         value: String(value),

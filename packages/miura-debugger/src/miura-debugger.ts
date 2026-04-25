@@ -232,6 +232,27 @@ function createAdvice(diagnostic: Partial<MiuraDiagnostic>): MiuraDiagnosticAdvi
         });
     }
 
+    if (diagnostic.internalDetails?.code === 'template-function-value') {
+        advice.push({
+            title: 'Pass a value instead of a function',
+            detail: 'If this is a signal, bind the signal object directly or call it before rendering. If this is a callback, use an event/property binding instead of node text.',
+        });
+    }
+
+    if (diagnostic.internalDetails?.code === 'ambiguous-direct-read') {
+        advice.push({
+            title: 'Make the binding identity explicit',
+            detail: 'Falsy fallback values like empty strings are ambiguous in templates. Bind a signal/field ref directly, call the value explicitly, or use a non-empty sentinel fallback.',
+        });
+    }
+
+    if (diagnostic.internalDetails?.code === 'trusted-html-non-string') {
+        advice.push({
+            title: 'Check trustedHTML input',
+            detail: 'trustedHTML() is intended for already-sanitized HTML strings. Convert or sanitize the value before marking it as trusted.',
+        });
+    }
+
     if (diagnostic.bindingKind === 'directive') {
         advice.push({
             title: 'Check the directive chain',

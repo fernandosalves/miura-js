@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MiuraElement, html, trustedHTML } from '../index.js';
+import { clearDiagnostics, getDiagnostics } from '@miurajs/miura-debugger';
 
 const waitForUpdate = async (element: MiuraElement, timeoutMs = 150) => {
   await Promise.race([
@@ -12,10 +13,12 @@ const waitForUpdate = async (element: MiuraElement, timeoutMs = 150) => {
 
 describe('MiuraElement reactivity regressions', () => {
   beforeEach(() => {
+    clearDiagnostics();
     document.body.innerHTML = '';
   });
 
   afterEach(() => {
+    clearDiagnostics();
     document.body.innerHTML = '';
   });
 
@@ -149,6 +152,10 @@ describe('MiuraElement reactivity regressions', () => {
     const shell = element.shadowRoot?.querySelector('.shell');
     expect(element.shadowRoot?.querySelector('.subtitle')?.textContent).toBe('Administration');
     expect(shell?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Administration');
+    expect(getDiagnostics().some((diagnostic) =>
+      diagnostic.internalDetails?.code === 'ambiguous-direct-read' &&
+      diagnostic.propertyName === 'subtitle'
+    )).toBe(true);
   });
 
   it('coalesces same-tick property changes into one component update', async () => {

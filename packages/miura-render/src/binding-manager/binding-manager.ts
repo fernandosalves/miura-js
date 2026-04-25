@@ -17,7 +17,7 @@ import { BindBinding } from './bindings/bind-binding';
 import { SpreadBinding } from './bindings/spread-binding';
 import { AsyncBinding } from './bindings/async-binding';
 import { UtilityBinding, UtilityPartBinding } from './bindings/utility-binding';
-import { reportDiagnostic } from '@miurajs/miura-debugger';
+import { reportDiagnostic, reportWarning } from '@miurajs/miura-debugger';
 import { queueRenderTask } from '../scheduler';
 
 type SignalLike = { peek(): unknown; subscribe(fn: (v: unknown) => void): () => void };
@@ -34,6 +34,15 @@ function _isSignal(v: unknown): v is SignalLike {
         && typeof (v as any).peek === 'function'
         && typeof (v as any).subscribe === 'function'
         && (v as any).__isSignal === true
+    );
+}
+
+function _looksLikeSignal(v: unknown): v is SignalLike {
+    return Boolean(
+        v
+        && ((typeof v === 'function') || typeof v === 'object')
+        && typeof (v as any).peek === 'function'
+        && typeof (v as any).subscribe === 'function'
     );
 }
 
@@ -523,10 +532,50 @@ export class BindingManager {
                     bindingDef.type !== BindingType.Directive &&
                     bindingDef.type !== BindingType.Reference &&
                     bindingDef.type !== BindingType.Property) { 
+
+                    if (_looksLikeSignal(value)) {
+                        reportWarning({
+                            subsystem: 'render',
+                            stage: 'binding',
+                            message: `Signal-like function was not recognised as a Miura signal for ${this.formatBindingContext(bindingDef, i)}.`,
+                            summary: 'Miura will read it with peek(), but this usually means multiple framework copies or a foreign signal object are present.',
+                            bindingIndex: i,
+                            bindingLabel: bindingDef.debugLabel ?? undefined,
+                            bindingKind: this.getBindingKind(bindingDef.type),
+                            internalDetails: {
+                                code: 'template-function-value',
+                                signalLike: true,
+                            },
+                        });
+                        finalValue = value.peek();
+                    } else {
                     
-                    // Auto-invoke functions for content, attributes, styles, etc.
-                    // to support context-aware expressions (ctx => ctx.val).
-                    finalValue = (value as any)(context);
+                        // Auto-invoke functions for content, attributes, styles, etc.
+                        // to support context-aware expressions (ctx => ctx.val).
+                        finalValue = (value as any)(context);
+                    }
+                }
+
+                if (
+                    typeof finalValue === 'function' &&
+                    bindingDef.type !== BindingType.Event &&
+                    bindingDef.type !== BindingType.Directive &&
+                    bindingDef.type !== BindingType.Reference &&
+                    bindingDef.type !== BindingType.Property
+                ) {
+                    reportWarning({
+                        subsystem: 'render',
+                        stage: 'binding',
+                        message: `Function value reached a render binding for ${this.formatBindingContext(bindingDef, i)}.`,
+                        summary: 'A function is about to be rendered as text. This often means a signal/callback was passed to node content accidentally.',
+                        bindingIndex: i,
+                        bindingLabel: bindingDef.debugLabel ?? undefined,
+                        bindingKind: this.getBindingKind(bindingDef.type),
+                        internalDetails: {
+                            code: 'template-function-value',
+                            functionName: finalValue.name || undefined,
+                        },
+                    });
                 }
 
                 // Set value — always await to handle both sync and async setValue methods

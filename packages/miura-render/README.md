@@ -325,6 +325,11 @@ reads can be promoted to fine-grained binding subscriptions by `MiuraElement`.
 `miura-element`. It coalesces repeated jobs for the same key so signal bursts
 patch each binding once with the latest value.
 
+In development, render bindings also emit structured `miura-debugger`
+diagnostics when function values leak into text content or when `trustedHTML()`
+receives non-string content. These warnings surface in the debugger overlay
+with binding labels and fix advice.
+
 ### Direct usage
 
 ```typescript

@@ -946,6 +946,11 @@ shared Miura render scheduler. Multiple same-tick writes to the same component
 or binding collapse into one DOM pass, while lifecycle hooks still run after
 the committed update.
 
+When Miura skips fine-grained direct-read promotion because a fallback value is
+ambiguous, it emits a structured debugger warning instead of silently risking a
+wrong binding. This is most useful for patterns like `${this.subtitle ||
+'Default'}` where the initial value is an empty string.
+
 For event channels, use `this.$emit(channel, value?)` to publish and `this.$on(channel, handler)` / `this.$once(channel, handler)` to subscribe with automatic cleanup on disconnect.
 
 ## Best Practices
