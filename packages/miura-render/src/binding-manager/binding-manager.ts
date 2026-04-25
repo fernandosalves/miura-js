@@ -505,6 +505,7 @@ export class BindingManager {
                     (binding as any).__signalUnsub = value.subscribe((v: unknown) => {
                         (binding as any).__pendingSignalValue = v;
                         void queueRenderTask(binding as object, () => {
+                            if ((binding as any).__lastSignal !== value) return;
                             const nextValue = (binding as any).__pendingSignalValue;
                             return binding.setValue(nextValue, context);
                         });

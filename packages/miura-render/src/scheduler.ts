@@ -42,9 +42,9 @@ export function queueRenderTask(key: object, job: RenderJob): Promise<boolean> {
 }
 
 export async function flushRenderQueue(): Promise<void> {
+    flushScheduled = false;
     if (flushing) return;
     flushing = true;
-    flushScheduled = false;
 
     try {
         while (queue.size > 0) {
