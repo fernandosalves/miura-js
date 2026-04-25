@@ -314,6 +314,12 @@ Template string → TemplateParser → ParsedTemplate (HTML + TemplateBinding[])
 
 `CompiledTemplate` exposes `nodeBindingIndices` and `directiveBindingInfos` so the caller can wire up the correct instances after the initial DOM render.
 
+AOT and JIT share the same parser and runtime binding semantics for complex
+content. Node bindings, structural directives, `repeat()`, signals, and
+`trustedHTML()` all keep the same behavior across both paths. Signal-like values
+are unwrapped before generated code runs, and component-level direct property
+reads can be promoted to fine-grained binding subscriptions by `MiuraElement`.
+
 ### Direct usage
 
 ```typescript

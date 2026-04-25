@@ -6,8 +6,8 @@ miura is a comprehensive, modular framework designed for building scalable and m
 
 ### Core
 
-- **[miura Element](../packages/miura-element/README.md)**: Base class for reactive web components — properties, computed values, async resources, form state, lifecycle hooks, error boundaries, two-way binding, slot utilities.
-- **[miura Render](../packages/miura-render/README.md)**: Rendering engine — `html`/`css` templates, state-machine parser, 10 binding types, LIS-based keyed diff, async rendering, virtual scrolling.
+- **[miura Element](../packages/miura-element/README.md)**: Base class for reactive web components — signal-backed properties, fine-grained template updates, async resources, form state, lifecycle hooks, error boundaries, two-way binding, slot utilities.
+- **[miura Render](../packages/miura-render/README.md)**: Rendering engine — `html`/`css` templates, state-machine parser, trusted HTML subtrees, binding types, LIS-based keyed diff, async rendering, virtual scrolling.
 - **[miura Framework](./miura-framework.md)**: Orchestration layer — app primitives, plugins, resources, and framework direction.
 
 ### Data & Routing
@@ -28,7 +28,7 @@ miura is a comprehensive, modular framework designed for building scalable and m
 
 ### Reference Docs
 
-- **[Rendering (JIT & AOT)](./miura-render.md)**: Full binding reference, structural directives, JIT vs AOT compiler.
+- **[Rendering (JIT & AOT)](./miura-render.md)**: Full binding reference, `trustedHTML()`, structural directives, fine-grained bindings, JIT vs AOT compiler.
 - **[Router](./miura-router.md)**: Guards, loaders, nested routes, layout outlets, router API.
 - **[Framework Overview](./miura.md)**: Package index, key concepts, lifecycle diagram.
 

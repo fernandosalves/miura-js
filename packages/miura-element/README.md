@@ -15,6 +15,8 @@ The core component system for the miura framework. Provides the `MiuraElement` b
 - **Error Boundaries** — `onError` handler with fallback UI and recovery
 - **Two-Way Binding** — `&` prefix with `bind()` helper for form elements
 - **AOT / JIT Compiler** — `static compiler = 'AOT'` to opt a component into the zero-DOM-query render path
+- **Trusted HTML Subtrees** — `trustedHTML()` for sanitized/generated HTML with an `afterRender` enhancement hook
+- **Fine-Grained Template Updates** — direct signal-backed property reads can update individual bindings without a full rerender
 - **Standalone Signals** — `createSignal()` / `createComputed()` for low-level usage outside components
 - **Shared Signals** — `$shared(key, initial)` for lightweight app-wide reactive state
 - **Router Bridge** — `$route()`, `$routeSelect()`, and `$routeData()` for reactive route context in components
@@ -747,6 +749,32 @@ class MuiPanel extends MiuraElement {
 
 Event modifiers via `|`: `@click|prevent=${handler}`, `@click|prevent,stop=${handler}`
 
+### Trusted HTML Subtrees
+
+Use `trustedHTML()` when a component needs to render sanitized or generated HTML
+as DOM. Prefer it over `.innerHTML=${...}` because it is explicit, participates
+in node binding updates, and gives you an `afterRender` hook for post-processing:
+
+```typescript
+import { html, trustedHTML } from '@miurajs/miura-element';
+
+template() {
+  return html`
+    <article class="content">
+      ${trustedHTML(this.renderedHtml, {
+        afterRender: (root) => {
+          renderMermaid(root);
+          mountEmbeds(root);
+        }
+      })}
+    </article>
+  `;
+}
+```
+
+Miura does not sanitize the string. Sanitize user content before wrapping it.
+`trustHTML()` remains available as a compatibility alias.
+
 ### Conditional Rendering
 
 ```typescript
@@ -886,7 +914,14 @@ class DataRow extends MiuraElement {
 | First render | `TemplateProcessor` → `Binding[]` | `TemplateCompiler` → `render()` → `{ fragment, refs }` |
 | Updates | `instance.update(values)` | Direct `refs[N].el.prop = v` — **zero DOM queries** |
 | Directives / `repeat()` | ✅ Full support | ✅ Delegated to `NodeBinding` / `DirectiveBinding` |
+| Signals / `trustedHTML()` | ✅ Full support | ✅ Signal unwrap + runtime binding delegation |
 | Best for | All components | High-frequency updates, list rows, counters |
+
+Miura can promote direct template reads of signal-backed properties into
+binding-level subscriptions. For example, `${this.label}` can update the text
+binding directly when `label` changes; `${this.label.toUpperCase()}` still
+rerenders the component because the expression is transformed. This promotion
+works in both JIT and AOT templates, including trusted HTML subtrees.
 
 ### Standalone Signals
 

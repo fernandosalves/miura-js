@@ -5,6 +5,7 @@
 ```typescript
 import {
   MiuraElement, html, css, component,
+  trustedHTML,
   repeat, when, choose, resolveAsync, createAsyncTracker,
   TemplateCompiler,
   $signal, $computed,
@@ -18,7 +19,7 @@ import {
 | Package | Role | Status |
 |---------|------|--------|
 | `@miurajs/miura-element` | Base class, reactive properties, lifecycle, AOT/JIT compiler flag | ✅ Stable |
-| `@miurajs/miura-render` | `html`/`css` templates, parser, bindings, directives, AOT `CodeFactory` | ✅ Stable |
+| `@miurajs/miura-render` | `html`/`css` templates, parser, bindings, `trustedHTML()`, directives, AOT `CodeFactory` | ✅ Stable |
 | `@miurajs/miura-framework` | Orchestration — plugin manager, event bus, performance monitor | ✅ Stable |
 | `@miurajs/miura-data-flow` | Store, middleware, 9 data providers | ✅ Stable |
 | `@miurajs/miura-ui` | 70+ pre-built UI components | ✅ Stable |
@@ -46,6 +47,16 @@ property.set(value) → signal.notify() → requestUpdate() → willUpdate() →
                     → performUpdate() → renderTemplateInstance() → updated()
 ```
 
+Direct template reads can bypass the full rerender path when Miura can prove a
+binding reads a single signal-backed property directly:
+
+```
+this.title in template → binding receives property signal → signal update patches that binding
+```
+
+That path works in both JIT and AOT templates, including node bindings and
+trusted HTML subtrees.
+
 ### JIT vs AOT
 
 All components default to **JIT** rendering via `TemplateProcessor`. Opt into **AOT** per class:
@@ -55,6 +66,30 @@ static compiler = 'AOT' as const;
 ```
 
 See [`docs/miura-render.md`](./miura-render.md) for the full breakdown.
+
+### Trusted HTML Subtrees
+
+Use `trustedHTML()` when an app has already sanitized or generated HTML and
+wants Miura to treat it as a subtree, not as a string property:
+
+```typescript
+template() {
+  return html`
+    <article>
+      ${trustedHTML(this.renderedHtml, {
+        afterRender: (root) => {
+          renderMermaid(root);
+          mountEmbeds(root);
+        }
+      })}
+    </article>
+  `;
+}
+```
+
+`trustedHTML()` deliberately does not sanitize. It exists to replace low-level
+`.innerHTML=${...}` bindings with an explicit framework primitive and a
+post-mount hook for enhancers.
 
 ### Signal-Backed Properties
 

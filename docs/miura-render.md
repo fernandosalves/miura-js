@@ -21,6 +21,11 @@
 | `~` | Async | `~src=${promise}` | Auto-unwraps Promise/Observable |
 | `#` | Directive / Ref | `#if=${cond}`, `#ref=${el}` | Structural directives or element refs |
 
+Node bindings are the preferred place for dynamic content subtrees. Use property
+bindings for DOM properties like `.value`, `.checked`, or `.scrollTop`; use
+node bindings for content. Avoid `.innerHTML=${...}` for rendered content,
+because it hides a subtree behind a generic property write.
+
 ### Event Modifiers
 
 ```typescript
@@ -37,6 +42,38 @@
 html`<div title="Hello ${first} ${last}">...</div>`
 // → concatenated as a single Attribute binding
 ```
+
+### Trusted HTML
+
+`trustedHTML(value, options?)` marks a string as a trusted subtree:
+
+```typescript
+import { html, trustedHTML } from '@miurajs/miura-render';
+
+html`
+  <article class="content">
+    ${trustedHTML(cleanHtml, {
+      afterRender(root) {
+        renderMermaidDiagrams(root);
+        mountCodeSandboxes(root);
+      }
+    })}
+  </article>
+`
+```
+
+Use it for HTML that your app has already sanitized or generated itself, such as
+markdown output after DOMPurify, server-rendered fragments, or framework-owned
+SVG children. Miura does not sanitize this value.
+
+`afterRender(root)` runs after Miura inserts the trusted subtree. In JIT it is
+called by `NodeBinding`; in AOT it is called by the compiled node-binding helper.
+When the value comes from a direct signal-backed property read, Miura preserves
+fine-grained updates and reruns the trusted subtree render without forcing the
+component template to rerender.
+
+`trustHTML()` remains available as a compatibility alias, but `trustedHTML()` is
+the preferred name for new code.
 
 ---
 
@@ -106,6 +143,16 @@ Three-tier binding strategy:
 | Property / Boolean / Event / Class / Style / etc. | Generated JS (inlined in `new Function()`) |
 | Node (TemplateResult, `repeat()`) | `NodeBinding` instance per ref |
 | Directive (`#if`, `#for`, `#switch`) | `DirectiveBinding` instance per ref |
+
+AOT uses the same parsed-template cache shape as JIT and delegates complex
+content back to the runtime binding classes where needed. That keeps features
+like `repeat()`, nested templates, structural directives, signals, and
+`trustedHTML()` aligned between both renderers.
+
+Signal-like values passed into AOT templates are unwrapped before generated code
+runs, and direct template reads from signal-backed properties can be promoted to
+binding-level subscriptions. The practical effect is that simple AOT bindings
+can update directly from a signal notification without a full component render.
 
 `CompiledTemplate` fields:
 - `html` — the parsed HTML string

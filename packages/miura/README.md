@@ -7,9 +7,9 @@ This package bundles and exports all the core modules, making it easy to get sta
 ## Included Building Blocks
 
 - `MiuraElement` for reactive custom elements
-- `html` and `css` template utilities
+- `html`, `css`, and `trustedHTML()` template utilities
 - property, state, and computed reactivity
-- structural directives and fine-grained bindings
+- structural directives, trusted HTML subtrees, and fine-grained bindings
 - component-scoped async resources with `$resource()`
 - component-scoped form state with `$form()`
 - lightweight shared state with `$shared()`
@@ -19,6 +19,11 @@ This package bundles and exports all the core modules, making it easy to get sta
 - island hydration helpers with `$islandProps()` and `$islandResource()`
 - integrated debugger runtime with framework-level dev overlays and component layers
 - signals and shared reactive primitives
+
+Direct reads of signal-backed properties in templates can update at the binding
+level in both JIT and AOT components. Use transformed expressions when you want
+normal component rerender semantics; use direct reads for hot text, attribute,
+property, node, and trusted HTML bindings.
 
 ## Example
 
