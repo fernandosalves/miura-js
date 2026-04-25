@@ -5,6 +5,7 @@ export * from './src/processor/dom-fragment';
 export * from './src/css-result';
 export * from './src/utils/debug';
 export * from './src/utils/performance';
+export * from './src/scheduler';
 export { html, getHtmlMetrics, resetHtmlMetrics, trustHTML, trustedHTML, enhance } from './src/html';
 export type { TrustedHTMLAfterRender, TrustedHTMLOptions } from './src/html';
 export { css, getCssMetrics, resetCssMetrics, clearCssCache, trustCSS } from './src/css';

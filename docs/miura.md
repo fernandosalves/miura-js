@@ -43,8 +43,9 @@ constructor → connectedCallback → onMount() → [updates] → onUnmount() �
 
 Reactive property change:
 ```
-property.set(value) → signal.notify() → requestUpdate() → willUpdate() → shouldUpdate()?
-                    → performUpdate() → renderTemplateInstance() → updated()
+property.set(value) → signal.notify() → shared scheduler → requestUpdate()
+                    → willUpdate() → shouldUpdate()? → performUpdate()
+                    → renderTemplateInstance() → updated()
 ```
 
 Direct template reads can bypass the full rerender path when Miura can prove a
@@ -56,6 +57,10 @@ this.title in template → binding receives property signal → signal update pa
 
 That path works in both JIT and AOT templates, including node bindings and
 trusted HTML subtrees.
+
+Both full component updates and fine-grained binding patches use the same
+microtask scheduler, so multiple writes to the same element or binding in one
+tick collapse into the latest DOM pass.
 
 ### JIT vs AOT
 

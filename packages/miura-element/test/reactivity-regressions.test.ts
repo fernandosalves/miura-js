@@ -113,6 +113,47 @@ describe('MiuraElement reactivity regressions', () => {
     expect(element.renderCount).toBe(2);
   });
 
+  it('coalesces same-tick property changes into one component update', async () => {
+    const tagName = `batched-update-${crypto.randomUUID()}`;
+
+    class BatchedUpdateElement extends MiuraElement {
+      static override properties = {
+        value: { type: Number, default: 0 },
+      };
+
+      declare value: number;
+      renderCount = 0;
+      updatedCount = 0;
+
+      protected override template() {
+        this.renderCount++;
+        return html`<div class="value">${this.value + 1}</div>`;
+      }
+
+      protected override updated() {
+        this.updatedCount++;
+      }
+    }
+
+    customElements.define(tagName, BatchedUpdateElement);
+
+    const element = document.createElement(tagName) as BatchedUpdateElement;
+    document.body.appendChild(element);
+
+    await waitForUpdate(element);
+    expect(element.renderCount).toBe(1);
+    expect(element.updatedCount).toBe(1);
+
+    element.value = 1;
+    element.value = 2;
+    element.value = 3;
+    await waitForUpdate(element);
+
+    expect(element.shadowRoot?.querySelector('.value')?.textContent).toBe('4');
+    expect(element.renderCount).toBe(2);
+    expect(element.updatedCount).toBe(2);
+  });
+
   it('keeps default slot content rendered when toggling a preceding #if block', async () => {
     const tagName = `conditional-slot-${crypto.randomUUID()}`;
 

@@ -18,6 +18,7 @@ import { SpreadBinding } from './bindings/spread-binding';
 import { AsyncBinding } from './bindings/async-binding';
 import { UtilityBinding, UtilityPartBinding } from './bindings/utility-binding';
 import { reportDiagnostic } from '@miurajs/miura-debugger';
+import { queueRenderTask } from '../scheduler';
 
 type SignalLike = { peek(): unknown; subscribe(fn: (v: unknown) => void): () => void };
 type MultipartBinding = AttributeBinding | UtilityBinding | ClassBinding | StyleBinding;
@@ -502,7 +503,11 @@ export class BindingManager {
 
                     (binding as any).__lastSignal = value;
                     (binding as any).__signalUnsub = value.subscribe((v: unknown) => {
-                        binding.setValue(v, context);
+                        (binding as any).__pendingSignalValue = v;
+                        void queueRenderTask(binding as object, () => {
+                            const nextValue = (binding as any).__pendingSignalValue;
+                            return binding.setValue(nextValue, context);
+                        });
                     });
 
                     // Set current value immediately (no full re-render needed)

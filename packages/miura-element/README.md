@@ -941,6 +941,11 @@ Signals created with `createSignal()` / `createComputed()` can be passed directl
 
 For decorated signal-backed fields, use `this.$.fieldName` in templates when you want the direct fine-grained binding path while keeping plain property syntax in component logic. These field refs expose `.value`, `.peek()`, `.subscribe()`, and `.map(...)` in addition to being directly bindable. `this.$ref('fieldName')` remains available when you need explicit programmatic access.
 
+Component updates and fine-grained binding updates are scheduled through the
+shared Miura render scheduler. Multiple same-tick writes to the same component
+or binding collapse into one DOM pass, while lifecycle hooks still run after
+the committed update.
+
 For event channels, use `this.$emit(channel, value?)` to publish and `this.$on(channel, handler)` / `this.$once(channel, handler)` to subscribe with automatic cleanup on disconnect.
 
 ## Best Practices

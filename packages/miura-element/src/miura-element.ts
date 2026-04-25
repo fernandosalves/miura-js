@@ -11,7 +11,7 @@ import { createForm, Form, FormOptions } from './form.js';
 import { createResource, resourceKey, Resource, ResourceKey, ResourceOptions } from './resource.js';
 import { useBeacon, usePulse, type Beacon, type Pulse } from './channels.js';
 
-import { TemplateResult, CSSResult, TRUSTED_SYMBOL, debugLog } from '@miurajs/miura-render';
+import { TemplateResult, CSSResult, TRUSTED_SYMBOL, debugLog, queueRenderTask } from '@miurajs/miura-render';
 import { TemplateProcessor, TemplateCompiler, NodeBinding, DirectiveBinding, ensureUtilityStylesInRoot } from '@miurajs/miura-render';
 import type { CompiledTemplate } from '@miurajs/miura-render';
 
@@ -54,6 +54,7 @@ type TemplateReadRecord = {
 type AotSignalSubscription = {
     signal: Signal<unknown> | ReadonlySignal<unknown>;
     unsubscribe: () => void;
+    taskKey: object;
     mapValue?: (value: unknown) => unknown;
 };
 
@@ -609,9 +610,9 @@ export class MiuraElement extends HTMLElement {
             this._updateScheduled = true;
             this.resetUpdateCompletePromise();
             const resolveUpdate = this.updateResolver;
-            queueMicrotask(() => {
+            void queueRenderTask(this, () => {
                 this._updateScheduled = false;
-                void this.performUpdate(resolveUpdate);
+                return this.performUpdate(resolveUpdate);
             });
         }
     }
@@ -974,10 +975,13 @@ export class MiuraElement extends HTMLElement {
         }
 
         existing?.unsubscribe();
+        const taskKey = existing?.taskKey ?? {};
         const unsubscribe = signalValue.subscribe((nextValue) => {
-            void this.applyAotSignalValue(index, mapValue ? mapValue(nextValue) : nextValue, compiled);
+            const mappedValue = mapValue ? mapValue(nextValue) : nextValue;
+            this._aotValues[index] = mappedValue;
+            void queueRenderTask(taskKey, () => this.applyAotSignalValue(index, this._aotValues[index], compiled));
         });
-        this._aotSignalSubscriptions.set(index, { signal: signalValue, unsubscribe, mapValue });
+        this._aotSignalSubscriptions.set(index, { signal: signalValue, unsubscribe, taskKey, mapValue });
     }
 
     private async applyAotSignalValue(

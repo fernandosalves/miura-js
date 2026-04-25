@@ -321,6 +321,10 @@ content. Node bindings, structural directives, `repeat()`, signals, and
 are unwrapped before generated code runs, and component-level direct property
 reads can be promoted to fine-grained binding subscriptions by `MiuraElement`.
 
+`queueRenderTask()` is the shared microtask scheduler used by `miura-render` and
+`miura-element`. It coalesces repeated jobs for the same key so signal bursts
+patch each binding once with the latest value.
+
 ### Direct usage
 
 ```typescript
