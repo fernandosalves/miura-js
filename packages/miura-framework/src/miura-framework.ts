@@ -64,6 +64,7 @@ export abstract class MiuraFramework extends MiuraElement {
     private _maxErrors = 10;
     private _activeRouteElements = new Map<string, HTMLElement>();
     private _activeRouteContexts = new Map<string, RouteRenderContext>();
+    private _componentFactories = new Map<string, () => Promise<any>>();
 
     constructor() {
         super();
@@ -175,8 +176,8 @@ export abstract class MiuraFramework extends MiuraElement {
             // Initialize lifecycle
             await this.lifecycle.start();
 
-            // Register components
-            await this._registerComponents();
+            // Register components (synchronous factory storage)
+            this._registerComponents();
 
             // Install plugins
             await this._installPlugins();
@@ -234,26 +235,44 @@ export abstract class MiuraFramework extends MiuraElement {
     /**
      * Register components dynamically
      */
-    private async _registerComponents(): Promise<void> {
+    private _registerComponents(): void {
         const constructor = this.getConstructor();
-        const componentConfigs = constructor.components;
+        const componentConfigs = constructor.components || {};
 
         for (const [name, importFn] of Object.entries(componentConfigs)) {
-            try {
-                const componentModule = await importFn();
-                const component = (componentModule as any).default || componentModule;
+            this._componentFactories.set(name, importFn);
+            this.eventBus.emit('component:registered', { name, lazy: true }, 5);
+        }
+    }
 
-                this.componentRegistry.register({
-                    name,
-                    element: component,
-                    version: '1.0.0'
-                });
+    /**
+     * Resolve a component by name, importing it if necessary
+     */
+    private async _resolveComponent(name: string): Promise<typeof MiuraElement | undefined> {
+        // 1. Check if already registered
+        let component = this.componentRegistry.get(name);
+        if (component) return component;
 
-                this.eventBus.emit('component:registered', { name }, 5);
+        // 2. Check if we have a factory for it
+        const factory = this._componentFactories.get(name);
+        if (!factory) return undefined;
 
-            } catch (error) {
-                this._handleError(`Failed to register component: ${name}`, error);
-            }
+        // 3. Resolve the factory
+        try {
+            const module = await factory();
+            const resolvedComponent = (module as any).default || module;
+
+            // 4. Register in the registry (which calls customElements.define)
+            this.componentRegistry.register({
+                name,
+                element: resolvedComponent,
+                version: '1.0.0'
+            });
+
+            return resolvedComponent;
+        } catch (error) {
+            this._handleError(`Failed to resolve component: ${name}`, error);
+            return undefined;
         }
     }
 
@@ -458,7 +477,7 @@ export abstract class MiuraFramework extends MiuraElement {
             previous?.remove();
             this._activeRouteElements.delete(routeKey);
             this._activeRouteContexts.delete(routeKey);
-            const component = this.componentRegistry.get(rootRecord.component);
+            const component = await this._resolveComponent(rootRecord.component);
             if (!component) {
                 reportWarning({
                     subsystem: 'framework',
@@ -534,7 +553,7 @@ export abstract class MiuraFramework extends MiuraElement {
         const routeKey = zoneElement.dataset.routerZone || zoneElement.id || 'default';
         const previousElement = this._activeRouteElements.get(routeKey);
         const previousContext = this._activeRouteContexts.get(routeKey) ?? null;
-        const component = this.componentRegistry.get(context.route.component);
+        const component = await this._resolveComponent(context.route.component);
         if (!component) {
             reportWarning({
                 subsystem: 'framework',
