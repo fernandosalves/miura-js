@@ -254,6 +254,82 @@ describe('miura debugger runtime', () => {
         expect(panel?.classList.contains('hidden')).toBe(false);
     });
 
+    it('filters diagnostics by severity in the overlay', () => {
+        enableMiuraDebugger({ overlay: true, layers: false, performance: false, openOnError: true });
+
+        reportDiagnostic({
+            subsystem: 'element',
+            stage: 'binding',
+            severity: 'warning',
+            message: 'Warning diagnostic',
+        });
+        reportDiagnostic({
+            subsystem: 'element',
+            stage: 'update',
+            severity: 'error',
+            message: 'Error diagnostic',
+        });
+
+        const overlay = document.querySelector('miura-dev-overlay') as HTMLElement | null;
+        const body = overlay?.shadowRoot?.querySelector('.body') as HTMLElement | null;
+        const warningsButton = overlay?.shadowRoot?.querySelector('[data-filter="warnings"]') as HTMLButtonElement | null;
+
+        expect(body?.textContent).toContain('Error diagnostic');
+        warningsButton?.click();
+        expect(body?.textContent).toContain('Warning diagnostic');
+        expect(body?.textContent).not.toContain('Error diagnostic');
+    });
+
+    it('shows diagnostic codes and can mute a code for the session', () => {
+        enableMiuraDebugger({ overlay: true, layers: false, performance: false, openOnWarning: true });
+
+        reportDiagnostic({
+            subsystem: 'element',
+            stage: 'binding',
+            severity: 'warning',
+            message: 'Skipped fine-grained promotion',
+            internalDetails: { code: 'ambiguous-direct-read' },
+        });
+
+        const overlay = document.querySelector('miura-dev-overlay') as HTMLElement | null;
+        const body = overlay?.shadowRoot?.querySelector('.body') as HTMLElement | null;
+        const muteButton = overlay?.shadowRoot?.querySelector('[data-action="mute-code"]') as HTMLButtonElement | null;
+
+        expect(body?.textContent).toContain('ambiguous-direct-read');
+        muteButton?.click();
+        expect(body?.textContent).not.toContain('Skipped fine-grained promotion');
+    });
+
+    it('copies the active diagnostic payload', async () => {
+        enableMiuraDebugger({ overlay: true, layers: false, performance: false, openOnError: true });
+        let copied = '';
+        Object.defineProperty(navigator, 'clipboard', {
+            configurable: true,
+            value: {
+                writeText: async (value: string) => {
+                    copied = value;
+                },
+            },
+        });
+
+        reportDiagnostic({
+            subsystem: 'render',
+            stage: 'binding',
+            severity: 'error',
+            message: 'Function value reached a render binding',
+            internalDetails: { code: 'template-function-value' },
+        });
+
+        const overlay = document.querySelector('miura-dev-overlay') as HTMLElement | null;
+        const copyButton = overlay?.shadowRoot?.querySelector('[data-action="copy"]') as HTMLButtonElement | null;
+
+        copyButton?.click();
+        await Promise.resolve();
+
+        expect(copied).toContain('template-function-value');
+        expect(copied).toContain('Function value reached a render binding');
+    });
+
     it('does not start dragging when clicking a header control button', () => {
         enableMiuraDebugger({ overlay: true, layers: false, performance: false, openOnError: true });
 

@@ -142,6 +142,7 @@ export interface MiuraTimelineEvent {
 type DiagnosticListener = (diagnostics: MiuraDiagnostic[]) => void;
 type LayerListener = (layers: DebugLayerSnapshot[]) => void;
 type TimelineListener = (events: MiuraTimelineEvent[]) => void;
+type DiagnosticFilter = 'all' | 'errors' | 'warnings';
 
 const DEFAULT_OPTIONS: Required<MiuraDebuggerOptions> = {
     disabled: false,
@@ -550,12 +551,15 @@ class MiuraDevOverlayElement extends HTMLElement {
     private dismissed = false;
     private lastDiagnosticId: string | null = null;
     private lastTimelineId: string | null = null;
+    private diagnosticFilter: DiagnosticFilter = 'all';
+    private mutedCodes = new Set<string>();
+    private copyStatus = '';
     private readonly controlClickHandler = (event: Event) => {
         const target = event.target as HTMLElement | null;
         const action = target?.closest('[data-action]')?.getAttribute('data-action');
         if (!action) return;
 
-        const items = getDiagnostics();
+        const items = this.getVisibleDiagnostics();
         if (action === 'prev') {
             if (items.length === 0) return;
             this.activeIndex = Math.max(0, this.activeIndex - 1);
@@ -567,6 +571,33 @@ class MiuraDevOverlayElement extends HTMLElement {
             if (items.length === 0) return;
             this.activeIndex = Math.min(items.length - 1, this.activeIndex + 1);
             this.render();
+            return;
+        }
+
+        if (action === 'filter') {
+            const filter = target?.closest('[data-filter]')?.getAttribute('data-filter') as DiagnosticFilter | null;
+            if (filter === 'all' || filter === 'errors' || filter === 'warnings') {
+                this.diagnosticFilter = filter;
+                this.activeIndex = 0;
+                this.render();
+            }
+            return;
+        }
+
+        if (action === 'copy') {
+            const item = items[this.activeIndex] ?? items[0] ?? null;
+            void this.copyDiagnostic(item);
+            return;
+        }
+
+        if (action === 'mute-code') {
+            const item = items[this.activeIndex] ?? items[0] ?? null;
+            const code = getDiagnosticCode(item);
+            if (code) {
+                this.mutedCodes.add(code);
+                this.activeIndex = 0;
+                this.render();
+            }
             return;
         }
 
@@ -606,7 +637,7 @@ class MiuraDevOverlayElement extends HTMLElement {
                 this.dismissed = false;
             }
             this.lastDiagnosticId = nextId;
-            this.activeIndex = Math.min(this.activeIndex, Math.max(items.length - 1, 0));
+            this.activeIndex = Math.min(this.activeIndex, Math.max(this.getVisibleDiagnostics(items).length - 1, 0));
             this.render();
         });
 
@@ -707,6 +738,10 @@ class MiuraDevOverlayElement extends HTMLElement {
                 button:hover {
                     background: rgba(255, 255, 255, 0.12);
                 }
+                button.active {
+                    background: rgba(255, 255, 255, 0.18);
+                    border-color: rgba(255, 255, 255, 0.26);
+                }
                 .body {
                     padding: 18px;
                     display: grid;
@@ -730,6 +765,43 @@ class MiuraDevOverlayElement extends HTMLElement {
                     border-radius: 14px;
                     background: rgba(255, 255, 255, 0.04);
                     border: 1px solid rgba(255, 255, 255, 0.06);
+                }
+                .toolbar {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 10px;
+                    flex-wrap: wrap;
+                }
+                .filter-group {
+                    display: inline-flex;
+                    gap: 6px;
+                    padding: 4px;
+                    border-radius: 12px;
+                    background: rgba(255, 255, 255, 0.05);
+                }
+                .chip-row {
+                    display: flex;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                }
+                .chip {
+                    display: inline-flex;
+                    align-items: center;
+                    border-radius: 999px;
+                    padding: 4px 8px;
+                    background: rgba(255, 255, 255, 0.08);
+                    color: rgba(255, 255, 255, 0.82);
+                    font: 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+                }
+                .chip.error {
+                    background: rgba(255, 95, 95, 0.18);
+                    color: #ffaaaa;
+                }
+                .chip.warning {
+                    background: rgba(255, 190, 95, 0.18);
+                    color: #ffd39a;
                 }
                 .section-title {
                     font-size: 12px;
@@ -878,11 +950,12 @@ class MiuraDevOverlayElement extends HTMLElement {
         const body = this.shadow.querySelector('.body') as HTMLElement | null;
         if (!panel || !body) return;
 
-        const items = getDiagnostics();
+        const allItems = getDiagnostics();
+        const items = this.getVisibleDiagnostics(allItems);
         const hasTimeline = this.timelineSnapshots.length > 0;
-        const shouldShowForError = debuggerOptions.openOnError && items.some((item) => item.severity === 'error');
-        const shouldShowForWarning = debuggerOptions.openOnWarning && items.some((item) => item.severity === 'warning');
-        const shouldShowForTimeline = debuggerOptions.openOnTimeline && items.length === 0 && hasTimeline;
+        const shouldShowForError = debuggerOptions.openOnError && allItems.some((item) => item.severity === 'error' && !this.isMuted(item));
+        const shouldShowForWarning = debuggerOptions.openOnWarning && allItems.some((item) => item.severity === 'warning' && !this.isMuted(item));
+        const shouldShowForTimeline = debuggerOptions.openOnTimeline && allItems.length === 0 && hasTimeline;
 
         if ((!shouldShowForError && !shouldShowForWarning && !shouldShowForTimeline) || this.dismissed) {
             panel.classList.add('hidden');
@@ -898,9 +971,11 @@ class MiuraDevOverlayElement extends HTMLElement {
         panel.style.left = `${this.panelPosition.x}px`;
         panel.style.top = `${this.panelPosition.y}px`;
         const item = items[this.activeIndex] ?? items[0] ?? null;
+        const toolbar = this.renderDiagnosticsToolbar(allItems, item);
 
         if (!item) {
             body.innerHTML = `
+                ${toolbar}
                 <div class="section">
                     <div class="subtle">debugger / runtime timeline</div>
                     <p class="message">Miura debugger timeline</p>
@@ -921,10 +996,18 @@ class MiuraDevOverlayElement extends HTMLElement {
             </div>
         `).join('');
         const contextRows = renderContextRows(item);
+        const code = getDiagnosticCode(item);
+        const elementPath = getElementPath(item.element);
 
         body.innerHTML = `
+            ${toolbar}
             <div class="section">
                 <div class="subtle">${item.subsystem} / ${item.stage}</div>
+                <div class="chip-row">
+                    <span class="chip ${item.severity}">${escapeHtml(item.severity)}</span>
+                    ${code ? `<span class="chip">${escapeHtml(code)}</span>` : ''}
+                    ${elementPath ? `<span class="chip">${escapeHtml(elementPath)}</span>` : ''}
+                </div>
                 <p class="message">${escapeHtml(item.message)}</p>
                 ${item.summary ? `<div class="subtle">${escapeHtml(item.summary)}</div>` : ''}
             </div>
@@ -962,6 +1045,58 @@ class MiuraDevOverlayElement extends HTMLElement {
             ` : ''}
         `;
         this.renderFocusHighlight(item);
+    }
+
+    private getVisibleDiagnostics(items = getDiagnostics()): MiuraDiagnostic[] {
+        return items.filter((item) => {
+            if (this.isMuted(item)) return false;
+            if (this.diagnosticFilter === 'errors') return item.severity === 'error';
+            if (this.diagnosticFilter === 'warnings') return item.severity === 'warning';
+            return true;
+        });
+    }
+
+    private isMuted(item: MiuraDiagnostic): boolean {
+        const code = getDiagnosticCode(item);
+        return Boolean(code && this.mutedCodes.has(code));
+    }
+
+    private renderDiagnosticsToolbar(allItems: MiuraDiagnostic[], activeItem: MiuraDiagnostic | null): string {
+        const visibleCount = this.getVisibleDiagnostics(allItems).length;
+        const errorCount = allItems.filter((item) => item.severity === 'error' && !this.isMuted(item)).length;
+        const warningCount = allItems.filter((item) => item.severity === 'warning' && !this.isMuted(item)).length;
+        const code = getDiagnosticCode(activeItem);
+
+        return `
+            <div class="section toolbar">
+                <div class="filter-group" aria-label="Diagnostic filter">
+                    ${filterButton('All', 'all', this.diagnosticFilter, visibleCount)}
+                    ${filterButton('Errors', 'errors', this.diagnosticFilter, errorCount)}
+                    ${filterButton('Warnings', 'warnings', this.diagnosticFilter, warningCount)}
+                </div>
+                <div class="controls">
+                    ${this.copyStatus ? `<span class="subtle">${escapeHtml(this.copyStatus)}</span>` : ''}
+                    <button type="button" data-action="copy" ${activeItem ? '' : 'disabled'}>Copy Diagnostic</button>
+                    <button type="button" data-action="mute-code" ${code ? '' : 'disabled'}>Mute This Code</button>
+                </div>
+            </div>
+        `;
+    }
+
+    private async copyDiagnostic(item: MiuraDiagnostic | null): Promise<void> {
+        if (!item) return;
+        const text = JSON.stringify(serializeDiagnosticForCopy(item), null, 2);
+        try {
+            await navigator.clipboard?.writeText(text);
+            this.copyStatus = 'Copied';
+        } catch {
+            this.copyStatus = 'Copy unavailable';
+        }
+        this.render();
+        window.setTimeout(() => {
+            this.copyStatus = '';
+            this.render();
+        }, 1200);
     }
 
     private renderSelectedLayerDetails(element: HTMLElement | null | undefined): string {
@@ -1161,6 +1296,59 @@ function row(label: string, value: string): string {
             <div>${escapeHtml(value)}</div>
         </div>
     `;
+}
+
+function filterButton(label: string, filter: DiagnosticFilter, current: DiagnosticFilter, count: number): string {
+    return `
+        <button
+            type="button"
+            class="${filter === current ? 'active' : ''}"
+            data-action="filter"
+            data-filter="${filter}"
+        >${label} (${count})</button>
+    `;
+}
+
+function getDiagnosticCode(item: MiuraDiagnostic | null | undefined): string | undefined {
+    const code = item?.internalDetails?.code;
+    return typeof code === 'string' && code ? code : undefined;
+}
+
+function getElementPath(element: HTMLElement | null | undefined): string {
+    if (!element) return '';
+    const parts: string[] = [];
+    let current: Element | null = element;
+
+    while (current && parts.length < 4) {
+        const id = current.id ? `#${current.id}` : '';
+        const label = current.getAttribute('label') || current.getAttribute('name') || current.getAttribute('aria-label');
+        const labelText = label ? `[${label}]` : '';
+        parts.unshift(`${current.localName}${id}${labelText}`);
+        const rootNode: Node = current.getRootNode();
+        const host: Element | null = rootNode instanceof ShadowRoot ? rootNode.host : null;
+        current = current.parentElement ?? host;
+    }
+
+    return parts.join(' > ');
+}
+
+function serializeDiagnosticForCopy(item: MiuraDiagnostic): Record<string, unknown> {
+    return {
+        severity: item.severity,
+        subsystem: item.subsystem,
+        stage: item.stage,
+        message: item.message,
+        summary: item.summary,
+        code: getDiagnosticCode(item),
+        component: item.componentTag ?? item.componentClass,
+        property: item.propertyName,
+        binding: item.bindingLabel ?? item.bindingKind,
+        route: item.routePath,
+        elementPath: getElementPath(item.element),
+        values: item.valuesSnapshot,
+        details: item.internalDetails,
+        stack: item.stack,
+    };
 }
 
 function formatStack(stack: string): string {

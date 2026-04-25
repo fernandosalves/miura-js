@@ -85,6 +85,10 @@ Warnings are stored and visible when the overlay is opened, but they do not
 auto-open the panel by default. Set `openOnWarning: true` if you want warning
 diagnostics to interrupt during development.
 
+The overlay includes severity filters, diagnostic code chips, a session-only
+"mute this code" action, and "copy diagnostic" for pasting the active payload
+into issues, PRs, or chat threads.
+
 ## Component-Level Debug Options
 
 Components can refine how they appear in the debugger with either `static debug` or the `@debug(...)` decorator:
