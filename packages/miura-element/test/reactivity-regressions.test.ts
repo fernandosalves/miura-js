@@ -155,7 +155,35 @@ describe('MiuraElement reactivity regressions', () => {
     expect(getDiagnostics().some((diagnostic) =>
       diagnostic.internalDetails?.code === 'ambiguous-direct-read' &&
       diagnostic.propertyName === 'subtitle'
-    )).toBe(true);
+    )).toBe(false);
+  });
+
+  it('does not warn for a single ambiguous falsy direct read', async () => {
+    const tagName = `single-falsy-read-${crypto.randomUUID()}`;
+
+    class SingleFalsyReadElement extends MiuraElement {
+      static override properties = {
+        label: { type: String, default: '' },
+      };
+
+      declare label: string;
+
+      protected override template() {
+        return html`<button>${this.label || ''}</button>`;
+      }
+    }
+
+    customElements.define(tagName, SingleFalsyReadElement);
+
+    const element = document.createElement(tagName) as SingleFalsyReadElement;
+    document.body.appendChild(element);
+
+    await waitForUpdate(element);
+
+    expect(getDiagnostics().some((diagnostic) =>
+      diagnostic.internalDetails?.code === 'ambiguous-direct-read' &&
+      diagnostic.propertyName === 'label'
+    )).toBe(false);
   });
 
   it('coalesces same-tick property changes into one component update', async () => {

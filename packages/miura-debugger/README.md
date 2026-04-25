@@ -19,7 +19,8 @@ import { enableMiuraDebugger } from '@miurajs/miura-debugger';
 enableMiuraDebugger({
   overlay: true,
   layers: true,
-  performance: true
+  performance: true,
+  openOnWarning: false
 });
 ```
 
@@ -79,6 +80,10 @@ Miura's render and element pipelines report developer warnings for common templa
 - non-string values passed to `trustedHTML()`
 
 These diagnostics include `internalDetails.code` values such as `template-function-value`, `ambiguous-direct-read`, and `trusted-html-non-string`, plus advice shown in the overlay.
+
+Warnings are stored and visible when the overlay is opened, but they do not
+auto-open the panel by default. Set `openOnWarning: true` if you want warning
+diagnostics to interrupt during development.
 
 ## Component-Level Debug Options
 

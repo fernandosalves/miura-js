@@ -222,6 +222,38 @@ describe('miura debugger runtime', () => {
         expect(panel?.classList.contains('hidden')).toBe(false);
     });
 
+    it('keeps the panel closed for warnings unless openOnWarning is enabled', () => {
+        enableMiuraDebugger({ overlay: true, layers: false, performance: false, openOnError: true });
+
+        reportDiagnostic({
+            subsystem: 'element',
+            stage: 'binding',
+            severity: 'warning',
+            message: 'Skipped fine-grained promotion for ambiguous direct read "label".',
+        });
+
+        const overlay = document.querySelector('miura-dev-overlay') as HTMLElement | null;
+        const panel = overlay?.shadowRoot?.querySelector('.panel') as HTMLElement | null;
+
+        expect(panel?.classList.contains('hidden')).toBe(true);
+    });
+
+    it('can open the panel for warnings when configured', () => {
+        enableMiuraDebugger({ overlay: true, layers: false, performance: false, openOnWarning: true });
+
+        reportDiagnostic({
+            subsystem: 'element',
+            stage: 'binding',
+            severity: 'warning',
+            message: 'Skipped fine-grained promotion for ambiguous direct read "label".',
+        });
+
+        const overlay = document.querySelector('miura-dev-overlay') as HTMLElement | null;
+        const panel = overlay?.shadowRoot?.querySelector('.panel') as HTMLElement | null;
+
+        expect(panel?.classList.contains('hidden')).toBe(false);
+    });
+
     it('does not start dragging when clicking a header control button', () => {
         enableMiuraDebugger({ overlay: true, layers: false, performance: false, openOnError: true });
 

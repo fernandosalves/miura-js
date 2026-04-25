@@ -837,7 +837,11 @@ export class MiuraElement extends HTMLElement {
                 const ambiguousRead = this._templateReadRecords.find((candidate) =>
                     !candidate.matched && Object.is(candidate.value, value)
                 );
-                if (ambiguousRead) {
+                const matchingValueCount = values.reduce<number>((count, candidate) =>
+                    Object.is(candidate, value) ? count + 1 : count, 0
+                );
+
+                if (ambiguousRead && matchingValueCount > 1) {
                     this._reportTemplateDiagnosticOnce(
                         `ambiguous-direct-read:${ambiguousRead.name}:${String(value)}`,
                         {

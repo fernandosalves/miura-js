@@ -59,6 +59,7 @@ export interface MiuraDebuggerOptions {
     layers?: boolean;
     performance?: boolean;
     openOnError?: boolean;
+    openOnWarning?: boolean;
     openOnTimeline?: boolean;
     maxDiagnostics?: number;
     maxTimelineEvents?: number;
@@ -149,6 +150,7 @@ const DEFAULT_OPTIONS: Required<MiuraDebuggerOptions> = {
     layers: false,
     performance: false,
     openOnError: true,
+    openOnWarning: false,
     openOnTimeline: false,
     maxDiagnostics: 20,
     maxTimelineEvents: 80,
@@ -593,8 +595,14 @@ class MiuraDevOverlayElement extends HTMLElement {
         }
 
         this.diagnosticsUnsub = subscribeDiagnostics((items) => {
-            const nextId = items[0]?.id ?? null;
-            if (nextId && nextId !== this.lastDiagnosticId && debuggerOptions.openOnError) {
+            const nextDiagnostic = items[0] ?? null;
+            const nextId = nextDiagnostic?.id ?? null;
+            const shouldOpenForDiagnostic = nextDiagnostic?.severity === 'error'
+                ? debuggerOptions.openOnError
+                : nextDiagnostic?.severity === 'warning'
+                    ? debuggerOptions.openOnWarning
+                    : false;
+            if (nextId && nextId !== this.lastDiagnosticId && shouldOpenForDiagnostic) {
                 this.dismissed = false;
             }
             this.lastDiagnosticId = nextId;
@@ -872,12 +880,13 @@ class MiuraDevOverlayElement extends HTMLElement {
 
         const items = getDiagnostics();
         const hasTimeline = this.timelineSnapshots.length > 0;
-        const shouldShowForError = debuggerOptions.openOnError && items.length > 0;
+        const shouldShowForError = debuggerOptions.openOnError && items.some((item) => item.severity === 'error');
+        const shouldShowForWarning = debuggerOptions.openOnWarning && items.some((item) => item.severity === 'warning');
         const shouldShowForTimeline = debuggerOptions.openOnTimeline && items.length === 0 && hasTimeline;
 
-        if ((!shouldShowForError && !shouldShowForTimeline) || this.dismissed) {
+        if ((!shouldShowForError && !shouldShowForWarning && !shouldShowForTimeline) || this.dismissed) {
             panel.classList.add('hidden');
-            if (!shouldShowForError && !shouldShowForTimeline) {
+            if (!shouldShowForError && !shouldShowForWarning && !shouldShowForTimeline) {
                 body.innerHTML = '';
             }
             this.renderFocusHighlight(null);
