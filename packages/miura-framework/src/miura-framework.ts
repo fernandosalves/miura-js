@@ -66,6 +66,7 @@ export abstract class MiuraFramework extends MiuraElement {
     private _activeRouteElements = new Map<string, HTMLElement>();
     private _activeRouteContexts = new Map<string, RouteRenderContext>();
     private _componentFactories = new Map<string, () => Promise<any>>();
+    private _componentResolutions = new Map<string, Promise<typeof MiuraElement | undefined>>();
 
     constructor() {
         super();
@@ -258,23 +259,34 @@ export abstract class MiuraFramework extends MiuraElement {
         const factory = this._componentFactories.get(name);
         if (!factory) return undefined;
 
-        // 3. Resolve the factory
-        try {
-            const module = await factory();
-            const resolvedComponent = (module as any).default || module;
+        const pending = this._componentResolutions.get(name);
+        if (pending) return pending;
 
-            // 4. Register in the registry (which calls customElements.define)
-            this.componentRegistry.register({
-                name,
-                element: resolvedComponent,
-                version: '1.0.0'
-            });
+        // 3. Resolve the factory once, even if several navigations request the
+        // same lazy component while the import is still in flight.
+        const resolution = (async () => {
+            try {
+                const module = await factory();
+                const resolvedComponent = (module as any).default || module;
 
-            return resolvedComponent;
-        } catch (error) {
-            this._handleError(`Failed to resolve component: ${name}`, error);
-            return undefined;
-        }
+                // 4. Register in the registry (which calls customElements.define)
+                this.componentRegistry.register({
+                    name,
+                    element: resolvedComponent,
+                    version: '1.0.0'
+                });
+
+                return resolvedComponent;
+            } catch (error) {
+                this._handleError(`Failed to resolve component: ${name}`, error);
+                return undefined;
+            } finally {
+                this._componentResolutions.delete(name);
+            }
+        })();
+
+        this._componentResolutions.set(name, resolution);
+        return resolution;
     }
 
     /**
@@ -556,6 +568,9 @@ export abstract class MiuraFramework extends MiuraElement {
         this.eventBus.emit('router:rendered', { route: context.route, matched }, 5);
     }
 
+    /**
+     * Renders a flat route (single segment)
+     */
     private async _renderFlatRoute(context: RouteRenderContext): Promise<void> {
         const renderZone = context.route.renderZone || '[data-router-zone="primary"]';
         const zoneElement = this._resolveRouteZone(renderZone);

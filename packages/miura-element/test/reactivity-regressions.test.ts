@@ -113,6 +113,44 @@ describe('MiuraElement reactivity regressions', () => {
     expect(element.renderCount).toBe(2);
   });
 
+  it('does not promote falsy fallback reads into unrelated empty bindings', async () => {
+    const tagName = `fallback-read-${crypto.randomUUID()}`;
+
+    class FallbackReadElement extends MiuraElement {
+      static override properties = {
+        subtitle: { type: String, default: '' },
+        showLead: { type: Boolean, default: false },
+      };
+
+      declare subtitle: string;
+      declare showLead: boolean;
+
+      protected override template() {
+        return html`
+          <section class="shell">
+            ${this.showLead ? html`<span class="lead">Lead</span>` : ''}
+            <p class="subtitle">${this.subtitle || 'Default subtitle'}</p>
+          </section>
+        `;
+      }
+    }
+
+    customElements.define(tagName, FallbackReadElement);
+
+    const element = document.createElement(tagName) as FallbackReadElement;
+    document.body.appendChild(element);
+
+    await waitForUpdate(element);
+    expect(element.shadowRoot?.querySelector('.subtitle')?.textContent).toBe('Default subtitle');
+
+    element.subtitle = 'Administration';
+    await waitForUpdate(element);
+
+    const shell = element.shadowRoot?.querySelector('.shell');
+    expect(element.shadowRoot?.querySelector('.subtitle')?.textContent).toBe('Administration');
+    expect(shell?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Administration');
+  });
+
   it('coalesces same-tick property changes into one component update', async () => {
     const tagName = `batched-update-${crypto.randomUUID()}`;
 

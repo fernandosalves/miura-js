@@ -64,6 +64,13 @@ function _isTrustedValue(value: unknown): value is { value: unknown; afterRender
     return Boolean(value && typeof value === 'object' && (value as any)[TRUSTED_SYMBOL] === true);
 }
 
+function _isSafeDirectReadMatchValue(value: unknown): boolean {
+    if (value === '' || value === false || value === null || value === undefined) {
+        return false;
+    }
+    return true;
+}
+
 type MiuraSourceError = Error & {
     miuraSourceElement?: HTMLElement | null;
     miuraComponentTag?: string;
@@ -812,9 +819,11 @@ export class MiuraElement extends HTMLElement {
                 continue;
             }
 
-            const read = this._templateReadRecords.find((candidate) =>
-                !candidate.matched && Object.is(candidate.value, value)
-            );
+            const read = _isSafeDirectReadMatchValue(value)
+                ? this._templateReadRecords.find((candidate) =>
+                    !candidate.matched && Object.is(candidate.value, value)
+                )
+                : undefined;
 
             if (read) {
                 read.matched = true;
