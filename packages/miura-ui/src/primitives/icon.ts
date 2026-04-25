@@ -16,7 +16,7 @@
  * ```
  */
 
-import { MiuraElement, html, css, component, property, state } from '@miurajs/miura-element';
+import { MiuraElement, html, css, component, property, state, trustedHTML } from '@miurajs/miura-element';
 
 // Icon size mapping in pixels
 const SIZES: Record<string, number> = {
@@ -280,7 +280,7 @@ export class MuiIcon extends MiuraElement {
       >
         <slot>
           ${this._svgContent 
-            ? html`<svg viewBox="0 0 24 24" .innerHTML="${this._svgContent}"></svg>`
+            ? html`<svg viewBox="0 0 24 24">${trustedHTML(this._svgContent)}</svg>`
             : this._loading 
               ? html`<span class="fallback"></span>`
               : html`<span class="fallback"></span>`

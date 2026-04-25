@@ -57,6 +57,27 @@ html`<input .value=${this.text}>`
 html`<my-component .data=${this.config}>`
 ```
 
+Prefer node bindings for rendered subtrees. For sanitized or framework-owned HTML, use
+`trustedHTML()` instead of assigning `.innerHTML` directly:
+
+```typescript
+import { html, trustedHTML } from '@miurajs/miura-render';
+
+html`
+  <article>
+    ${trustedHTML(cleanHtml, {
+      afterRender: (root) => {
+        // Enhance the inserted subtree, e.g. render diagrams or mount embeds.
+      }
+    })}
+  </article>
+`
+```
+
+`trustedHTML()` is intentionally explicit: Miura inserts the string as DOM and
+does not sanitize it. Sanitize user-provided content before wrapping it.
+`trustHTML()` remains available as a backwards-compatible alias.
+
 ### Boolean Binding
 
 ```typescript

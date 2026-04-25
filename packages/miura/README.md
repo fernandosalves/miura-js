@@ -39,6 +39,25 @@ class AppUserCard extends MiuraElement {
 }
 ```
 
+When rendering sanitized HTML, prefer Miura's explicit trusted subtree helper
+instead of binding `.innerHTML`:
+
+```typescript
+import { html, trustedHTML } from '@miurajs/miura';
+
+html`
+  <article>
+    ${trustedHTML(cleanHtml, {
+      afterRender: (root) => enhanceArticle(root)
+    })}
+  </article>
+`
+```
+
+`trustedHTML()` does not sanitize. It marks content that your app has already
+sanitized or generated itself, and its `afterRender` hook runs after Miura
+mounts the subtree.
+
 ```typescript
 @component({ tag: 'app-signup-form' })
 class AppSignupForm extends MiuraElement {

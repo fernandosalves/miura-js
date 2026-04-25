@@ -3,7 +3,12 @@
     "compilerOptions": {
         "outDir": "dist",
         "composite": true,
-        "baseUrl": "."
+        "baseUrl": ".",
+        "paths": {
+            "@miurajs/miura-element": ["../miura-element/index.ts"],
+            "@miurajs/miura-render": ["../miura-render/index.ts"],
+            "@miurajs/miura-debugger": ["../miura-debugger/index.ts"]
+        }
     },
     "include": [
         "index.ts",
