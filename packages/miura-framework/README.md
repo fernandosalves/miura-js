@@ -312,6 +312,30 @@ class UserProfile extends MiuraElement {
 }
 ```
 
+Route components can also implement lifecycle hooks. These are especially useful
+now that Miura reuses matching route component instances across param/query
+changes:
+
+```ts
+class UserProfile extends MiuraElement {
+  onRouteEnter(context: RouteRenderContext) {
+    // Mounted for the route.
+  }
+
+  onRouteUpdate(context: RouteRenderContext, previous: RouteContext | null) {
+    // Same instance reused for another matching route context.
+  }
+
+  onRouteLeave(context: RouteContext) {
+    // About to be removed from its route zone or outlet.
+  }
+}
+```
+
+Use these hooks for transitions, focus, scroll restoration, analytics, or
+route-scoped cleanup. `routeContext` is assigned on every routed component, even
+when the class only declares it at the TypeScript level.
+
 ## 🏊‍♂️ Data Lake Architecture
 
 The Data Lake is configured declaratively and automatically loaded on startup.

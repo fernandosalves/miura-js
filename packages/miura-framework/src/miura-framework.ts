@@ -5,6 +5,8 @@ import { createRouter } from '@miurajs/miura-router';
 import type {
     RouterInstance,
     RouteRenderContext,
+    RouteContext,
+    RouteLifecycleHooks,
     NavigationOptions,
 } from '@miurajs/miura-router';
 import { AppLifecycle } from './lifecycle.js';
@@ -60,6 +62,7 @@ export abstract class MiuraFramework extends MiuraElement {
     private _errorCount = 0;
     private _maxErrors = 10;
     private _activeRouteElements = new Map<string, HTMLElement>();
+    private _activeRouteContexts = new Map<string, RouteRenderContext>();
 
     constructor() {
         super();
@@ -325,8 +328,10 @@ export abstract class MiuraFramework extends MiuraElement {
         }
 
         this.lifecycle.destroy();
+        this._leaveActiveRouteElements();
         this.router?.stop();
         this._activeRouteElements.clear();
+        this._activeRouteContexts.clear();
         this.data.clear();
         this.eventBus.emit('framework:destroyed', {}, 10);
         this.eventBus.clear();
@@ -424,6 +429,7 @@ export abstract class MiuraFramework extends MiuraElement {
 
         const routeKey = zoneElement.dataset.routerZone || zoneElement.id || 'default';
         const previous = this._activeRouteElements.get(routeKey);
+        const previousContext = this._activeRouteContexts.get(routeKey) ?? null;
 
         // Reuse the layout element if it's already the same component (avoid
         // tearing down the shell on every child navigation)
@@ -432,8 +438,10 @@ export abstract class MiuraFramework extends MiuraElement {
             : null;
 
         if (!layoutEl) {
+            this._leaveRouteElement(previous, previousContext);
             previous?.remove();
             this._activeRouteElements.delete(routeKey);
+            this._activeRouteContexts.delete(routeKey);
             const component = this.componentRegistry.get(rootRecord.component);
             if (!component) {
                 reportWarning({
@@ -449,13 +457,22 @@ export abstract class MiuraFramework extends MiuraElement {
             zoneElement.appendChild(layoutEl);
             this._activeRouteElements.set(routeKey, layoutEl);
         }
+        const layoutElement = layoutEl;
 
         // Always refresh the reused layout's route context so layouts that
         // depend on route data stay in sync across child navigations.
-        this._injectRouteData(layoutEl, context);
+        this._injectRouteData(layoutElement, context);
+        await this._waitForRouteElementReady(layoutElement);
+        if (previousContext && layoutElement === previous) {
+            this._activeRouteContexts.set(routeKey, context);
+            await this._callRouteUpdate(layoutElement, context, previousContext);
+        } else {
+            this._activeRouteContexts.set(routeKey, context);
+            await this._callRouteEnter(layoutElement, context);
+        }
 
         // 2. Walk remaining records, finding each nested outlet in the previous element
-        let parentEl: Element = layoutEl;
+        let parentEl: Element = layoutElement;
         for (let i = 1; i < matched.length; i++) {
             const record = matched[i];
 
@@ -500,6 +517,7 @@ export abstract class MiuraFramework extends MiuraElement {
 
         const routeKey = zoneElement.dataset.routerZone || zoneElement.id || 'default';
         const previousElement = this._activeRouteElements.get(routeKey);
+        const previousContext = this._activeRouteContexts.get(routeKey) ?? null;
         const component = this.componentRegistry.get(context.route.component);
         if (!component) {
             reportWarning({
@@ -518,16 +536,24 @@ export abstract class MiuraFramework extends MiuraElement {
 
         const reused = Boolean(element);
         if (!element) {
+            this._leaveRouteElement(previousElement, previousContext);
             previousElement?.remove();
             this._activeRouteElements.delete(routeKey);
+            this._activeRouteContexts.delete(routeKey);
             element = new component() as HTMLElement;
             zoneElement.appendChild(element);
             this._activeRouteElements.set(routeKey, element);
+            this._activeRouteContexts.set(routeKey, context);
         }
 
         this._injectRouteData(element, context);
-
         await this._waitForRouteElementReady(element);
+        if (reused) {
+            this._activeRouteContexts.set(routeKey, context);
+            await this._callRouteUpdate(element, context, previousContext);
+        } else {
+            await this._callRouteEnter(element, context);
+        }
 
         this.eventBus.emit('router:rendered', { route: context.route, element, reused }, 5);
     }
@@ -573,16 +599,45 @@ export abstract class MiuraFramework extends MiuraElement {
     }
 
     private _injectRouteData(element: Element, context: RouteRenderContext): void {
-        if ('routeContext' in element) {
-            (element as any).routeContext = context;
-            return;
-        }
-
+        (element as any).routeContext = context;
         element.setAttribute('data-route', JSON.stringify({
             params: context.params,
             query: Object.fromEntries(context.query.entries()),
             hash: context.hash,
         }));
+    }
+
+    private async _callRouteEnter(element: Element, context: RouteRenderContext): Promise<void> {
+        const hook = (element as RouteLifecycleHooks).onRouteEnter;
+        if (typeof hook === 'function') {
+            await hook.call(element, context);
+        }
+    }
+
+    private async _callRouteUpdate(
+        element: Element,
+        context: RouteRenderContext,
+        previous: RouteContext | null
+    ): Promise<void> {
+        const hook = (element as RouteLifecycleHooks).onRouteUpdate;
+        if (typeof hook === 'function') {
+            await hook.call(element, context, previous);
+        }
+    }
+
+    private _leaveRouteElement(element: Element | null | undefined, context: RouteContext | RouteRenderContext | null): void {
+        if (!element || !context) return;
+
+        const hook = (element as RouteLifecycleHooks).onRouteLeave;
+        if (typeof hook === 'function') {
+            void hook.call(element, context);
+        }
+    }
+
+    private _leaveActiveRouteElements(): void {
+        for (const [routeKey, element] of this._activeRouteElements) {
+            this._leaveRouteElement(element, this._activeRouteContexts.get(routeKey) ?? null);
+        }
     }
 
     private async _waitForRouteElementReady(element: Element): Promise<void> {

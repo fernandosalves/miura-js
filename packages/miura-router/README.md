@@ -155,6 +155,21 @@ import { RouterOutlet } from '@miurajs/miura-router';
 // RouterOutlet registers itself as <miura-router-outlet> when imported
 ```
 
+When an outlet reuses the same component tag for a new route context, it keeps
+the DOM instance and calls route lifecycle hooks:
+
+```ts
+class AppProfile extends MiuraElement {
+  onRouteEnter(context: RouteRenderContext) {}
+  onRouteUpdate(context: RouteRenderContext, previous: RouteContext | null) {}
+  onRouteLeave(context: RouteContext) {}
+}
+```
+
+`onRouteEnter` runs for newly mounted route components, `onRouteUpdate` runs
+when a matching component instance is reused, and `onRouteLeave` runs before the
+outlet clears or replaces the component.
+
 ## � Redirects
 
 ```ts

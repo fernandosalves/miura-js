@@ -1,4 +1,4 @@
-import type { RouteContext, RouteRecord } from './types.js';
+import type { RouteContext, RouteLifecycleHooks, RouteRecord, RouteRenderContext } from './types.js';
 
 /**
  * RouterOutlet — `<miura-router-outlet>`
@@ -26,6 +26,7 @@ import type { RouteContext, RouteRecord } from './types.js';
  */
 export class RouterOutlet extends HTMLElement {
     private _current: HTMLElement | null = null;
+    private _currentContext: RouteRenderContext | null = null;
 
     static get observedAttributes() {
         return ['name'];
@@ -41,13 +42,19 @@ export class RouterOutlet extends HTMLElement {
         }
     }
 
+    disconnectedCallback(): void {
+        this._clearCurrent();
+    }
+
     /**
      * Render a route component into this outlet.
      * Called by MiuraRouter when the matched route targets this outlet.
      */
-    renderRoute(record: RouteRecord, context: RouteContext): HTMLElement {
+    renderRoute(record: RouteRecord, context: RouteRenderContext): HTMLElement {
         if (this._current?.tagName.toLowerCase() === record.component.toLowerCase()) {
             this._injectContext(this._current, context);
+            this._callRouteUpdate(this._current, context, this._currentContext);
+            this._currentContext = context;
             return this._current;
         }
 
@@ -56,6 +63,8 @@ export class RouterOutlet extends HTMLElement {
         this._injectContext(element, context);
         this.appendChild(element);
         this._current = element as HTMLElement;
+        this._currentContext = context;
+        this._callRouteEnter(this._current, context);
         return this._current;
     }
 
@@ -67,6 +76,10 @@ export class RouterOutlet extends HTMLElement {
     }
 
     private _clearCurrent(): void {
+        if (this._current && this._currentContext) {
+            this._callRouteLeave(this._current, this._currentContext);
+        }
+
         if (this._current?.parentNode === this) {
             this._current.remove();
         }
@@ -75,18 +88,37 @@ export class RouterOutlet extends HTMLElement {
         // in the outlet, clear them so each navigation starts from a clean slate.
         this.replaceChildren();
         this._current = null;
+        this._currentContext = null;
     }
 
     private _injectContext(element: Element, context: RouteContext): void {
-        if ('routeContext' in element) {
-            (element as any).routeContext = context;
-            return;
-        }
+        (element as any).routeContext = context;
         element.setAttribute('data-route', JSON.stringify({
             params: context.params,
             query: Object.fromEntries(context.query.entries()),
             hash: context.hash,
         }));
+    }
+
+    private _callRouteEnter(element: Element, context: RouteRenderContext): void {
+        const hook = (element as RouteLifecycleHooks).onRouteEnter;
+        if (typeof hook === 'function') {
+            void hook.call(element, context);
+        }
+    }
+
+    private _callRouteUpdate(element: Element, context: RouteRenderContext, previous: RouteContext | null): void {
+        const hook = (element as RouteLifecycleHooks).onRouteUpdate;
+        if (typeof hook === 'function') {
+            void hook.call(element, context, previous);
+        }
+    }
+
+    private _callRouteLeave(element: Element, context: RouteContext | RouteRenderContext): void {
+        const hook = (element as RouteLifecycleHooks).onRouteLeave;
+        if (typeof hook === 'function') {
+            void hook.call(element, context);
+        }
     }
 }
 

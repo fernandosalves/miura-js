@@ -95,6 +95,12 @@ export interface RouteRenderContext<
     previous?: RouteContext | null;
 }
 
+export interface RouteLifecycleHooks {
+    onRouteEnter?(context: RouteRenderContext): void | Promise<void>;
+    onRouteUpdate?(context: RouteRenderContext, previous: RouteContext | null): void | Promise<void>;
+    onRouteLeave?(context: RouteContext | RouteRenderContext): void | Promise<void>;
+}
+
 export type RouteGuard = (
     context: RouteRenderContext
 ) => boolean | string | void | Promise<boolean | string | void>;

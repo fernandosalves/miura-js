@@ -162,6 +162,32 @@ const profile = router.dataSignal('profile');
 
 Use this when components or app services need to react to route context or loader data without manually passing everything through the render callback.
 
+## Route Component Lifecycle
+
+Route components mounted by `MiuraFramework` or `<miura-router-outlet>` can
+implement route-aware hooks:
+
+```typescript
+class UserPage extends MiuraElement {
+  onRouteEnter(context: RouteRenderContext) {
+    // First time this component instance is mounted for a route.
+  }
+
+  onRouteUpdate(context: RouteRenderContext, previous: RouteContext | null) {
+    // Same component instance was reused for a new route context.
+  }
+
+  onRouteLeave(context: RouteContext) {
+    // Component is about to be removed from its route zone or outlet.
+  }
+}
+```
+
+Use these hooks for route-specific effects such as scroll restoration,
+transition state, focus management, analytics, or cancelling work that belongs
+to a route instance. Components still receive `routeContext` automatically, and
+`data-route` is kept as a serialised debug/fallback attribute.
+
 ---
 
 ## Router API
