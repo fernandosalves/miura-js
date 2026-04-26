@@ -30,7 +30,7 @@
  *   price(12);     // → logs "price: 12"
  *   tax();         // → 2.4
  */
-import { reportTimelineEvent, getCurrentTraceId, getActiveComponent, registerSignalMetadata } from '@miurajs/miura-debugger';
+import { reportTimelineEvent, getCurrentTraceId, getActiveComponent, registerSignalMetadata, onSignalRead, onSignalWrite } from '@miurajs/miura-debugger';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -79,6 +79,7 @@ export function signal<T>(initial: T, label?: string): Signal<T> {
             }
 
             const activeComp = getActiveComponent();
+            onSignalRead(fn as Signal<T>, activeComp);
             if (activeComp) {
                 // Link signal to component in the debugger/graph
                 reportTimelineEvent({
@@ -94,6 +95,9 @@ export function signal<T>(initial: T, label?: string): Signal<T> {
 
         const next = value as T;
         if (Object.is(_value, next)) { return; }
+
+        const activeComp = getActiveComponent();
+        onSignalWrite(fn as Signal<T>, next, _value, activeComp);
 
         reportTimelineEvent({
             subsystem: 'signal',

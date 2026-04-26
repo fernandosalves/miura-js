@@ -1,4 +1,4 @@
-import { debugLog } from '@miurajs/miura-debugger';
+import { debugLog, emitStoreDispatched } from '@miurajs/miura-debugger';
 
 /**
  * Store state interface
@@ -43,6 +43,7 @@ export interface StoreSubscriber {
  * Combines the best of Redux, Zustand, and modern patterns
  */
 export class Store<T extends StoreState = StoreState> {
+  private static storeIdCounter = 0;
   private state: T;
   private actions: StoreActions<T> = {};
   private subscribers = new Map<string, StoreSubscriber>();
@@ -50,9 +51,11 @@ export class Store<T extends StoreState = StoreState> {
   private isUpdating = false;
   private updateQueue: Array<() => void> = [];
   private subscriberIdCounter = 0;
+  private storeKey: string;
 
-  constructor(initialState: T) {
+  constructor(initialState: T, key = `store_${++Store.storeIdCounter}`) {
     this.state = { ...initialState };
+    this.storeKey = key;
   }
 
   /**
@@ -93,6 +96,8 @@ export class Store<T extends StoreState = StoreState> {
       throw new Error(`Action '${action}' not found`);
     }
 
+    const startTime = performance.now();
+    const beforeState = this.getState();
     try {
       // Run before middlewares
       for (const middleware of this.middlewares) {
@@ -104,6 +109,14 @@ export class Store<T extends StoreState = StoreState> {
       // Execute action and update state
       const result = await this.actions[action](this.state, ...args);
       this.updateState(result as Partial<T>);
+      emitStoreDispatched({
+        storeKey: this.storeKey,
+        action,
+        args,
+        beforeState,
+        afterState: this.getState(),
+        duration: performance.now() - startTime,
+      });
 
       // Run after middlewares
       for (const middleware of this.middlewares) {

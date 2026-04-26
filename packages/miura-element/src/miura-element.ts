@@ -3,7 +3,7 @@ import { consumeContext, provideContext, type ContextKey } from './context.js';
 import { findIslandHost, readIslandProps, type MiuraIsland } from './miura-island.js';
 import { PropertyDeclarations, createLocalSignalProperties, createProperties, createStateProperties, LOCAL_SIGNAL_KEY_PREFIX, SIGNAL_KEY_PREFIX } from './properties';
 import type { RouteSignalLike, RouterBridgeLike } from './router-bridge.js';
-import { getComponentDebugOptions, registerDebugLayer, reportDiagnostic, reportTimelineEvent, reportWarning, unregisterDebugLayer, pushActiveComponent, popActiveComponent, getActiveComponent } from '@miurajs/miura-debugger';
+import { emitComponentDiscovered, emitComponentRemoved, emitComponentUpdated, getComponentDebugOptions, registerDebugLayer, reportDiagnostic, reportTimelineEvent, reportWarning, unregisterDebugLayer, pushActiveComponent, popActiveComponent, getActiveComponent } from '@miurajs/miura-debugger';
 import { signal, computed, Signal, ReadonlySignal } from './signals.js';
 import { createFieldRef, type FieldRef } from './field-ref.js';
 import { shared, createGlobalProperties, GLOBAL_SIGNAL_KEY_PREFIX, type SharedKey } from './shared.js';
@@ -538,6 +538,14 @@ export class MiuraElement extends HTMLElement {
         this._setupConnectionSubscriptions();
 
         const parent = getActiveComponent();
+        emitComponentDiscovered({
+            id: this.__miura_id,
+            tag: this.localName || this.constructor.name,
+            componentClass: this.constructor.name,
+            parentId: parent?.__miura_id ?? null,
+            renderTime: this._performanceMetrics.renderTime,
+            updateCount: this._performanceMetrics.updateCount,
+        });
         if (parent) {
             reportTimelineEvent({
                 subsystem: 'element',
@@ -572,6 +580,8 @@ export class MiuraElement extends HTMLElement {
      * @returns {void}
      */
     disconnectedCallback(): void {
+        emitComponentRemoved(this.__miura_id);
+
         // Call user hook
         this.onUnmount();
 
@@ -729,6 +739,14 @@ export class MiuraElement extends HTMLElement {
                 // Track performance
                 this._performanceMetrics.renderTime = performance.now() - startTime;
                 this._performanceMetrics.lastRenderTime = Date.now();
+                emitComponentUpdated({
+                    id: this.__miura_id,
+                    tag: this.localName || this.constructor.name,
+                    componentClass: this.constructor.name,
+                    changedProperties: [...changedProperties.keys()].map((key) => String(key)),
+                    renderTime: this._performanceMetrics.renderTime,
+                    updateCount: this._performanceMetrics.updateCount,
+                });
                 reportTimelineEvent({
                     subsystem: 'element',
                     stage: 'render',

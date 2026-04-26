@@ -1,3 +1,5 @@
+import { emitConsumeResolved } from '@miurajs/miura-debugger';
+
 const providedContexts = new WeakMap<object, Map<ContextKey<unknown>, unknown>>();
 
 export interface ContextKey<T> extends Symbol {
@@ -49,17 +51,21 @@ export function hasProvidedContext(host: object, key: ContextKey<unknown>): bool
 }
 
 function resolveContextValue<T>(host: Node, key: ContextKey<T>, fallback?: T): T | undefined {
+    return resolveContext(host, key, fallback).value;
+}
+
+function resolveContext<T>(host: Node, key: ContextKey<T>, fallback?: T): { value: T | undefined; provider: Node | null } {
     let current: Node | null = host;
 
     while (current) {
         const map = getContextMap(current);
         if (map?.has(key as ContextKey<unknown>)) {
-            return map.get(key as ContextKey<unknown>) as T;
+            return { value: map.get(key as ContextKey<unknown>) as T, provider: current };
         }
         current = getTraversalParent(current);
     }
 
-    return fallback;
+    return { value: fallback, provider: null };
 }
 
 /**
@@ -78,7 +84,9 @@ export function consumeContext<T>(host: Node, key: ContextKey<T>, fallback?: T):
 
     return new Proxy(target as any, {
         apply(_target, thisArg, args) {
-            const actualValue = resolveContextValue(host, key, fallback);
+            const resolved = resolveContext(host, key, fallback);
+            const actualValue = resolved.value;
+            reportContextResolved(host, key, resolved.provider, actualValue);
             if (typeof actualValue !== 'function') {
                 return actualValue;
             }
@@ -86,7 +94,9 @@ export function consumeContext<T>(host: Node, key: ContextKey<T>, fallback?: T):
             return Reflect.apply(actualValue, thisArg, args);
         },
         get(_target, prop, _receiver) {
-            const actualValue = resolveContextValue(host, key, fallback);
+            const resolved = resolveContext(host, key, fallback);
+            const actualValue = resolved.value;
+            reportContextResolved(host, key, resolved.provider, actualValue);
 
             if (prop === Symbol.toPrimitive) {
                 return () => actualValue as any;
@@ -115,7 +125,9 @@ export function consumeContext<T>(host: Node, key: ContextKey<T>, fallback?: T):
             return typeof result === 'function' ? result.bind(actualValue) : result;
         },
         has(_target, prop) {
-            const actualValue = resolveContextValue(host, key, fallback);
+            const resolved = resolveContext(host, key, fallback);
+            const actualValue = resolved.value;
+            reportContextResolved(host, key, resolved.provider, actualValue);
             if (actualValue === undefined || actualValue === null) {
                 return false;
             }
@@ -123,4 +135,13 @@ export function consumeContext<T>(host: Node, key: ContextKey<T>, fallback?: T):
             return prop in Object(actualValue);
         },
     }) as T;
+}
+
+function reportContextResolved<T>(host: Node, key: ContextKey<T>, provider: Node | null, value: T | undefined): void {
+    emitConsumeResolved({
+        consumerComponentId: (host as { __miura_id?: string }).__miura_id,
+        contextKey: key.description ?? String(key),
+        providerId: (provider as { __miura_id?: string } | null)?.__miura_id,
+        value,
+    });
 }

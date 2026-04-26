@@ -94,21 +94,38 @@ export function onSignalRead(signal: any, context?: any) {
     
     const meta = getSignalMetadata(signal);
     if (!meta) return;
+    const readerId = context?.__miura_id;
+
+    emitDevtoolsEvent('signal:read', {
+        id: meta.id,
+        label: meta.label,
+        readerId,
+        value: serializeUnknown(signal.peek?.()),
+    });
 
     reportTimelineEvent({
         subsystem: 'signal',
         stage: 'runtime',
         message: `Signal read: ${meta.label || meta.id}`,
-        values: { id: meta.id, label: meta.label, action: 'read', contextId: context?.__miura_id }
+        values: { id: meta.id, label: meta.label, action: 'read', contextId: readerId }
     });
 }
 
 /** Hook called when a signal is written (dev-only) */
-export function onSignalWrite(signal: any, value: any) {
+export function onSignalWrite(signal: any, value: any, oldValue?: any, context?: any) {
     if (debuggerOptions.disabled || !debuggerOptions.devtools) return;
     
     const meta = getSignalMetadata(signal);
     if (!meta) return;
+    const writerId = context?.__miura_id;
+
+    emitDevtoolsEvent('signal:written', {
+        id: meta.id,
+        label: meta.label,
+        oldValue: serializeUnknown(oldValue),
+        newValue: serializeUnknown(value),
+        writerId,
+    });
 
     reportTimelineEvent({
         subsystem: 'signal',
@@ -194,9 +211,37 @@ export interface MiuraTimelineEvent {
     parentTraceId?: string;
 }
 
+export type MiuraDevtoolsEventType =
+    | 'component:discovered'
+    | 'component:updated'
+    | 'component:removed'
+    | 'signal:read'
+    | 'signal:written'
+    | 'store:dispatched'
+    | 'consume:resolved'
+    | 'binding:created';
+
+export interface MiuraDevtoolsEvent<T = Record<string, unknown>> {
+    type: MiuraDevtoolsEventType;
+    payload: T;
+    timestamp: number;
+}
+
+export type MiuraDevtoolsEventMap = Partial<{
+    onComponentDiscovered: (event: MiuraDevtoolsEvent) => void;
+    onComponentUpdated: (event: MiuraDevtoolsEvent) => void;
+    onComponentRemoved: (event: MiuraDevtoolsEvent) => void;
+    onSignalRead: (event: MiuraDevtoolsEvent) => void;
+    onSignalWritten: (event: MiuraDevtoolsEvent) => void;
+    onStoreDispatched: (event: MiuraDevtoolsEvent) => void;
+    onConsumeResolved: (event: MiuraDevtoolsEvent) => void;
+    onBindingCreated: (event: MiuraDevtoolsEvent) => void;
+}>;
+
 type DiagnosticListener = (diagnostics: MiuraDiagnostic[]) => void;
 type LayerListener = (layers: DebugLayerSnapshot[]) => void;
 type TimelineListener = (events: MiuraTimelineEvent[]) => void;
+export type DevtoolsEventListener = (event: MiuraDevtoolsEvent) => void;
 type DiagnosticFilter = 'all' | 'errors' | 'warnings';
 
 const DEFAULT_OPTIONS: Required<MiuraDebuggerOptions> = {
@@ -220,6 +265,7 @@ const diagnosticListeners = new Set<DiagnosticListener>();
 const layerRegistry = new Map<HTMLElement, DebugLayerSnapshot>();
 const layerListeners = new Set<LayerListener>();
 const timelineListeners = new Set<TimelineListener>();
+const devtoolsEventListeners = new Set<DevtoolsEventListener>();
 const COMPONENT_DEBUG_OPTIONS = Symbol.for('miura.component.debug.options');
 
 // ── DevTools State ───────────────────────────────────────────────────────────
@@ -228,7 +274,12 @@ interface GraphNode {
     tag: string;
     class: string;
     parent?: string;
+    parentId: string | null;
     children: string[];
+    childIds: string[];
+    renderTime?: number;
+    updateCount?: number;
+    connected?: boolean;
 }
 
 const _componentGraph = new Map<string, GraphNode>();
@@ -325,6 +376,199 @@ export function getAllSignals(): any[] {
         });
     });
     return result;
+}
+
+export function subscribeEvents(listener: MiuraDevtoolsEventMap | DevtoolsEventListener): () => void {
+    const normalized = normalizeDevtoolsListener(listener);
+    devtoolsEventListeners.add(normalized);
+    return () => devtoolsEventListeners.delete(normalized);
+}
+
+export function subscribeComponentEvents(listener: DevtoolsEventListener): () => void {
+    return subscribeFilteredDevtoolsEvents(listener, (event) => event.type.startsWith('component:'));
+}
+
+export function subscribeSignalEvents(listener: DevtoolsEventListener): () => void {
+    return subscribeFilteredDevtoolsEvents(listener, (event) => event.type.startsWith('signal:'));
+}
+
+export function subscribeStoreEvents(listener: DevtoolsEventListener): () => void {
+    return subscribeFilteredDevtoolsEvents(listener, (event) => event.type.startsWith('store:'));
+}
+
+export function subscribeBindingEvents(listener: DevtoolsEventListener): () => void {
+    return subscribeFilteredDevtoolsEvents(listener, (event) => event.type.includes('binding'));
+}
+
+export function emitComponentDiscovered(input: {
+    id: string;
+    tag: string;
+    componentClass?: string;
+    parentId?: string | null;
+    renderTime?: number;
+    updateCount?: number;
+    properties?: Record<string, unknown>;
+    state?: Record<string, unknown>;
+}): void {
+    if (!canEmitDevtoolsEvents()) return;
+
+    const parentId = input.parentId ?? null;
+    const node: GraphNode = {
+        id: input.id,
+        tag: input.tag,
+        class: input.componentClass ?? 'Unknown',
+        parent: parentId ?? undefined,
+        parentId,
+        children: [],
+        childIds: [],
+        renderTime: input.renderTime ?? 0,
+        updateCount: input.updateCount ?? 0,
+        connected: true,
+    };
+    const existing = _componentGraph.get(input.id);
+    _componentGraph.set(input.id, existing ? { ...existing, ...node, children: existing.children, childIds: existing.childIds } : node);
+    if (parentId) {
+        const parent = _componentGraph.get(parentId);
+        if (parent) {
+            if (!parent.children.includes(input.id)) parent.children.push(input.id);
+            if (!parent.childIds.includes(input.id)) parent.childIds.push(input.id);
+        }
+    }
+
+    emitDevtoolsEvent('component:discovered', {
+        id: input.id,
+        tag: input.tag,
+        parentId,
+        renderTime: input.renderTime ?? 0,
+        updateCount: input.updateCount ?? 0,
+        connected: true,
+        properties: input.properties ?? {},
+        state: input.state ?? {},
+    });
+}
+
+export function emitComponentUpdated(input: {
+    id: string;
+    tag: string;
+    componentClass?: string;
+    parentId?: string | null;
+    changedProperties?: string[];
+    renderTime?: number;
+    updateCount?: number;
+    properties?: Record<string, unknown>;
+    state?: Record<string, unknown>;
+}): void {
+    if (!canEmitDevtoolsEvents()) return;
+
+    const existing = _componentGraph.get(input.id);
+    if (existing) {
+        existing.renderTime = input.renderTime ?? existing.renderTime;
+        existing.updateCount = input.updateCount ?? existing.updateCount;
+        existing.connected = true;
+    } else {
+        emitComponentDiscovered(input);
+    }
+
+    emitDevtoolsEvent('component:updated', {
+        id: input.id,
+        tag: input.tag,
+        parentId: input.parentId ?? existing?.parentId ?? null,
+        changedProperties: input.changedProperties ?? [],
+        renderTime: input.renderTime ?? 0,
+        updateCount: input.updateCount ?? 0,
+        connected: true,
+        properties: input.properties ?? {},
+        state: input.state ?? {},
+    });
+}
+
+export function emitComponentRemoved(id: string): void {
+    if (!canEmitDevtoolsEvents()) return;
+
+    const existing = _componentGraph.get(id);
+    _componentGraph.delete(id);
+    for (const node of _componentGraph.values()) {
+        node.children = node.children.filter((childId) => childId !== id);
+        node.childIds = node.childIds.filter((childId) => childId !== id);
+    }
+    emitDevtoolsEvent('component:removed', {
+        id,
+        tag: existing?.tag,
+    });
+}
+
+export function emitStoreDispatched(input: {
+    storeKey: string;
+    action: string;
+    args?: unknown[];
+    beforeState?: Record<string, unknown>;
+    afterState?: Record<string, unknown>;
+    duration?: number;
+}): void {
+    if (!canEmitDevtoolsEvents()) return;
+
+    emitDevtoolsEvent('store:dispatched', {
+        storeKey: input.storeKey,
+        action: input.action,
+        args: input.args ?? [],
+        beforeState: input.beforeState ?? {},
+        afterState: input.afterState ?? {},
+        duration: input.duration ?? 0,
+    });
+}
+
+export function emitConsumeResolved(input: {
+    consumerComponentId?: string;
+    contextKey: string;
+    providerId?: string;
+    value?: unknown;
+}): void {
+    if (!canEmitDevtoolsEvents()) return;
+
+    emitDevtoolsEvent('consume:resolved', {
+        consumerComponentId: input.consumerComponentId,
+        contextKey: input.contextKey,
+        providerId: input.providerId,
+        value: serializeUnknown(input.value),
+    });
+}
+
+function subscribeFilteredDevtoolsEvents(listener: DevtoolsEventListener, filter: (event: MiuraDevtoolsEvent) => boolean): () => void {
+    return subscribeEvents((event) => {
+        if (filter(event)) listener(event);
+    });
+}
+
+function normalizeDevtoolsListener(listener: MiuraDevtoolsEventMap | DevtoolsEventListener): DevtoolsEventListener {
+    if (typeof listener === 'function') return listener;
+    const handlers: Record<MiuraDevtoolsEventType, keyof MiuraDevtoolsEventMap> = {
+        'component:discovered': 'onComponentDiscovered',
+        'component:updated': 'onComponentUpdated',
+        'component:removed': 'onComponentRemoved',
+        'signal:read': 'onSignalRead',
+        'signal:written': 'onSignalWritten',
+        'store:dispatched': 'onStoreDispatched',
+        'consume:resolved': 'onConsumeResolved',
+        'binding:created': 'onBindingCreated',
+    };
+    return (event) => {
+        const handler = listener[handlers[event.type]];
+        handler?.(event);
+    };
+}
+
+function emitDevtoolsEvent(type: MiuraDevtoolsEventType, payload: Record<string, unknown>): MiuraDevtoolsEvent {
+    const event: MiuraDevtoolsEvent = {
+        type,
+        payload,
+        timestamp: Date.now(),
+    };
+    devtoolsEventListeners.forEach((listener) => listener(event));
+    return event;
+}
+
+function canEmitDevtoolsEvents(): boolean {
+    return !debuggerOptions.disabled && debuggerOptions.devtools;
 }
 
 function canUseDom(): boolean {
@@ -668,7 +912,10 @@ export function reportTimelineEvent(event: Omit<Partial<MiuraTimelineEvent>, 'id
                 tag: normalized.values.child as string,
                 class: 'Unknown', // We could pass this too
                 parent: parentId,
-                children: []
+                parentId: parentId ?? null,
+                children: [],
+                childIds: [],
+                connected: true,
             });
         }
         
@@ -676,6 +923,9 @@ export function reportTimelineEvent(event: Omit<Partial<MiuraTimelineEvent>, 'id
             const parentNode = _componentGraph.get(parentId);
             if (parentNode && !parentNode.children.includes(childId)) {
                 parentNode.children.push(childId);
+            }
+            if (parentNode && !parentNode.childIds.includes(childId)) {
+                parentNode.childIds.push(childId);
             }
         }
     }
@@ -1616,6 +1866,11 @@ if (typeof window !== 'undefined') {
         getOptions: getMiuraDebuggerOptions,
         enable: enableMiuraDebugger,
         disable: disableMiuraDebugger,
+        subscribeEvents,
+        subscribeComponentEvents,
+        subscribeSignalEvents,
+        subscribeStoreEvents,
+        subscribeBindingEvents,
         subscribeTimeline,
         getTimelineEvents,
         clearTimelineEvents,

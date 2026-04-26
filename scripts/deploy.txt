@@ -1,0 +1,16 @@
+cd /Users/fernandoalves/Desktop/miura-js/packages/miura-debugger && npm run build &&
+cd /Users/fernandoalves/Desktop/miura-js/packages/miura-render && npm run build &&
+cd /Users/fernandoalves/Desktop/miura-js/packages/miura-element && npm run build &&
+cd /Users/fernandoalves/Desktop/miura-js/packages/miura-framework && npm run build &&
+cd /Users/fernandoalves/Desktop/miura-js/packages/miura-data-flow && npm run build &&
+cd /Users/fernandoalves/Desktop/miura-js/packages/miura && npm run build 
+
+cd /Users/fernandoalves/Desktop/miura-js/packages/miura-debugger && npm publish
+cd /Users/fernandoalves/Desktop/miura-js/packages/miura-render && npm publish
+cd /Users/fernandoalves/Desktop/miura-js/packages/miura-element && npm publish
+cd /Users/fernandoalves/Desktop/miura-js/packages/miura-framework && npm publish
+cd /Users/fernandoalves/Desktop/miura-js/packages/miura-data-flow && npm publish
+cd /Users/fernandoalves/Desktop/miura-js/packages/miura && npm publish 
+
+
+
