@@ -31,6 +31,9 @@ registerIcon('settings', { paths: ['M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0-5v3m0 1
 registerIcon('calendar', { paths: ['M7 3v4M17 3v4M4 8h16M5 5h14v16H5z'] });
 registerIcon('columns', { paths: ['M4 5h6v14H4zM14 5h6v14h-6z'] });
 registerIcon('spark', { paths: ['M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'] });
+registerIcon('list', { paths: ['M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'] });
+registerIcon('panel', { paths: ['M4 5h16v14H4zM4 10h16'] });
+registerIcon('node', { paths: ['M7 7h4v4H7zM13 13h4v4h-4zM11 9h3a2 2 0 0 1 2 2v2'] });
 
 export class MuiIcon extends MiuraNanoElement {
   static observedAttributes = ['name', 'size', 'label'];
