@@ -1,0 +1,107 @@
+@layer miura.tokens {
+  :root,
+  [data-mui-theme="light"] {
+    color-scheme: light;
+
+    --mui-color-bg: #f7f8fa;
+    --mui-color-surface: #ffffff;
+    --mui-color-surface-raised: #ffffff;
+    --mui-color-surface-muted: #f1f3f5;
+    --mui-color-surface-hover: #e9ecef;
+    --mui-color-border: #dfe3e8;
+    --mui-color-border-strong: #c7cdd4;
+    --mui-color-text: #1f2328;
+    --mui-color-text-muted: #69717d;
+    --mui-color-accent: #0f6cbd;
+    --mui-color-accent-hover: #0b5cab;
+    --mui-color-accent-muted: #e7f1ff;
+    --mui-color-danger: #c93a3a;
+    --mui-color-warning: #9a6700;
+    --mui-color-success: #1f7a3f;
+
+    --mui-font-sans: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --mui-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+    --mui-text-xs: 0.75rem;
+    --mui-text-sm: 0.8125rem;
+    --mui-text-md: 0.875rem;
+    --mui-text-lg: 1rem;
+    --mui-text-xl: 1.25rem;
+
+    --mui-weight-regular: 400;
+    --mui-weight-medium: 500;
+    --mui-weight-semibold: 600;
+
+    --mui-space-1: 0.125rem;
+    --mui-space-2: 0.25rem;
+    --mui-space-3: 0.5rem;
+    --mui-space-4: 0.75rem;
+    --mui-space-5: 1rem;
+    --mui-space-6: 1.25rem;
+    --mui-space-7: 1.5rem;
+    --mui-space-8: 2rem;
+
+    --mui-radius-xs: 2px;
+    --mui-radius-sm: 4px;
+    --mui-radius-md: 6px;
+    --mui-radius-lg: 8px;
+    --mui-radius-pill: 999px;
+
+    --mui-shadow-sm: 0 1px 2px rgba(31, 35, 40, 0.08);
+    --mui-shadow-md: 0 8px 24px rgba(31, 35, 40, 0.1);
+    --mui-shadow-lg: 0 20px 48px rgba(31, 35, 40, 0.16);
+
+    --mui-duration-fast: 120ms;
+    --mui-duration-base: 180ms;
+    --mui-duration-slow: 260ms;
+    --mui-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+    --mui-control-height-sm: 30px;
+    --mui-control-height-md: 36px;
+    --mui-control-height-lg: 44px;
+    --mui-rail-width: 56px;
+    --mui-nav-panel-width: 288px;
+    --mui-inspector-width: 340px;
+    --mui-toolbar-height: 44px;
+    --mui-focus-ring: 0 0 0 3px color-mix(in srgb, var(--mui-color-accent) 24%, transparent);
+  }
+
+  [data-mui-theme="dark"] {
+    color-scheme: dark;
+
+    --mui-color-bg: #0f1115;
+    --mui-color-surface: #171a20;
+    --mui-color-surface-raised: #1c2027;
+    --mui-color-surface-muted: #222731;
+    --mui-color-surface-hover: #2a303a;
+    --mui-color-border: #2c333d;
+    --mui-color-border-strong: #3b4450;
+    --mui-color-text: #f3f6fa;
+    --mui-color-text-muted: #9aa4b2;
+    --mui-color-accent: #65a8ff;
+    --mui-color-accent-hover: #8abcff;
+    --mui-color-accent-muted: rgba(101, 168, 255, 0.14);
+    --mui-color-danger: #ff7b72;
+    --mui-color-warning: #d29922;
+    --mui-color-success: #56d364;
+    --mui-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24);
+    --mui-shadow-md: 0 10px 28px rgba(0, 0, 0, 0.32);
+    --mui-shadow-lg: 0 24px 56px rgba(0, 0, 0, 0.44);
+  }
+
+  [data-mui-density="compact"] {
+    --mui-control-height-sm: 26px;
+    --mui-control-height-md: 32px;
+    --mui-control-height-lg: 38px;
+    --mui-toolbar-height: 40px;
+    --mui-nav-panel-width: 260px;
+  }
+
+  [data-mui-density="comfortable"] {
+    --mui-control-height-sm: 34px;
+    --mui-control-height-md: 40px;
+    --mui-control-height-lg: 48px;
+    --mui-toolbar-height: 48px;
+    --mui-nav-panel-width: 312px;
+  }
+}

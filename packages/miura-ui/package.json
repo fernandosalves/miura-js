@@ -11,10 +11,37 @@
         ".": {
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js"
+        },
+        "./tokens": {
+            "types": "./dist/src/tokens/index.d.ts",
+            "import": "./dist/src/tokens/index.js"
+        },
+        "./tokens.css": {
+            "import": "./dist/src/tokens/tokens.css"
+        },
+        "./nano": {
+            "types": "./dist/src/nano/index.d.ts",
+            "import": "./dist/src/nano/index.js"
+        },
+        "./primitives": {
+            "types": "./dist/src/primitives/index.d.ts",
+            "import": "./dist/src/primitives/index.js"
+        },
+        "./elements": {
+            "types": "./dist/src/elements/index.d.ts",
+            "import": "./dist/src/elements/index.js"
+        },
+        "./forms": {
+            "types": "./dist/src/forms/index.d.ts",
+            "import": "./dist/src/forms/index.js"
+        },
+        "./workspace": {
+            "types": "./dist/src/workspace/index.d.ts",
+            "import": "./dist/src/workspace/index.js"
         }
     },
     "scripts": {
-        "build": "tsc",
+        "build": "tsc && mkdir -p dist/src/tokens && cp src/tokens/tokens.css dist/src/tokens/tokens.css",
         "dev": "tsc --watch",
         "test": "vitest run",
         "test:watch": "vitest watch",

@@ -1,83 +1,58 @@
-import { MiuraElement, html, css, component, property } from '@miurajs/miura-element';
+import { MiuraElement, css, html } from '@miurajs/miura-element';
 
-/**
- * Form Field Wrapper — label + helper/error text around any input
- *
- * <mui-field label="Email" required helper="We'll never share your email">
- *   <mui-input type="email"></mui-input>
- * </mui-field>
- */
-@component({ tag: 'mui-field' })
 export class MuiField extends MiuraElement {
-  @property({ type: String, default: '' })
-  label!: string;
+  static properties = {
+    label: { type: String, default: '' },
+    help: { type: String, default: '' },
+    error: { type: String, default: '' },
+    required: { type: Boolean, default: false, reflect: true },
+  };
 
-  @property({ type: String, default: '' })
-  helper!: string;
+  declare label: string;
+  declare help: string;
+  declare error: string;
+  declare required: boolean;
 
-  @property({ type: String, default: '' })
-  error!: string;
-
-  @property({ type: Boolean, default: false, reflect: true })
-  required!: boolean;
-
-  @property({ type: Boolean, default: false, reflect: true })
-  disabled!: boolean;
-
-  static styles: any = css`
-    :host { display: block; }
-
-    .field { display: flex; flex-direction: column; gap: var(--mui-space-1, 4px); }
-
-    .label-row {
-      display: flex;
-      align-items: center;
-      gap: var(--mui-space-1, 4px);
-      font-size: var(--mui-text-sm, 0.875rem);
-      font-weight: var(--mui-weight-medium, 500);
-      color: var(--mui-text, #1f2937);
+  static styles = css`
+    :host {
+      display: grid;
+      gap: var(--mui-space-2);
+      font-family: var(--mui-font-sans);
+      color: var(--mui-color-text);
     }
 
-    :host([disabled]) .label-row { color: var(--mui-text-muted, #9ca3af); }
-
-    .required-star {
-      color: var(--mui-error, #ef4444);
-      font-size: 0.875em;
+    label {
+      font-size: var(--mui-text-sm);
+      font-weight: var(--mui-weight-medium);
+      color: var(--mui-color-text);
     }
 
-    .helper {
-      font-size: var(--mui-text-xs, 0.75rem);
-      color: var(--mui-text-secondary, #6b7280);
-      line-height: 1.4;
+    .required {
+      color: var(--mui-color-danger);
     }
 
-    .error-msg {
-      font-size: var(--mui-text-xs, 0.75rem);
-      color: var(--mui-error, #ef4444);
-      line-height: 1.4;
-      display: flex;
-      align-items: center;
-      gap: 4px;
+    .message {
+      min-height: 1rem;
+      font-size: var(--mui-text-xs);
+      color: var(--mui-color-text-muted);
+    }
+
+    .message.error {
+      color: var(--mui-color-danger);
     }
   `;
 
   template() {
+    const message = this.error || this.help;
+
     return html`
-      <div class="field">
-        ${this.label ? html`
-          <label class="label-row">
-            ${this.label}
-            ${this.required ? html`<span class="required-star" aria-hidden="true">*</span>` : ''}
-          </label>
-        ` : ''}
-        <slot></slot>
-        ${this.error ? html`
-          <div class="error-msg" role="alert">
-            <mui-icon name="alert-circle" size="xs"></mui-icon>
-            ${this.error}
-          </div>
-        ` : (this.helper ? html`<div class="helper">${this.helper}</div>` : '')}
-      </div>
+      ${this.label ? html`<label part="label">${this.label}${this.required ? html` <span class="required">*</span>` : ''}</label>` : ''}
+      <slot></slot>
+      ${message ? html`<div part="message" class="message ${this.error ? 'error' : ''}">${message}</div>` : ''}
     `;
   }
+}
+
+if (!customElements.get('mui-field')) {
+  customElements.define('mui-field', MuiField);
 }
