@@ -2,7 +2,7 @@
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 export type DiagnosticSeverity = 'info' | 'warning' | 'error';
-export type DiagnosticSubsystem = 'element' | 'render' | 'router' | 'framework' | 'data-flow' | 'island' | 'debugger';
+export type DiagnosticSubsystem = 'element' | 'render' | 'router' | 'framework' | 'data-flow' | 'island' | 'debugger' | 'signal';
 export type DiagnosticStage =
     | 'render'
     | 'update'
@@ -61,8 +61,59 @@ export interface MiuraDebuggerOptions {
     openOnError?: boolean;
     openOnWarning?: boolean;
     openOnTimeline?: boolean;
+    devtools?: boolean; // New: Enable DevTools bridge
     maxDiagnostics?: number;
     maxTimelineEvents?: number;
+}
+
+// ── Metadata Registry (Non-Invasive) ──────────────────────────────────────────
+const SIGNAL_METADATA = new WeakMap<any, { id: string; label?: string }>();
+const ELEMENT_METADATA = new WeakMap<any, { id: string }>();
+let _nextSignalId = 0;
+
+/** Register metadata for a signal without modifying the signal itself */
+export function registerSignalMetadata(signal: any, label?: string) {
+    if (!SIGNAL_METADATA.has(signal)) {
+        SIGNAL_METADATA.set(signal, { 
+            id: `sig_${++_nextSignalId}`, 
+            label 
+        });
+    }
+}
+
+/** Get metadata for a signal */
+export function getSignalMetadata(signal: any) {
+    return SIGNAL_METADATA.get(signal);
+}
+
+/** Hook called when a signal is read (dev-only) */
+export function onSignalRead(signal: any, context?: any) {
+    if (debuggerOptions.disabled || !debuggerOptions.devtools) return;
+    
+    const meta = getSignalMetadata(signal);
+    if (!meta) return;
+
+    reportTimelineEvent({
+        subsystem: 'signal',
+        stage: 'runtime',
+        message: `Signal read: ${meta.label || meta.id}`,
+        values: { id: meta.id, label: meta.label, action: 'read', contextId: context?.__miura_id }
+    });
+}
+
+/** Hook called when a signal is written (dev-only) */
+export function onSignalWrite(signal: any, value: any) {
+    if (debuggerOptions.disabled || !debuggerOptions.devtools) return;
+    
+    const meta = getSignalMetadata(signal);
+    if (!meta) return;
+
+    reportTimelineEvent({
+        subsystem: 'signal',
+        stage: 'runtime',
+        message: `Signal write: ${meta.label || meta.id} = ${value}`,
+        values: { id: meta.id, label: meta.label, action: 'write', value }
+    });
 }
 
 export interface ComponentDebugOptions extends Omit<MiuraDebuggerOptions, 'maxDiagnostics'> {
@@ -153,6 +204,7 @@ const DEFAULT_OPTIONS: Required<MiuraDebuggerOptions> = {
     openOnError: true,
     openOnWarning: false,
     openOnTimeline: false,
+    devtools: false,
     maxDiagnostics: 20,
     maxTimelineEvents: 80,
 };
@@ -413,7 +465,7 @@ export function enableMiuraDebugger(options: MiuraDebuggerOptions = {}): Require
 }
 
 export function disableMiuraDebugger(): void {
-    debuggerOptions = { ...DEFAULT_OPTIONS, disabled: true, overlay: false, layers: false, performance: false };
+    debuggerOptions = { ...DEFAULT_OPTIONS, disabled: true, overlay: false, layers: false, performance: false, devtools: false };
     unmountMiuraDevOverlay();
 }
 

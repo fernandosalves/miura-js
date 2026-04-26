@@ -62,18 +62,10 @@ type SubscribableSignal<T = unknown> = {
 type ComputedNode = { _registerDependency(source: SubscribableSignal): void };
 let _currentComputed: ComputedNode | null = null;
 
-// ── signal() ──────────────────────────────────────────────────────────────────
-
 /**
  * Create a writable signal.
- *
- * ```ts
- * const count = signal(0);
- * count();    // read → 0
- * count(1);   // write → notifies subscribers
- * ```
  */
-export function signal<T>(initial: T): Signal<T> {
+export function signal<T>(initial: T, label?: string): Signal<T> {
     let _value = initial;
     const _subs = new Set<(v: T) => void>();
 
@@ -84,10 +76,25 @@ export function signal<T>(initial: T): Signal<T> {
             if (_currentComputed) {
                 _currentComputed._registerDependency(fn as Signal<T>);
             }
+            
+            // Non-invasive DevTools hook
+            const win = typeof window !== 'undefined' ? (window as any) : null;
+            if (win?.miuraDebugger?.onSignalRead) {
+                win.miuraDebugger.onSignalRead(fn, _currentComputed);
+            }
+
             return _value;
         }
+        
         const next = value as T;
         if (Object.is(_value, next)) { return; }
+        
+        // Non-invasive DevTools hook
+        const win = typeof window !== 'undefined' ? (window as any) : null;
+        if (win?.miuraDebugger?.onSignalWrite) {
+            win.miuraDebugger.onSignalWrite(fn, next);
+        }
+
         _value = next;
         [..._subs].forEach(s => s(_value));
     }
@@ -99,6 +106,12 @@ export function signal<T>(initial: T): Signal<T> {
     fn.peek = (): T => _value;
     (fn as any).__isSignal = true;
 
+    // Register metadata if debugger is present
+    const win = typeof window !== 'undefined' ? (window as any) : null;
+    if (win?.miuraDebugger?.registerSignalMetadata) {
+        win.miuraDebugger.registerSignalMetadata(fn, label);
+    }
+
     return fn as Signal<T>;
 }
 
@@ -106,16 +119,8 @@ export function signal<T>(initial: T): Signal<T> {
 
 /**
  * Create a derived read-only signal.
- *
- * ```ts
- * const count   = signal(0);
- * const doubled = computed(() => count() * 2);
- * doubled();     // 0
- * count(3);
- * doubled();     // 6
- * ```
  */
-export function computed<T>(fn: () => T): ReadonlySignal<T> {
+export function computed<T>(fn: () => T, label?: string): ReadonlySignal<T> {
     let _value: T;
     let _dirty = true;
     const _subs = new Set<(v: T) => void>();
@@ -185,6 +190,12 @@ export function computed<T>(fn: () => T): ReadonlySignal<T> {
     };
     (rfn as any).__isSignal = true;
     (rfn as any).__isComputed = true;
+
+    // Register metadata if debugger is present
+    const win = typeof window !== 'undefined' ? (window as any) : null;
+    if (win?.miuraDebugger?.registerSignalMetadata) {
+        win.miuraDebugger.registerSignalMetadata(rfn, label);
+    }
 
     return rfn as ReadonlySignal<T>;
 }

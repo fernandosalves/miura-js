@@ -1,6 +1,6 @@
 {
     "name": "@miurajs/miura-render",
-    "version": "0.4.1",
+    "version": "0.4.2",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -21,7 +21,7 @@
         "dist"
     ],
     "dependencies": {
-        "@miurajs/miura-debugger": "^0.4.1"
+        "@miurajs/miura-debugger": "^0.4.2"
     },
     "devDependencies": {
         "@types/jsdom": "^21.1.6",
