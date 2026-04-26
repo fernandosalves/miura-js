@@ -75,7 +75,7 @@ export class MuiSwitch extends MiuraElement {
   private toggle(): void {
     if (this.disabled) return;
     this.checked = !this.checked;
-    this.emit('change', { checked: this.checked });
+    this.emit('change', { checked: this.checked }, { bubbles: true, composed: true });
   }
 
   template() {

@@ -10,11 +10,19 @@ class MiuraUiWorkspaceShellDemo extends MiuraElement {
     activeRail: { type: String, default: 'notebook' },
     activeItem: { type: String, default: 'page-1' },
     theme: { type: String, default: 'light' },
+    inspector: { type: Boolean, default: true },
+    paneSize: { type: Number, default: 360 },
+    movedCards: { type: Number, default: 0 },
+    events: { type: Array, default: () => [] },
   };
 
   declare activeRail: string;
   declare activeItem: string;
   declare theme: 'light' | 'dark';
+  declare inspector: boolean;
+  declare paneSize: number;
+  declare movedCards: number;
+  declare events: string[];
 
   private railItems = [
     { id: 'notebook', label: 'Notebook', icon: 'folder' },
@@ -128,6 +136,55 @@ class MiuraUiWorkspaceShellDemo extends MiuraElement {
       font-size: var(--mui-text-sm);
     }
 
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .workspace-title {
+      display: grid;
+      gap: 3px;
+    }
+
+    .workspace-title strong {
+      color: var(--mui-color-text);
+      font-size: var(--mui-text-lg);
+    }
+
+    .workspace-title span {
+      color: var(--mui-color-text-muted);
+      font-size: var(--mui-text-sm);
+    }
+
+    .card button {
+      margin-top: 10px;
+    }
+
+    .activity {
+      margin-top: 16px;
+      display: grid;
+      gap: 6px;
+      padding: 10px;
+      border: 1px solid var(--mui-color-border);
+      border-radius: var(--mui-radius-md);
+      background: var(--mui-color-surface-muted);
+    }
+
+    .activity div {
+      color: var(--mui-color-text-muted);
+      font-family: var(--mui-font-mono);
+      font-size: var(--mui-text-xs);
+    }
+
     .inspector {
       height: 100%;
       box-sizing: border-box;
@@ -137,14 +194,40 @@ class MiuraUiWorkspaceShellDemo extends MiuraElement {
     }
   `;
 
+  private pushEvent(message: string) {
+    this.events = [`${new Date().toLocaleTimeString()} ${message}`, ...this.events].slice(0, 6);
+  }
+
+  private selectRail(event: CustomEvent) {
+    this.activeRail = event.detail.id;
+    this.pushEvent(`rail -> ${event.detail.label}`);
+  }
+
+  private selectItem(event: CustomEvent) {
+    this.activeItem = event.detail.id;
+    this.pushEvent(`tree -> ${event.detail.label}`);
+  }
+
+  private moveCard(label: string) {
+    this.movedCards++;
+    this.pushEvent(`${label} moved to next lane`);
+  }
+
+  private updatePane(event: CustomEvent) {
+    this.paneSize = Math.round(event.detail.size);
+  }
+
   template() {
+    this.dataset.muiTheme = this.theme;
+    this.dataset.muiDensity = "compact";
+
     return html`
-      <mui-app-shell data-mui-theme=${this.theme} data-mui-density="compact">
+      <mui-app-shell data-mui-theme=${this.theme} data-mui-density="compact" .inspector=${this.inspector}>
         <mui-icon-rail
           slot="rail"
           .items=${this.railItems}
           .active=${this.activeRail}
-          @item-select=${(event: CustomEvent) => this.activeRail = event.detail.id}
+          @item-select=${(event: CustomEvent) => this.selectRail(event)}
         ></mui-icon-rail>
 
         <div slot="nav" class="nav-panel">
@@ -159,35 +242,58 @@ class MiuraUiWorkspaceShellDemo extends MiuraElement {
             .items=${this.treeItems}
             .active=${this.activeItem}
             .expanded=${['board-1', 'board-2']}
-            @item-select=${(event: CustomEvent) => this.activeItem = event.detail.id}
+            @item-select=${(event: CustomEvent) => this.selectItem(event)}
           ></mui-content-tree>
+          <div class="activity" aria-live="polite">
+            ${(this.events.length ? this.events : ['Click rails, tree items, cards, theme, or drag the divider.']).map((event) => html`
+              <div>${event}</div>
+            `)}
+          </div>
         </div>
 
         <div class="canvas">
-          <mui-split-pane size="360" min="260" max="620">
+          <div class="topbar">
+            <div class="workspace-title">
+              <strong>${this.activeRail} workspace</strong>
+              <span>Selected: ${this.activeItem} · pane ${this.paneSize}px · moved cards ${this.movedCards}</span>
+            </div>
+            <div class="topbar-actions">
+              <mui-button size="sm" variant="secondary" @click=${() => {
+                this.inspector = !this.inspector;
+                this.pushEvent(`inspector -> ${this.inspector ? 'open' : 'closed'}`);
+              }}>
+                <mui-icon slot="icon-start" name="panel-left"></mui-icon>
+                Inspector
+              </mui-button>
+            </div>
+          </div>
+
+          <mui-split-pane .size=${this.paneSize} min="260" max="620" @resize=${(event: CustomEvent) => this.updatePane(event)}>
             <div slot="primary" class="column">
               <h3>Notebook outline</h3>
               <div class="card">
                 <strong>Mind nodes</strong>
                 <p>Node canvas primitives will grow from the blog mindmap prototype.</p>
+                <mui-button size="sm" variant="ghost" @click=${() => this.pushEvent('mind node opened')}>Open node</mui-button>
               </div>
               <div class="card">
                 <strong>Calendar lane</strong>
                 <p>Calendar cells become data-aware workspace surfaces.</p>
+                <mui-button size="sm" variant="ghost" @click=${() => this.pushEvent('calendar lane focused')}>Focus lane</mui-button>
               </div>
             </div>
             <div slot="secondary" class="board">
               <div class="column">
                 <h3>Backlog</h3>
-                <div class="card"><strong>Extract primitives</strong><p>Disclosure, roving focus, tree, pane resize.</p></div>
+                <div class="card"><strong>Extract primitives</strong><p>Disclosure, roving focus, tree, pane resize.</p><mui-button size="sm" variant="secondary" @click=${() => this.moveCard('Extract primitives')}>Move</mui-button></div>
               </div>
               <div class="column">
                 <h3>Building</h3>
-                <div class="card"><strong>Workspace shell</strong><p>Rail, tree, split pane, inspector.</p></div>
+                <div class="card"><strong>Workspace shell</strong><p>Rail, tree, split pane, inspector.</p><mui-button size="sm" variant="secondary" @click=${() => this.moveCard('Workspace shell')}>Move</mui-button></div>
               </div>
               <div class="column">
                 <h3>Next</h3>
-                <div class="card"><strong>Canvas kit</strong><p>Kanban, calendar, and node graph.</p></div>
+                <div class="card"><strong>Canvas kit</strong><p>Kanban, calendar, and node graph.</p><mui-button size="sm" variant="secondary" @click=${() => this.moveCard('Canvas kit')}>Move</mui-button></div>
               </div>
             </div>
           </mui-split-pane>
@@ -228,5 +334,9 @@ export const WorkspaceShell: Story = {
     activeRail: 'notebook',
     activeItem: 'page-1',
     theme: 'light',
+    inspector: true,
+    paneSize: 360,
+    movedCards: 0,
+    events: [],
   },
 };

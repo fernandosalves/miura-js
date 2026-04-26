@@ -10,12 +10,18 @@ class MiuraUiFoundationsDemo extends MiuraElement {
     density: { type: String, default: 'compact' },
     title: { type: String, default: '' },
     enabled: { type: Boolean, default: true },
+    actionCount: { type: Number, default: 0 },
+    loading: { type: Boolean, default: false },
+    events: { type: Array, default: () => [] },
   };
 
   declare theme: 'light' | 'dark';
   declare density: 'compact' | 'cozy' | 'comfortable';
   declare title: string;
   declare enabled: boolean;
+  declare actionCount: number;
+  declare loading: boolean;
+  declare events: string[];
 
   static styles = css`
     :host {
@@ -65,17 +71,83 @@ class MiuraUiFoundationsDemo extends MiuraElement {
       color: var(--mui-color-text-muted);
       font-size: var(--mui-text-md);
     }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric,
+    .event-log {
+      border: 1px solid var(--mui-color-border);
+      border-radius: var(--mui-radius-md);
+      background: var(--mui-color-surface-muted);
+      padding: 10px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--mui-color-text-muted);
+      font-size: var(--mui-text-xs);
+      margin-bottom: 4px;
+    }
+
+    .metric strong {
+      font-size: var(--mui-text-md);
+    }
+
+    .event-log {
+      display: grid;
+      gap: 6px;
+      min-height: 82px;
+    }
+
+    .event-line {
+      font-family: var(--mui-font-mono);
+      font-size: var(--mui-text-xs);
+      color: var(--mui-color-text-muted);
+    }
   `;
 
   private setTheme(theme: 'light' | 'dark') {
     this.theme = theme;
+    this.pushEvent(`theme -> ${theme}`);
   }
 
   private setDensity(density: 'compact' | 'cozy' | 'comfortable') {
     this.density = density;
+    this.pushEvent(`density -> ${density}`);
+  }
+
+  private pushEvent(message: string) {
+    this.events = [`${new Date().toLocaleTimeString()} ${message}`, ...this.events].slice(0, 5);
+  }
+
+  private createWorkspace() {
+    this.actionCount++;
+    this.loading = true;
+    this.pushEvent(`create workspace #${this.actionCount}`);
+    window.setTimeout(() => {
+      this.loading = false;
+      this.pushEvent('workspace ready');
+    }, 700);
+  }
+
+  private updateTitle(event: CustomEvent) {
+    this.title = event.detail.value;
+    this.pushEvent(`title -> ${this.title || '(empty)'}`);
+  }
+
+  private updateEnabled(event: CustomEvent) {
+    this.enabled = event.detail.checked;
+    this.pushEvent(`publishing -> ${this.enabled ? 'enabled' : 'disabled'}`);
   }
 
   template() {
+    this.dataset.muiTheme = this.theme;
+    this.dataset.muiDensity = this.density;
+
     return html`
       <div class="surface" data-mui-theme=${this.theme} data-mui-density=${this.density}>
         <div class="toolbar">
@@ -96,29 +168,42 @@ class MiuraUiFoundationsDemo extends MiuraElement {
               <mui-input
                 placeholder="Notebook, calendar, admin..."
                 .value=${this.title}
-                @change=${(event: CustomEvent) => this.title = event.detail.value}
+                @change=${(event: CustomEvent) => this.updateTitle(event)}
               ></mui-input>
             </mui-field>
 
             <mui-field label="Publishing">
               <mui-switch
                 .checked=${this.enabled}
-                @change=${(event: CustomEvent) => this.enabled = event.detail.checked}
+                @change=${(event: CustomEvent) => this.updateEnabled(event)}
               >Enabled</mui-switch>
             </mui-field>
           </div>
 
+          <div class="status-grid">
+            <div class="metric"><span>Theme</span><strong>${this.theme}</strong></div>
+            <div class="metric"><span>Density</span><strong>${this.density}</strong></div>
+            <div class="metric"><span>Title</span><strong>${this.title || 'Untitled'}</strong></div>
+            <div class="metric"><span>Actions</span><strong>${this.actionCount}</strong></div>
+          </div>
+
           <div class="toolbar">
-            <mui-button>
+            <mui-button .loading=${this.loading} @click=${() => this.createWorkspace()}>
               <mui-icon slot="icon-start" name="spark"></mui-icon>
               Create workspace
             </mui-button>
-            <mui-button variant="secondary">
+            <mui-button variant="secondary" @click=${() => this.pushEvent('configure clicked')}>
               <mui-icon slot="icon-start" name="settings"></mui-icon>
               Configure
             </mui-button>
-            <mui-button variant="ghost">Cancel</mui-button>
-            <mui-button variant="danger">Delete</mui-button>
+            <mui-button variant="ghost" @click=${() => this.pushEvent('cancel clicked')}>Cancel</mui-button>
+            <mui-button variant="danger" @click=${() => this.pushEvent('delete clicked')}>Delete</mui-button>
+          </div>
+
+          <div class="event-log" aria-live="polite">
+            ${(this.events.length ? this.events : ['Interact with the controls to see events here.']).map((event) => html`
+              <div class="event-line">${event}</div>
+            `)}
           </div>
         </section>
       </div>
@@ -146,5 +231,8 @@ export const Foundations: Story = {
     density: 'compact',
     title: 'Editorial workspace',
     enabled: true,
+    actionCount: 0,
+    loading: false,
+    events: [],
   },
 };

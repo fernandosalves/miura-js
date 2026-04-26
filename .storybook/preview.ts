@@ -1,5 +1,5 @@
 import type { Preview } from "@storybook/web-components";
-import '../packages/miura-ui/src/styles/design-system.css';
+import '../packages/miura-ui/src/tokens/tokens.css';
 import {
   clearDebugLayers,
   clearDiagnostics,

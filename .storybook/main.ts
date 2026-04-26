@@ -4,10 +4,8 @@ const config: StorybookConfig = {
     stories: [
         "../stories/**/*.mdx",
         "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)",
-        "../packages/**/stories/**/*.stories.@(js|jsx|ts|tsx)",
-        "!../packages/**/dist/**/*.stories.@(js|jsx|ts|tsx)",
+        "../packages/*/stories/**/*.stories.@(js|jsx|ts|tsx)",
     ],
-    // Exclude compiled stories from dist folders
     docs: {
         autodocs: true,
     },

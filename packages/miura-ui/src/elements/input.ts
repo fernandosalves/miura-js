@@ -64,8 +64,8 @@ export class MuiInput extends MiuraElement {
 
   private onInput(event: Event): void {
     this.value = (event.target as HTMLInputElement).value;
-    this.emit('input', { value: this.value, name: this.name });
-    this.emit('change', { value: this.value, name: this.name });
+    this.emit('input', { value: this.value, name: this.name }, { bubbles: true, composed: true });
+    this.emit('change', { value: this.value, name: this.name }, { bubbles: true, composed: true });
   }
 
   template() {

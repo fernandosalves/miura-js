@@ -110,7 +110,7 @@ export class MuiIconRail extends MiuraElement {
   private activate(item: RailItem): void {
     if (item.disabled) return;
     this.active = item.id;
-    this.emit('item-select', item);
+    this.emit('item-select', item, { bubbles: true, composed: true });
   }
 
   template() {

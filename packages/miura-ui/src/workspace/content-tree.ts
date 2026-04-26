@@ -99,13 +99,13 @@ export class MuiContentTree extends MiuraElement {
       expanded.add(item.id);
     }
     this.expanded = [...expanded];
-    this.emit('expanded-change', { expanded: this.expanded });
+    this.emit('expanded-change', { expanded: this.expanded }, { bubbles: true, composed: true });
   }
 
   private select(item: ContentTreeItem): void {
     if (item.disabled) return;
     this.active = item.id;
-    this.emit('item-select', item);
+    this.emit('item-select', item, { bubbles: true, composed: true });
   }
 
   private renderItem(item: ContentTreeItem): unknown {

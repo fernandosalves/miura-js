@@ -101,7 +101,7 @@ export class MuiSplitPane extends MiuraElement {
     const rawSize = this.direction === 'vertical' ? event.clientY - rect.top : event.clientX - rect.left;
     this.size = clampPaneSize(rawSize, this.min, this.max);
     this.applySize();
-    this.emit('resize', { size: this.size });
+    this.emit('resize', { size: this.size }, { bubbles: true, composed: true });
   };
 
   private onPointerUp = (): void => {
