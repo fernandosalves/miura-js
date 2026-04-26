@@ -212,9 +212,14 @@ export class MuiKanbanBoard extends MiuraElement {
   }
 
   template() {
+    const columns = (this.columns ?? []).map((column) => ({
+      ...column,
+      cards: Array.isArray(column.cards) ? column.cards : [],
+    }));
+
     return html`
       <div class="board" part="board">
-        ${(this.columns ?? []).map((column) => html`
+        ${columns.map((column) => html`
           <section
             class="column"
             part="column"

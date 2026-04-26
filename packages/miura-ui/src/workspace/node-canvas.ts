@@ -191,10 +191,18 @@ export class MuiNodeCanvas extends MiuraElement {
     return (this.nodes ?? []).find((node) => node.id === id);
   }
 
+  private numeric(value: unknown, fallback: number): number {
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) ? numberValue : fallback;
+  }
+
   private center(node: NodeCanvasNode): { x: number; y: number } {
+    const x = this.numeric(node.x, 0);
+    const y = this.numeric(node.y, 0);
+    const width = this.numeric(node.width, 220);
     return {
-      x: node.x + (node.width ?? 220) / 2,
-      y: node.y + 54,
+      x: x + width / 2,
+      y: y + 54,
     };
   }
 
@@ -205,6 +213,7 @@ export class MuiNodeCanvas extends MiuraElement {
     const a = this.center(from);
     const b = this.center(to);
     const dx = Math.max(64, Math.abs(b.x - a.x) * 0.45);
+    if (![a.x, a.y, b.x, b.y, dx].every(Number.isFinite)) return '';
     return `M ${a.x} ${a.y} C ${a.x + dx} ${a.y}, ${b.x - dx} ${b.y}, ${b.x} ${b.y}`;
   }
 
@@ -215,7 +224,13 @@ export class MuiNodeCanvas extends MiuraElement {
 
   private onPointerDown(node: NodeCanvasNode, event: PointerEvent): void {
     this.selectNode(node);
-    this.dragging = { id: node.id, startX: event.clientX, startY: event.clientY, nodeX: node.x, nodeY: node.y };
+    this.dragging = {
+      id: node.id,
+      startX: event.clientX,
+      startY: event.clientY,
+      nodeX: this.numeric(node.x, 0),
+      nodeY: this.numeric(node.y, 0),
+    };
     (event.currentTarget as HTMLElement).classList.add('dragging');
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
   }
@@ -238,11 +253,13 @@ export class MuiNodeCanvas extends MiuraElement {
   }
 
   private renderNode(node: NodeCanvasNode) {
-    const width = node.width ?? 220;
+    const width = this.numeric(node.width, 220);
+    const x = this.numeric(node.x, 0);
+    const y = this.numeric(node.y, 0);
     return html`
       <div
         class="node"
-        style=${`left: ${node.x}px; top: ${node.y}px; --_node-width: ${width}px;`}
+        style=${`left: ${x}px; top: ${y}px; --_node-width: ${width}px;`}
         @pointerdown=${(event: PointerEvent) => this.onPointerDown(node, event)}
         @pointermove=${(event: PointerEvent) => this.onPointerMove(node, event)}
         @pointerup=${(event: PointerEvent) => this.onPointerUp(node, event)}
