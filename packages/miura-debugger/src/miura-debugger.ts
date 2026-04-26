@@ -12,7 +12,10 @@ export type DiagnosticStage =
     | 'loader'
     | 'plugin'
     | 'hydration'
-    | 'runtime';
+    | 'runtime'
+    | 'write'
+    | 'read'
+    | 'discovery';
 
 export interface DebugConfig {
     processor?: boolean;
@@ -74,10 +77,9 @@ let _nextSignalId = 0;
 /** Register metadata for a signal without modifying the signal itself */
 export function registerSignalMetadata(signal: any, label?: string) {
     if (!SIGNAL_METADATA.has(signal)) {
-        SIGNAL_METADATA.set(signal, { 
-            id: `sig_${++_nextSignalId}`, 
-            label 
-        });
+        const id = `sig_${++_nextSignalId}`;
+        SIGNAL_METADATA.set(signal, { id, label });
+        _signalRegistry.set(id, signal);
     }
 }
 
@@ -188,6 +190,8 @@ export interface MiuraTimelineEvent {
     pluginName?: string;
     element?: HTMLElement | null;
     values?: Record<string, unknown>;
+    traceId?: string;
+    parentTraceId?: string;
 }
 
 type DiagnosticListener = (diagnostics: MiuraDiagnostic[]) => void;
@@ -217,6 +221,111 @@ const layerRegistry = new Map<HTMLElement, DebugLayerSnapshot>();
 const layerListeners = new Set<LayerListener>();
 const timelineListeners = new Set<TimelineListener>();
 const COMPONENT_DEBUG_OPTIONS = Symbol.for('miura.component.debug.options');
+
+// ── DevTools State ───────────────────────────────────────────────────────────
+interface GraphNode {
+    id: string;
+    tag: string;
+    class: string;
+    parent?: string;
+    children: string[];
+}
+
+const _componentGraph = new Map<string, GraphNode>();
+const _signalRegistry = new Map<string, any>();
+
+// ── Trace Engine ─────────────────────────────────────────────────────────────
+let _currentTraceId: string | null = null;
+let _traceStack: string[] = [];
+const _traceParents = new Map<string, string>();
+
+/** Start a new logical trace (transaction) */
+export function startTrace(label: string, subsystem: DiagnosticSubsystem): string {
+    const id = `trace_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const parentId = _currentTraceId;
+    
+    if (parentId) {
+        _traceParents.set(id, parentId);
+    }
+    
+    _traceStack.push(id);
+    _currentTraceId = id;
+
+    reportTimelineEvent({
+        subsystem,
+        stage: 'runtime',
+        message: `TRACE_START: ${label}`,
+        traceId: id,
+        parentTraceId: parentId || undefined,
+        values: { label }
+    });
+
+    return id;
+}
+
+/** End the specified trace or the current one */
+export function endTrace(id?: string): void {
+    const targetId = id || _currentTraceId;
+    if (!targetId) return;
+
+    const index = _traceStack.indexOf(targetId);
+    if (index !== -1) {
+        _traceStack.splice(index, 1);
+        _currentTraceId = _traceStack[_traceStack.length - 1] || null;
+    }
+    // Note: We keep _traceParents for historical lookup if needed, 
+    // but for now let's just leave it or clear it if it's the last one.
+    if (_traceStack.length === 0) {
+        _traceParents.clear();
+    }
+}
+
+/** Get the currently active trace ID */
+export function getCurrentTraceId(): string | null {
+    return _currentTraceId;
+}
+
+/** Get the parent of a specific trace ID */
+export function getParentTraceId(id: string): string | undefined {
+    return _traceParents.get(id);
+}
+
+// ── Component Stack ──────────────────────────────────────────────────────────
+let _activeComponentStack: any[] = [];
+
+/** Push a component onto the active rendering stack */
+export function pushActiveComponent(instance: any): void {
+    _activeComponentStack.push(instance);
+}
+
+/** Pop a component from the active rendering stack */
+export function popActiveComponent(): void {
+    _activeComponentStack.pop();
+}
+
+/** Get the currently rendering component */
+export function getActiveComponent(): any | null {
+    return _activeComponentStack[_activeComponentStack.length - 1] || null;
+}
+
+/** Get the full component graph for the Node Graph view */
+export function getComponentGraph(): GraphNode[] {
+    return Array.from(_componentGraph.values());
+}
+
+/** Get all registered signal metadata */
+export function getAllSignals(): any[] {
+    const result: any[] = [];
+    _signalRegistry.forEach((sig, id) => {
+        const meta = SIGNAL_METADATA.get(sig);
+        result.push({ 
+            id, 
+            label: meta?.label, 
+            value: serializeUnknown(sig.peek()) 
+        });
+    });
+    return result;
+}
 
 function canUseDom(): boolean {
     return typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -261,7 +370,7 @@ function serializeUnknown(value: unknown, depth = 0): unknown {
         return `<${value.tagName.toLowerCase()}>`;
     }
 
-    if (depth > 2) {
+    if (depth > 5) {
         return '[Object]';
     }
 
@@ -541,10 +650,35 @@ export function reportTimelineEvent(event: Omit<Partial<MiuraTimelineEvent>, 'id
         routePath: event.routePath,
         pluginName: event.pluginName,
         element: event.element ?? null,
+        traceId: event.traceId ?? _currentTraceId ?? undefined,
+        parentTraceId: event.parentTraceId ?? (event.traceId ? _traceParents.get(event.traceId) : (_currentTraceId ? _traceParents.get(_currentTraceId) : undefined)),
         values: event.values
             ? Object.fromEntries(Object.entries(event.values).map(([key, value]) => [key, serializeUnknown(value)]))
             : undefined,
     };
+
+    // Update Component Graph on discovery
+    if (normalized.stage === 'discovery' && normalized.values?.childId) {
+        const childId = normalized.values.childId as string;
+        const parentId = normalized.values.parentId as string | undefined;
+        
+        if (!_componentGraph.has(childId)) {
+            _componentGraph.set(childId, {
+                id: childId,
+                tag: normalized.values.child as string,
+                class: 'Unknown', // We could pass this too
+                parent: parentId,
+                children: []
+            });
+        }
+        
+        if (parentId) {
+            const parentNode = _componentGraph.get(parentId);
+            if (parentNode && !parentNode.children.includes(childId)) {
+                parentNode.children.push(childId);
+            }
+        }
+    }
 
     timelineEvents = [normalized, ...timelineEvents].slice(0, debuggerOptions.maxTimelineEvents);
     notifyTimeline();
@@ -1474,4 +1608,22 @@ export function mountMiuraDevOverlay(): HTMLElement | null {
 export function unmountMiuraDevOverlay(): void {
     if (!canUseDom()) return;
     document.querySelector('miura-dev-overlay')?.remove();
+}
+
+// ── Global Export for DevTools ────────────────────────────────────────────────
+if (typeof window !== 'undefined') {
+    (window as any).miuraDebugger = {
+        getOptions: getMiuraDebuggerOptions,
+        enable: enableMiuraDebugger,
+        disable: disableMiuraDebugger,
+        subscribeTimeline,
+        getTimelineEvents,
+        clearTimelineEvents,
+        getComponentGraph,
+        getAllSignals,
+        startTrace,
+        endTrace,
+        getCurrentTraceId,
+        serializeUnknown
+    };
 }

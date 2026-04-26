@@ -3,7 +3,7 @@ import { consumeContext, provideContext, type ContextKey } from './context.js';
 import { findIslandHost, readIslandProps, type MiuraIsland } from './miura-island.js';
 import { PropertyDeclarations, createLocalSignalProperties, createProperties, createStateProperties, LOCAL_SIGNAL_KEY_PREFIX, SIGNAL_KEY_PREFIX } from './properties';
 import type { RouteSignalLike, RouterBridgeLike } from './router-bridge.js';
-import { getComponentDebugOptions, registerDebugLayer, reportDiagnostic, reportTimelineEvent, reportWarning, unregisterDebugLayer } from '@miurajs/miura-debugger';
+import { getComponentDebugOptions, registerDebugLayer, reportDiagnostic, reportTimelineEvent, reportWarning, unregisterDebugLayer, pushActiveComponent, popActiveComponent, getActiveComponent } from '@miurajs/miura-debugger';
 import { signal, computed, Signal, ReadonlySignal } from './signals.js';
 import { createFieldRef, type FieldRef } from './field-ref.js';
 import { shared, createGlobalProperties, GLOBAL_SIGNAL_KEY_PREFIX, type SharedKey } from './shared.js';
@@ -214,6 +214,8 @@ export class MiuraElement extends HTMLElement {
 
     /** @private */
     private _initialized = false;
+    /** Unique ID for DevTools tracking @private */
+    public __miura_id = `comp_${Math.random().toString(36).slice(2, 9)}`;
     /** @private */
     private _pendingUpdate = false;
     /** @private */
@@ -534,6 +536,22 @@ export class MiuraElement extends HTMLElement {
         this._subscribePropertySignals();
         this._resolveIslandProps();
         this._setupConnectionSubscriptions();
+
+        const parent = getActiveComponent();
+        if (parent) {
+            reportTimelineEvent({
+                subsystem: 'element',
+                stage: 'discovery',
+                message: `Component connected: ${this.localName}`,
+                values: { 
+                    parent: parent.localName, 
+                    parentId: parent.__miura_id,
+                    child: this.localName,
+                    childId: this.__miura_id 
+                }
+            });
+        }
+
         if (this._pendingUpdate) {
             this.requestUpdate();  // Single render on connect
         }
@@ -676,15 +694,20 @@ export class MiuraElement extends HTMLElement {
                 // Clear error state on successful re-render attempt
                 this._hasError = false;
 
-                const template = this._evaluateTemplateWithDependencyCollection();
-                // Duck-typing check for TemplateResult to handle multiple module instances
-                const isTemplate = template && 
-                                typeof template === 'object' && 
-                                'strings' in template && 
-                                'values' in template;
+                try {
+                    pushActiveComponent(this);
+                    const template = this._evaluateTemplateWithDependencyCollection();
+                    // Duck-typing check for TemplateResult to handle multiple module instances
+                    const isTemplate = template && 
+                                    typeof template === 'object' && 
+                                    'strings' in template && 
+                                    'values' in template;
 
-                if (isTemplate) {
-                    await this.renderTemplateInstance(this._promoteDirectTemplateReads(template as TemplateResult));
+                    if (isTemplate) {
+                        await this.renderTemplateInstance(this._promoteDirectTemplateReads(template as TemplateResult));
+                    }
+                } finally {
+                    popActiveComponent();
                 }
 
                 const isFirstRender = !this._hasRendered;

@@ -1,6 +1,7 @@
 import { Binding } from './binding';
 import { EventModifier, EVENT_MODIFIERS } from '../../modifiers/event-modifiers';
 import { debugLog } from '../../utils/debug';
+import { startTrace, endTrace } from '@miurajs/miura-debugger';
 
 export class EventBinding implements Binding {
     private handler: EventListener | null = null;
@@ -56,7 +57,12 @@ export class EventBinding implements Binding {
                 }
             }
 
-            handler(event);
+            const traceId = startTrace(`event: ${this.eventName}`, 'element');
+            try {
+                handler(event);
+            } finally {
+                endTrace(traceId);
+            }
         };
     }
 

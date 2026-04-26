@@ -1,6 +1,6 @@
 {
     "name": "@miurajs/miura-router",
-    "version": "0.4.2",
+    "version": "0.4.4",
     "type": "module",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
@@ -18,7 +18,7 @@
         "build": "tsc"
     },
     "dependencies": {
-        "@miurajs/miura-debugger": "^0.4.2"
+        "@miurajs/miura-debugger": "^0.4.4"
     },
     "devDependencies": {
         "typescript": "^5.4.5"

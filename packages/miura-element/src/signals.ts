@@ -30,6 +30,7 @@
  *   price(12);     // → logs "price: 12"
  *   tax();         // → 2.4
  */
+import { reportTimelineEvent, getCurrentTraceId, getActiveComponent, registerSignalMetadata } from '@miurajs/miura-debugger';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -76,24 +77,31 @@ export function signal<T>(initial: T, label?: string): Signal<T> {
             if (_currentComputed) {
                 _currentComputed._registerDependency(fn as Signal<T>);
             }
-            
-            // Non-invasive DevTools hook
-            const win = typeof window !== 'undefined' ? (window as any) : null;
-            if (win?.miuraDebugger?.onSignalRead) {
-                win.miuraDebugger.onSignalRead(fn, _currentComputed);
+
+            const activeComp = getActiveComponent();
+            if (activeComp) {
+                // Link signal to component in the debugger/graph
+                reportTimelineEvent({
+                    subsystem: 'signal',
+                    stage: 'read',
+                    message: `Signal read by ${activeComp.constructor.name}`,
+                    values: { label, signal: fn, component: activeComp }
+                });
             }
 
             return _value;
         }
-        
+
         const next = value as T;
         if (Object.is(_value, next)) { return; }
-        
-        // Non-invasive DevTools hook
-        const win = typeof window !== 'undefined' ? (window as any) : null;
-        if (win?.miuraDebugger?.onSignalWrite) {
-            win.miuraDebugger.onSignalWrite(fn, next);
-        }
+
+        reportTimelineEvent({
+            subsystem: 'signal',
+            stage: 'write',
+            message: `Signal write: ${label || 'anonymous'}`,
+            traceId: getCurrentTraceId() || undefined,
+            values: { label, oldValue: _value, newValue: next }
+        });
 
         _value = next;
         [..._subs].forEach(s => s(_value));
@@ -106,11 +114,8 @@ export function signal<T>(initial: T, label?: string): Signal<T> {
     fn.peek = (): T => _value;
     (fn as any).__isSignal = true;
 
-    // Register metadata if debugger is present
-    const win = typeof window !== 'undefined' ? (window as any) : null;
-    if (win?.miuraDebugger?.registerSignalMetadata) {
-        win.miuraDebugger.registerSignalMetadata(fn, label);
-    }
+    // Register metadata
+    registerSignalMetadata(fn, label);
 
     return fn as Signal<T>;
 }
@@ -191,11 +196,8 @@ export function computed<T>(fn: () => T, label?: string): ReadonlySignal<T> {
     (rfn as any).__isSignal = true;
     (rfn as any).__isComputed = true;
 
-    // Register metadata if debugger is present
-    const win = typeof window !== 'undefined' ? (window as any) : null;
-    if (win?.miuraDebugger?.registerSignalMetadata) {
-        win.miuraDebugger.registerSignalMetadata(rfn, label);
-    }
+    // Register metadata
+    registerSignalMetadata(rfn, label);
 
     return rfn as ReadonlySignal<T>;
 }

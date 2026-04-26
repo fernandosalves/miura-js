@@ -12,7 +12,7 @@ import type {
     RouteLoaderConfig,
     RouteLoaderState,
 } from './types.js';
-import { reportDiagnostic, reportTimelineEvent } from '@miurajs/miura-debugger';
+import { reportDiagnostic, reportTimelineEvent, startTrace, endTrace } from '@miurajs/miura-debugger';
 import type { WritableRouteSignal } from './route-signals.js';
 import { createDerivedRouteSignal, createRouteDataSignal, createRouteSignal } from './route-signals.js';
 
@@ -212,6 +212,7 @@ export class MiuraRouter implements RouterInstance {
         location: LocationParts,
         options: InternalNavigationOptions,
     ): Promise<NavigationResult> {
+        const traceId = startTrace(`navigate: ${location.fullPath}`, 'router');
         try {
             reportTimelineEvent({
                 subsystem: 'router',
@@ -305,6 +306,8 @@ export class MiuraRouter implements RouterInstance {
                 },
             });
             return { ok: false, reason: 'error', error: error as Error };
+        } finally {
+            endTrace(traceId);
         }
     }
 

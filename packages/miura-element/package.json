@@ -1,6 +1,6 @@
 {
     "name": "@miurajs/miura-element",
-    "version": "0.4.2",
+    "version": "0.4.4",
     "type": "module",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -39,8 +39,8 @@
     },
     "homepage": "https://github.com/fernandosalves/miura-js#readme",
     "dependencies": {
-        "@miurajs/miura-debugger": "^0.4.2",
-        "@miurajs/miura-render": "^0.4.2"
+        "@miurajs/miura-debugger": "^0.4.4",
+        "@miurajs/miura-render": "^0.4.4"
     },
     "devDependencies": {
         "typescript": "^5.0.0",

@@ -65,7 +65,7 @@ function _createSignalProperty(
         : null;
 
     // Create signal EAGERLY so subscriptions can be set up in connectedCallback
-    const s = signal(defaultVal);
+    const s = signal(defaultVal, name);
 
     // Store as non-enumerable so it doesn't show up in template evaluation etc.
     Object.defineProperty(instance, sigKey, {
@@ -165,7 +165,7 @@ export function createLocalSignalProperties(
         const defaultVal = 'default' in options
             ? convertValue(options.default, options.type)
             : undefined;
-        const s = signal(defaultVal);
+        const s = signal(defaultVal, name);
 
         Object.defineProperty(instance, sigKey, {
             value: s,
