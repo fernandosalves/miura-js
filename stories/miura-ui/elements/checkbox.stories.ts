@@ -1,0 +1,65 @@
+import '../../../packages/miura-ui/src/tokens/tokens.css';
+import '../../../packages/miura-ui/src/elements/index';
+import type { Meta, StoryObj } from '@storybook/web-components';
+import { MiuraElement, html, css } from '../../../packages/miura-element';
+
+class MuiCheckboxStory extends MiuraElement {
+  static properties = {
+    selected: { type: Array, default: () => ['tokens'] },
+  };
+
+  declare selected: string[];
+
+  static styles = css`
+    :host { display: block; font-family: var(--mui-font-sans); }
+    .page { min-height: 520px; padding: 28px; background: var(--mui-color-bg); color: var(--mui-color-text); }
+    .docs { max-width: 760px; display: grid; gap: 18px; }
+    .section { display: grid; gap: 14px; border: 1px solid var(--mui-color-border); border-radius: var(--mui-radius-lg); background: var(--mui-color-surface); box-shadow: var(--mui-shadow-sm); padding: 18px; }
+    .row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+    h1, p { margin: 0; }
+    p { color: var(--mui-color-text-muted); line-height: 1.5; }
+  `;
+
+  private toggle(key: string, checked: boolean) {
+    const next = new Set(this.selected);
+    if (checked) next.add(key); else next.delete(key);
+    this.selected = [...next];
+  }
+
+  template() {
+    this.dataset.muiTheme = 'light';
+    this.dataset.muiDensity = 'compact';
+
+    return html`
+      <div class="page">
+        <div class="docs">
+          <section class="section">
+            <h1>mui-checkbox</h1>
+            <p>Checkbox supports checked, indeterminate, disabled, slot label content, and composed change events.</p>
+          </section>
+          <section class="section">
+            <div class="row">
+              <mui-checkbox .checked=${this.selected.includes('tokens')} @change=${(event: CustomEvent) => this.toggle('tokens', event.detail.checked)}>Tokens</mui-checkbox>
+              <mui-checkbox .checked=${this.selected.includes('forms')} @change=${(event: CustomEvent) => this.toggle('forms', event.detail.checked)}>Forms</mui-checkbox>
+              <mui-checkbox indeterminate>Mixed state</mui-checkbox>
+              <mui-checkbox disabled>Disabled</mui-checkbox>
+            </div>
+            <p>Selected: ${this.selected.join(', ') || 'none'}</p>
+          </section>
+        </div>
+      </div>
+    `;
+  }
+}
+
+if (!customElements.get('mui-checkbox-story')) customElements.define('mui-checkbox-story', MuiCheckboxStory);
+
+const meta: Meta<MuiCheckboxStory> = {
+  title: 'Miura UI Next/Elements/Checkbox',
+  component: 'mui-checkbox-story',
+  tags: ['autodocs'],
+};
+
+export default meta;
+type Story = StoryObj<MuiCheckboxStory>;
+export const Documentation: Story = { args: { selected: ['tokens'] } };
