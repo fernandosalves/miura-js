@@ -162,7 +162,7 @@ export class MuiNotificationCenter extends MiuraElement {
     return html`
       <div class="trigger">
         <mui-button size="sm" variant="secondary" @click=${() => this.toggle()} aria-label="Notifications">
-          <mui-icon slot="icon-start" name="spark"></mui-icon>
+          <mui-icon slot="icon-start" name="sparkles"></mui-icon>
           Alerts
         </mui-button>
         ${this.unread ? html`<span class="count">${this.unread}</span>` : ''}

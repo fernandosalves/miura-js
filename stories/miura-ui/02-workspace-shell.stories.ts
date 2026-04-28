@@ -234,7 +234,7 @@ class MiuraUiWorkspaceShellDemo extends MiuraElement {
           <div class="nav-header">
             <h2>${this.activeRail}</h2>
             <mui-button size="sm" variant="ghost" @click=${() => this.theme = this.theme === 'light' ? 'dark' : 'light'}>
-              <mui-icon slot="icon-start" name="spark"></mui-icon>
+              <mui-icon slot="icon-start" name="sparkles"></mui-icon>
               Theme
             </mui-button>
           </div>

@@ -1,39 +1,55 @@
 import { defineNanoElement, MiuraNanoElement } from '../nano/index.js';
+import * as LucideIcons from 'lucide';
+import { icons as LucideIconMap } from 'lucide';
+import type { IconNode } from 'lucide';
 
 export interface IconDefinition {
   viewBox?: string;
   paths: string[];
 }
 
-const icons = new Map<string, IconDefinition>();
+const icons = new Map<string, IconDefinition | IconNode>();
 
-export function registerIcon(name: string, definition: IconDefinition): void {
+export function registerIcon(name: string, definition: IconDefinition | IconNode): void {
   icons.set(normalizeIconName(name), definition);
 }
 
-export function getIcon(name: string): IconDefinition | undefined {
-  return icons.get(normalizeIconName(name));
+export function getIcon(name: string): IconDefinition | IconNode | undefined {
+  if (!name) return undefined;
+
+  const normalized = normalizeIconName(name);
+  const registered = icons.get(normalized);
+  if (registered) return registered;
+
+  const pascalName = toPascalCase(name);
+
+  const lucideIcon =
+    (LucideIconMap as any)?.[pascalName] ||
+    (LucideIcons as any)?.[pascalName] ||
+    (LucideIcons as any)?.icons?.[pascalName] ||
+    (LucideIcons as any)?.default?.[pascalName] ||
+    (LucideIcons as any)?.default?.icons?.[pascalName];
+
+  if (Array.isArray(lucideIcon)) {
+    return lucideIcon as IconNode;
+  }
+
+  return undefined;
 }
 
 function normalizeIconName(name: string): string {
   return name.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`).replace(/^-/, '').toLowerCase();
 }
 
-registerIcon('menu', { paths: ['M4 6h16M4 12h16M4 18h16'] });
-registerIcon('search', { paths: ['M11 19a8 8 0 1 1 5.657-13.657A8 8 0 0 1 11 19Zm5-3 4 4'] });
-registerIcon('panel-left', { paths: ['M4 5h16v14H4zM9 5v14'] });
-registerIcon('chevron-left', { paths: ['M15 18 9 12l6-6'] });
-registerIcon('chevron-right', { paths: ['m9 18 6-6-6-6'] });
-registerIcon('plus', { paths: ['M12 5v14M5 12h14'] });
-registerIcon('folder', { paths: ['M3 7h7l2 2h9v10H3z'] });
-registerIcon('file', { paths: ['M6 3h8l4 4v14H6zM14 3v5h5'] });
-registerIcon('settings', { paths: ['M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0-5v3m0 12v3M4.2 4.2l2.1 2.1m11.4 11.4 2.1 2.1M3 12h3m12 0h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1'] });
-registerIcon('calendar', { paths: ['M7 3v4M17 3v4M4 8h16M5 5h14v16H5z'] });
-registerIcon('columns', { paths: ['M4 5h6v14H4zM14 5h6v14h-6z'] });
-registerIcon('spark', { paths: ['M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'] });
-registerIcon('list', { paths: ['M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'] });
-registerIcon('panel', { paths: ['M4 5h16v14H4zM4 10h16'] });
-registerIcon('node', { paths: ['M7 7h4v4H7zM13 13h4v4h-4zM11 9h3a2 2 0 0 1 2 2v2'] });
+function toPascalCase(str: string): string {
+  return str
+    .replace(/^\$\{|\}$/g, '')
+    .replace(/^["']|["']$/g, '')
+    .trim()
+    .split('-')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join('');
+}
 
 export class MuiIcon extends MiuraNanoElement {
   static observedAttributes = ['name', 'size', 'label'];
@@ -73,6 +89,26 @@ export class MuiIcon extends MiuraNanoElement {
     }
 
     const aria = label ? `role="img" aria-label="${label}"` : 'aria-hidden="true"';
+
+    // Handle Lucide IconNode format
+    if (Array.isArray(icon)) {
+      const body = icon
+        .map(([tag, attrs]) => {
+          const attrStr = Object.entries(attrs || {})
+            .map(([key, val]) => `${key}="${val}"`)
+            .join(' ');
+          return `<${tag} ${attrStr}></${tag}>`;
+        })
+        .join('');
+
+      return `
+        <svg part="svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" ${aria}>
+          ${body}
+        </svg>
+      `;
+    }
+
+    // Handle legacy IconDefinition format
     return `
       <svg part="svg" viewBox="${icon.viewBox ?? '0 0 24 24'}" ${aria}>
         ${icon.paths.map((path) => `<path d="${path}"></path>`).join('')}

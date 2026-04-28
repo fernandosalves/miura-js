@@ -118,7 +118,7 @@ export class MuiIconRail extends MiuraElement {
 
     return html`
       <nav part="rail" aria-label=${this.label}>
-        <div class="brand" part="brand"><slot name="brand"><mui-icon name="spark"></mui-icon></slot></div>
+        <div class="brand" part="brand"><slot name="brand"><mui-icon name="sparkles"></mui-icon></slot></div>
         ${items.map((item) => html`
           <button
             part="item"

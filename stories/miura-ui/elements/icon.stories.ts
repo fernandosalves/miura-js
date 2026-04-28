@@ -8,14 +8,18 @@ registerIcon('diamond', { paths: ['M12 3 21 12 12 21 3 12z'] });
 
 class MuiIconStory extends MiuraElement {
   static properties = {
-    selected: { type: String, default: 'spark' },
+    selected: { type: String, default: 'sparkles' },
     size: { type: Number, default: 24 },
   };
 
   declare selected: string;
   declare size: number;
 
-  private icons = ['menu', 'search', 'panel-left', 'chevron-left', 'chevron-right', 'plus', 'folder', 'file', 'settings', 'calendar', 'columns', 'spark', 'diamond'];
+  private icons = [
+    'menu', 'search', 'panel-left', 'chevron-left', 'chevron-right', 'plus', 'folder', 'file', 
+    'settings', 'calendar', 'columns', 'sparkles', 'activity', 'alert-circle', 'database', 'globe',
+    'sun', 'moon', 'cpu', 'zap', 'shield', 'bell', 'mail', 'user', 'image', 'video', 'diamond'
+  ];
 
   static styles = css`
     :host { display: block; font-family: var(--mui-font-sans); }
@@ -41,8 +45,8 @@ class MuiIconStory extends MiuraElement {
         <div class="docs">
           <section class="section">
             <h1>mui-icon</h1>
-            <p>Registry-backed SVG icon element built on the nano base. Icons inherit text color and support accessible labels.</p>
-            <p>Custom icons can be registered with <code>registerIcon(name, definition)</code>.</p>
+            <p>Lucide-powered SVG icon element. Supports all Lucide icons natively by name. Icons inherit text color and support accessible labels.</p>
+            <p>Custom icons can be registered with <code>registerIcon(name, definition)</code> using SVG paths or Lucide-style IconNodes.</p>
           </section>
           <section class="section">
             <h2>Interactive Gallery</h2>
@@ -83,5 +87,5 @@ export default meta;
 type Story = StoryObj<MuiIconStory>;
 
 export const Documentation: Story = {
-  args: { selected: 'spark', size: 24 },
+  args: { selected: 'sparkles', size: 24 },
 };

@@ -2,7 +2,7 @@ import { MiuraElement, css, html } from '@miurajs/miura-element';
 
 export class MuiEmptyState extends MiuraElement {
   static properties = {
-    icon: { type: String, default: 'spark' },
+    icon: { type: String, default: 'sparkles' },
     heading: { type: String, default: '' },
     description: { type: String, default: '' },
   };

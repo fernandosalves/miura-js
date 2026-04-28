@@ -189,7 +189,7 @@ class MiuraUiFoundationsDemo extends MiuraElement {
 
           <div class="toolbar">
             <mui-button .loading=${this.loading} @click=${() => this.createWorkspace()}>
-              <mui-icon slot="icon-start" name="spark"></mui-icon>
+              <mui-icon slot="icon-start" name="sparkles"></mui-icon>
               Create workspace
             </mui-button>
             <mui-button variant="secondary" @click=${() => this.pushEvent('configure clicked')}>

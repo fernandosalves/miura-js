@@ -133,7 +133,12 @@ class MiuraUiElementsDemo extends MiuraElement {
     this.dataset.muiTheme = this.theme;
     this.dataset.muiDensity = this.density;
 
-    const icons = ['menu', 'search', 'panel-left', 'chevron-left', 'chevron-right', 'plus', 'folder', 'file', 'settings', 'calendar', 'columns', 'spark'];
+    const icons = [
+      'menu', 'search', 'panel-left', 'chevron-left', 'chevron-right', 'plus', 'folder', 'file', 
+      'settings', 'calendar', 'columns', 'sparkles', 'activity', 'alert-circle', 'database', 'globe',
+      'sun', 'moon', 'cpu', 'zap', 'shield', 'bell', 'mail', 'user', 'image', 'video',
+      'trash', 'edit', 'share', 'download', 'upload', 'cloud', 'heart', 'star'
+    ];
 
     return html`
       <div class="surface" data-mui-theme=${this.theme} data-mui-density=${this.density}>
@@ -168,7 +173,7 @@ class MiuraUiElementsDemo extends MiuraElement {
             <p>Variants, sizes, icon slots, loading, disabled, and block layout.</p>
             <div class="row">
               <mui-button .loading=${this.loading} @click=${() => this.runLoadingAction()}>
-                <mui-icon slot="icon-start" name="spark"></mui-icon>
+                <mui-icon slot="icon-start" name="sparkles"></mui-icon>
                 Primary
               </mui-button>
               <mui-button variant="secondary" @click=${() => this.log('secondary button clicked')}>Secondary</mui-button>
@@ -220,7 +225,7 @@ class MiuraUiElementsDemo extends MiuraElement {
 
           <section class="panel">
             <h3>mui-icon</h3>
-            <p>Registry-backed SVG icon element using the nano base.</p>
+            <p>Lucide-powered SVG icon element. Supports all Lucide icons natively by name.</p>
             <div class="icon-grid">
               ${icons.map((icon) => html`
                 <button class="icon-cell" title=${icon} @click=${() => this.log(`icon -> ${icon}`)}>
