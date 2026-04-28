@@ -1,42 +1,42 @@
 {
-  "name": "@miurajs/miura-debugger",
-  "version": "0.4.7",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+    "name": "@miurajs/miura-debugger",
+    "version": "0.4.7",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "test": "vitest run",
+        "dev": "vitest"
+    },
+    "keywords": [
+        "web-components",
+        "framework",
+        "debugging",
+        "typescript"
+    ],
+    "author": "Fernando Alves",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/fernandosalves/miura-js.git"
+    },
+    "bugs": {
+        "url": "https://github.com/fernandosalves/miura-js/issues"
+    },
+    "homepage": "https://github.com/fernandosalves/miura-js#readme",
+    "devDependencies": {
+        "typescript": "^5.0.0",
+        "vitest": "^1.0.0"
     }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "test": "vitest run",
-    "dev": "vitest"
-  },
-  "keywords": [
-    "web-components",
-    "framework",
-    "debugging",
-    "typescript"
-  ],
-  "author": "Fernando Alves",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/fernandosalves/miura-js.git"
-  },
-  "bugs": {
-    "url": "https://github.com/fernandosalves/miura-js/issues"
-  },
-  "homepage": "https://github.com/fernandosalves/miura-js#readme",
-  "devDependencies": {
-    "typescript": "^5.0.0",
-    "vitest": "^1.0.0"
-  }
 }

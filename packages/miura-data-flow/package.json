@@ -1,57 +1,58 @@
 {
-  "name": "@miurajs/miura-data-flow",
-  "version": "0.4.7",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+    "name": "@miurajs/miura-data-flow",
+    "version": "0.4.7",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./providers/graphql": {
+            "types": "./src/providers/graphql-provider.d.ts",
+            "import": "./src/providers/graphql-provider.ts"
+        },
+        "./providers/s3": {
+            "types": "./src/providers/s3-provider.d.ts",
+            "import": "./src/providers/s3-provider.ts"
+        },
+        "./providers/firebase": {
+            "types": "./src/providers/firebase-provider.d.ts",
+            "import": "./src/providers/firebase-provider.ts"
+        },
+        "./providers/supabase": {
+            "types": "./src/providers/supabase-provider.d.ts",
+            "import": "./src/providers/supabase-provider.ts"
+        },
+        "./providers/grpc-web": {
+            "types": "./src/providers/grpc-web-provider.d.ts",
+            "import": "./src/providers/grpc-web-provider.ts"
+        }
     },
-    "./providers/graphql": {
-      "types": "./src/providers/graphql-provider.d.ts",
-      "import": "./src/providers/graphql-provider.ts"
+    "files": [
+        "dist",
+        "src/providers/graphql-provider.ts",
+        "src/providers/s3-provider.ts",
+        "src/providers/firebase-provider.ts",
+        "src/providers/supabase-provider.ts",
+        "src/providers/grpc-web-provider.ts"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "test": "vitest",
+        "dev": "vitest watch"
     },
-    "./providers/s3": {
-      "types": "./src/providers/s3-provider.d.ts",
-      "import": "./src/providers/s3-provider.ts"
+    "dependencies": {
+        "@miurajs/miura-debugger": "^0.4.7"
     },
-    "./providers/firebase": {
-      "types": "./src/providers/firebase-provider.d.ts",
-      "import": "./src/providers/firebase-provider.ts"
+    "optionalDependencies": {
+        "@aws-sdk/client-s3": "^3.1005.0",
+        "graphql-request": "^6.1.0"
     },
-    "./providers/supabase": {
-      "types": "./src/providers/supabase-provider.d.ts",
-      "import": "./src/providers/supabase-provider.ts"
+    "devDependencies": {
+        "typescript": "^5.0.0",
+        "vitest": "^1.0.0"
     },
-    "./providers/grpc-web": {
-      "types": "./src/providers/grpc-web-provider.d.ts",
-      "import": "./src/providers/grpc-web-provider.ts"
-    }
-  },
-  "files": [
-    "dist",
-    "src/providers/graphql-provider.ts",
-    "src/providers/s3-provider.ts",
-    "src/providers/firebase-provider.ts",
-    "src/providers/supabase-provider.ts",
-    "src/providers/grpc-web-provider.ts"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "test": "vitest",
-    "dev": "vitest watch"
-  },
-  "dependencies": {
-    "@miurajs/miura-debugger": "^0.4.7"
-  },
-  "optionalDependencies": {
-    "@aws-sdk/client-s3": "^3.1005.0",
-    "graphql-request": "^6.1.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.0.0",
-    "vitest": "^1.0.0"
-  }
+    "license": "MIT"
 }
