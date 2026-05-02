@@ -1,7 +1,25 @@
 {
     "name": "@miurajs/miura-architect",
     "version": "0.1.0",
+    "author": "Fernando Alves",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/fernandosalves/miura-js.git"
+    },
+    "bugs": {
+        "url": "https://github.com/fernandosalves/miura-js/issues"
+    },
+    "homepage": "https://github.com/fernandosalves/miura-js#readme",
     "type": "module",
+    "files": [
+        "dist"
+    ],
+    "keywords": [
+        "web-components",
+        "framework",
+        "javascript",
+        "typescript"
+    ],
     "scripts": {
         "dev": "vite",
         "server": "npx tsx src/server.ts",
@@ -16,6 +34,9 @@
         "@types/ws": "^8.5.10",
         "typescript": "^5.4.5",
         "vite": "^5.2.11"
+    },
+    "publishConfig": {
+        "access": "public"
     },
     "license": "MIT"
 }

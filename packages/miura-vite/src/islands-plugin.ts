@@ -1,6 +1,6 @@
 import type { Plugin } from 'vite';
-import type { IslandManifest } from '../../miura-element/src/server/island-renderer.js';
-import { buildManifest } from '../../miura-element/src/server/island-renderer.js';
+import type { IslandManifest } from '@miurajs/miura-element/server';
+import { buildManifest } from '@miurajs/miura-element/server';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -79,10 +79,10 @@ export interface IslandsPluginOptions {
  */
 export function islandsPlugin(options: IslandsPluginOptions = {}): Plugin {
     const {
-        components   = {},
+        components = {},
         placeholder: globalPlaceholder,
-        manifest:    manifestPath  = 'islands.manifest.json',
-        verbose      = manifestPath !== false,
+        manifest: manifestPath = 'islands.manifest.json',
+        verbose = manifestPath !== false,
     } = options;
 
     // Accumulate across all HTML files during build
@@ -112,9 +112,9 @@ export function islandsPlugin(options: IslandsPluginOptions = {}): Plugin {
             );
 
             this.emitFile({
-                type:     'asset',
+                type: 'asset',
                 fileName: String(manifestPath),
-                source:   JSON.stringify(manifest, null, 2),
+                source: JSON.stringify(manifest, null, 2),
             });
 
             if (verbose) {
@@ -222,8 +222,8 @@ function _processIsland(
 
 function _getAttr(attrsStr: string, name: string): string | null {
     const match = attrsStr.match(new RegExp(`${name}="([^"]*)"`, 'i'))
-               || attrsStr.match(new RegExp(`${name}='([^']*)'`, 'i'))
-               || attrsStr.match(new RegExp(`${name}=([^\\s>]+)`, 'i'));
+        || attrsStr.match(new RegExp(`${name}='([^']*)'`, 'i'))
+        || attrsStr.match(new RegExp(`${name}=([^\\s>]+)`, 'i'));
     return match ? match[1] : null;
 }
 
