@@ -26,7 +26,8 @@
     { "path": "./packages/miura-framework" },
     { "path": "./packages/miura-i18n" },
     { "path": "./packages/miura-computing" },
-    { "path": "./packages/miura" }
+    { "path": "./packages/miura" },
+    { "path": "./packages/miura-cli" }
   ],
   "files": [],
   "exclude": ["node_modules", "dist"]

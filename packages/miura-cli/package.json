@@ -1,0 +1,44 @@
+{
+    "name": "@miurajs/miura-cli",
+    "version": "0.1.0",
+    "description": "CLI for scaffolding Miura apps and components.",
+    "type": "module",
+    "bin": {
+        "miura": "./dist/index.js"
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch"
+    },
+    "keywords": [
+        "miura",
+        "cli",
+        "scaffold",
+        "web-components"
+    ],
+    "author": "Fernando Alves",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/fernandosalves/miura-js.git"
+    },
+    "bugs": {
+        "url": "https://github.com/fernandosalves/miura-js/issues"
+    },
+    "homepage": "https://github.com/fernandosalves/miura-js#readme",
+    "devDependencies": {
+        "@types/node": "^24.0.1",
+        "typescript": "^5.4.5"
+    }
+}
