@@ -476,8 +476,7 @@ function packageJson(projectName: string, options: AppOptions) {
     }
 
     if (options.architect) {
-        devDependencies['@miurajs/miura-vite'] = '^0.1.2';
-        devDependencies['@miurajs/miura-architect'] = '^0.1.2';
+        devDependencies['@miurajs/miura-architect'] = '^0.1.4';
         scripts.dev = 'miura-architect dev -- vite';
         scripts['dev:app'] = 'vite';
         scripts.architect = 'miura-architect dev';
@@ -603,6 +602,12 @@ export class AppShell extends MiuraFramework {
         version: '0.0.0',
         environment: import.meta.env.DEV ? 'development' as const : 'production' as const,
         debug: import.meta.env.DEV,
+        debugger: {
+            overlay: import.meta.env.DEV,
+            devtools: import.meta.env.DEV,
+            layers: false,
+            performance: import.meta.env.DEV
+        },
         router: {
             enabled: true,
             mode: 'hash' as const,
@@ -874,11 +879,45 @@ body {
 }
 
 function viteConfig(options?: AppOptions) {
-    const importPlugin = options?.architect
-        ? "import { miuraVitePlugin } from '@miurajs/miura-vite';\n"
+    const architectPlugin = options?.architect
+        ? `
+function miuraArchitectPlugin() {
+    return {
+        name: 'miura-architect-dev',
+        apply: 'serve',
+        configureServer(server) {
+            server.middlewares.use('/@miura-architect/bridge', async (_req, res) => {
+                res.setHeader('Content-Type', 'application/javascript');
+                res.setHeader('Cache-Control', 'no-store');
+                const transformed = await server.transformRequest('/node_modules/@miurajs/miura-architect/dist/bridge.js');
+                res.end(transformed?.code ?? '');
+            });
+            server.middlewares.use('/__miura_architect__/manifest.json', (_req, res) => {
+                res.setHeader('Content-Type', 'application/json');
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.end(JSON.stringify({
+                    version: 1,
+                    generatedAt: Date.now(),
+                    rootDir: process.cwd(),
+                    config: {
+                        inlineComponentPatterns: ['mui-*'],
+                        cardComponentPatterns: ['*-app', '*-layout', '*-page', '*-panel']
+                    },
+                    components: [],
+                    apiEndpoints: []
+                }));
+            });
+        },
+        transformIndexHtml(html) {
+            if (html.includes('/@miura-architect/bridge')) return html;
+            return html.replace('</body>', '  <script type="module" src="/@miura-architect/bridge"></script>\\n</body>');
+        }
+    };
+}
+`
         : '';
     const plugins = options?.architect
-        ? `\n    plugins: [\n        ...miuraVitePlugin({ architect: true })\n    ],`
+        ? `\n    plugins: [\n        miuraArchitectPlugin()\n    ],`
         : '';
     const manualChunks = options?.architect || options?.framework ? `,
     build: {
@@ -897,7 +936,7 @@ function viteConfig(options?: AppOptions) {
     }` : '';
 
     return `import { defineConfig } from 'vite';
-${importPlugin}
+${architectPlugin}
 
 export default defineConfig({${plugins}
     server: {

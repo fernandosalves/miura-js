@@ -90,10 +90,11 @@ export function miuraArchitectBridgePlugin(path = ARCHITECT_BRIDGE_PATH): Plugin
     name: 'miura-architect-bridge',
     apply: 'serve',
     configureServer(server) {
-      server.middlewares.use(path, (_req, res) => {
+      server.middlewares.use(path, async (_req, res) => {
         res.setHeader('Content-Type', 'application/javascript');
         res.setHeader('Cache-Control', 'no-store');
-        res.end("import '@miurajs/miura-architect/bridge';\n");
+        const transformed = await server.transformRequest('/node_modules/@miurajs/miura-architect/dist/bridge.js');
+        res.end(transformed?.code ?? '');
       });
     },
     transformIndexHtml(html) {

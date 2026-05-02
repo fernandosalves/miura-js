@@ -8,6 +8,8 @@ class MiuraArchitectBridge {
   private queue: unknown[] = [];
   private unsubscribers: Array<() => void> = [];
   private fullSyncTimer = 0;
+  private debuggerRetryTimer = 0;
+  private debuggerHooked = false;
   private readonly serverUrl: string;
 
   constructor(serverUrl = 'ws://localhost:3006?target=true') {
@@ -48,6 +50,8 @@ class MiuraArchitectBridge {
   }
 
   private installDebuggerHooks(): void {
+    if (this.debuggerHooked) return;
+
     const win = window as Window & {
       miuraDebugger?: {
         subscribeEvents?: (listener: Record<string, (event: unknown) => void>) => () => void;
@@ -65,8 +69,14 @@ class MiuraArchitectBridge {
     };
 
     if (!win.miuraDebugger) {
-      console.warn('[miura-architect] miuraDebugger not available');
+      this.debuggerRetryTimer = window.setTimeout(() => this.installDebuggerHooks(), 250);
       return;
+    }
+
+    this.debuggerHooked = true;
+    if (this.debuggerRetryTimer) {
+      window.clearTimeout(this.debuggerRetryTimer);
+      this.debuggerRetryTimer = 0;
     }
 
     const onEvent = (event: unknown) => this.forwardDebuggerEvent(event);
@@ -84,6 +94,9 @@ class MiuraArchitectBridge {
     } else {
       this.subscribeFallback(win);
     }
+
+    console.info('[miura-architect] bridge connected to miuraDebugger');
+    this.sendInitialSnapshot();
 
     this.fullSyncTimer = window.setInterval(() => {
       this.send({
@@ -189,6 +202,7 @@ class MiuraArchitectBridge {
     for (const unsubscribe of this.unsubscribers) unsubscribe();
     this.unsubscribers = [];
     if (this.fullSyncTimer) window.clearInterval(this.fullSyncTimer);
+    if (this.debuggerRetryTimer) window.clearTimeout(this.debuggerRetryTimer);
     this.socket?.close();
   }
 }
