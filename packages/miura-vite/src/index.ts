@@ -3,6 +3,9 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import type { Plugin, ResolvedConfig, ViteDevServer } from 'vite';
 
+export { islandsPlugin } from './islands-plugin.js';
+export type { IslandsPluginOptions, IslandComponentConfig, HydrationStrategy } from './islands-plugin.js';
+
 export interface MiuraArchitectManifestPluginOptions {
   enabled?: boolean;
   outFile?: string;
