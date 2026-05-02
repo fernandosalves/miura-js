@@ -946,9 +946,16 @@ async function resolveAppOptions(options: CliOptions): Promise<AppOptions> {
     console.log(color.muted('Use arrow keys to move, space to toggle, enter to continue.'));
     console.log('');
 
-    const rl = createInterface({ input, output });
-    const packageManager = await askPackageManager(rl, defaults.packageManager);
-    rl.close();
+    const packageManager = await singleSelect<PackageManager>(
+        'Select package manager',
+        [
+            { value: 'pnpm', label: 'pnpm', hint: 'fast workspace-friendly default' },
+            { value: 'npm', label: 'npm', hint: 'Node standard package manager' },
+            { value: 'yarn', label: 'yarn', hint: 'classic Yarn workflow' },
+            { value: 'bun', label: 'bun', hint: 'Bun runtime and package manager' },
+        ],
+        defaults.packageManager
+    );
 
     const selected = await multiSelect(
         'Select app capabilities',
@@ -995,15 +1002,6 @@ function normalizeAppOptions(options: AppOptions): AppOptions {
     };
 }
 
-async function askPackageManager(rl: ReturnType<typeof createInterface>, fallback: PackageManager): Promise<PackageManager> {
-    const answer = await rl.question(`${color.cyan('Package manager')} ${color.muted(`(${fallback}) [pnpm/npm/yarn/bun]`)}: `);
-    if (!answer.trim()) {
-        return fallback;
-    }
-
-    return parsePackageManager(answer);
-}
-
 async function askRequired(rl: ReturnType<typeof createInterface>, label: string): Promise<string> {
     const answer = (await rl.question(`${color.cyan(label)}: `)).trim();
     if (!answer) {
@@ -1023,6 +1021,7 @@ async function singleSelect<T extends string>(
     }
 
     emitKeypressEvents(input);
+    input.resume();
     input.setRawMode(true);
 
     let activeIndex = Math.max(0, choices.findIndex((choice) => choice.value === initialValue));
@@ -1056,6 +1055,7 @@ async function singleSelect<T extends string>(
         const finish = () => {
             input.setRawMode(false);
             input.off('keypress', onKeypress);
+            input.pause();
             output.write('\n');
             resolve(choices[activeIndex].value);
         };
@@ -1063,17 +1063,18 @@ async function singleSelect<T extends string>(
         const onKeypress = (_value: string, key: { name?: string; ctrl?: boolean }) => {
             if (key.ctrl && key.name === 'c') {
                 input.setRawMode(false);
+                input.pause();
                 output.write('\n');
                 process.exit(130);
             }
 
-            if (key.name === 'up') {
+            if (key.name === 'up' || key.name === 'k') {
                 activeIndex = (activeIndex - 1 + choices.length) % choices.length;
                 render();
                 return;
             }
 
-            if (key.name === 'down') {
+            if (key.name === 'down' || key.name === 'j') {
                 activeIndex = (activeIndex + 1) % choices.length;
                 render();
                 return;
@@ -1099,6 +1100,7 @@ async function multiSelect<T extends string>(
     }
 
     emitKeypressEvents(input);
+    input.resume();
     input.setRawMode(true);
 
     let activeIndex = 0;
@@ -1133,6 +1135,7 @@ async function multiSelect<T extends string>(
         const finish = () => {
             input.setRawMode(false);
             input.off('keypress', onKeypress);
+            input.pause();
             output.write('\n');
             resolve(selected);
         };
@@ -1140,17 +1143,18 @@ async function multiSelect<T extends string>(
         const onKeypress = (_value: string, key: { name?: string; ctrl?: boolean }) => {
             if (key.ctrl && key.name === 'c') {
                 input.setRawMode(false);
+                input.pause();
                 output.write('\n');
                 process.exit(130);
             }
 
-            if (key.name === 'up') {
+            if (key.name === 'up' || key.name === 'k') {
                 activeIndex = (activeIndex - 1 + choices.length) % choices.length;
                 render();
                 return;
             }
 
-            if (key.name === 'down') {
+            if (key.name === 'down' || key.name === 'j') {
                 activeIndex = (activeIndex + 1) % choices.length;
                 render();
                 return;
@@ -1175,25 +1179,6 @@ async function multiSelect<T extends string>(
         input.on('keypress', onKeypress);
         render();
     });
-}
-
-async function askBoolean(rl: ReturnType<typeof createInterface>, question: string, fallback: boolean): Promise<boolean> {
-    const hint = fallback ? 'Y/n' : 'y/N';
-    const answer = (await rl.question(`${question} (${hint}): `)).trim().toLowerCase();
-
-    if (!answer) {
-        return fallback;
-    }
-
-    if (['y', 'yes', 'true', '1'].includes(answer)) {
-        return true;
-    }
-
-    if (['n', 'no', 'false', '0'].includes(answer)) {
-        return false;
-    }
-
-    fail(`Invalid answer "${answer}". Use yes or no.`);
 }
 
 function parsePackageManager(value: string): PackageManager {
