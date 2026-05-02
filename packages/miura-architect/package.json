@@ -1,6 +1,6 @@
 {
     "name": "@miurajs/miura-architect",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "author": "Fernando Alves",
     "repository": {
         "type": "git",
@@ -11,6 +11,12 @@
     },
     "homepage": "https://github.com/fernandosalves/miura-js#readme",
     "type": "module",
+    "bin": {
+        "miura-architect": "./dist/cli.js"
+    },
+    "exports": {
+        "./bridge": "./dist/bridge.js"
+    },
     "files": [
         "dist"
     ],
@@ -23,7 +29,7 @@
     "scripts": {
         "dev": "vite",
         "server": "npx tsx src/server.ts",
-        "build": "tsc && vite build"
+        "build": "tsc -p tsconfig.node.json && vite build"
     },
     "dependencies": {
         "@miurajs/miura-element": "^0.4.5",

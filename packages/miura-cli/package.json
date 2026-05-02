@@ -1,6 +1,6 @@
 {
     "name": "@miurajs/miura-cli",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "CLI for scaffolding Miura apps and components.",
     "type": "module",
     "bin": {

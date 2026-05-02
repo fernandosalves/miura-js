@@ -476,8 +476,9 @@ function packageJson(projectName: string, options: AppOptions) {
     }
 
     if (options.architect) {
+        devDependencies['@miurajs/miura-vite'] = '^0.1.0';
         devDependencies['@miurajs/miura-architect'] = '^0.1.0';
-        scripts.architect = 'miura-architect server';
+        scripts.architect = 'miura-architect dev';
     }
 
     if (options.tests) {
@@ -871,6 +872,12 @@ body {
 }
 
 function viteConfig(options?: AppOptions) {
+    const importPlugin = options?.architect
+        ? "import { miuraVitePlugin } from '@miurajs/miura-vite';\n"
+        : '';
+    const plugins = options?.architect
+        ? `\n    plugins: [\n        ...miuraVitePlugin({ architect: true })\n    ],`
+        : '';
     const manualChunks = options?.architect || options?.framework ? `,
     build: {
         target: 'es2022',
@@ -888,8 +895,9 @@ function viteConfig(options?: AppOptions) {
     }` : '';
 
     return `import { defineConfig } from 'vite';
+${importPlugin}
 
-export default defineConfig({
+export default defineConfig({${plugins}
     server: {
         open: true
     }${manualChunks}

@@ -15,6 +15,13 @@ export interface MiuraArchitectManifestPluginOptions {
   cardComponentPatterns?: string[];
 }
 
+export interface MiuraVitePluginOptions {
+  architect?: boolean | MiuraArchitectManifestPluginOptions & {
+    bridge?: boolean;
+    bridgePath?: string;
+  };
+}
+
 interface ManifestField {
   name: string;
   source: 'static-properties' | 'state' | 'signal' | 'computed' | 'inferred';
@@ -62,6 +69,39 @@ const DEFAULT_INCLUDE = ['src'];
 const DEFAULT_EXCLUDE = ['node_modules', 'dist', '.git', '.miura'];
 const DEFAULT_INLINE_COMPONENT_PATTERNS = ['mui-*'];
 const DEFAULT_CARD_COMPONENT_PATTERNS = ['*-app', '*-layout', '*-page', '*-panel'];
+const ARCHITECT_BRIDGE_PATH = '/@miura-architect/bridge';
+
+export function miuraVitePlugin(options: MiuraVitePluginOptions = {}): Plugin[] {
+  const architectOptions = options.architect === true ? {} : options.architect || undefined;
+  const plugins: Plugin[] = [];
+
+  if (options.architect) {
+    plugins.push(miuraArchitectManifestPlugin(architectOptions));
+    if (architectOptions?.bridge !== false) {
+      plugins.push(miuraArchitectBridgePlugin(architectOptions?.bridgePath ?? ARCHITECT_BRIDGE_PATH));
+    }
+  }
+
+  return plugins;
+}
+
+export function miuraArchitectBridgePlugin(path = ARCHITECT_BRIDGE_PATH): Plugin {
+  return {
+    name: 'miura-architect-bridge',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use(path, (_req, res) => {
+        res.setHeader('Content-Type', 'application/javascript');
+        res.setHeader('Cache-Control', 'no-store');
+        res.end("import '@miurajs/miura-architect/bridge';\n");
+      });
+    },
+    transformIndexHtml(html) {
+      if (html.includes(path)) return html;
+      return html.replace('</body>', `  <script type="module" src="${path}"></script>\n</body>`);
+    },
+  };
+}
 
 export function miuraArchitectManifestPlugin(options: MiuraArchitectManifestPluginOptions = {}): Plugin {
   const enabled = options.enabled ?? true;
