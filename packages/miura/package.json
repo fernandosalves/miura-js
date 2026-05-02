@@ -1,6 +1,6 @@
 {
     "name": "@miurajs/miura",
-    "version": "2.5.10",
+    "version": "2.5.11",
     "description": "The main package for the miura framework, bundling all core modules.",
     "type": "module",
     "main": "./dist/index.js",
@@ -48,8 +48,8 @@
         "@miurajs/miura-ui": "^0.4.5",
         "@miurajs/miura-mocks": "^0.1.0",
         "@miurajs/miura-vite": "^0.1.1",
-        "@miurajs/miura-cli": "^0.1.1",
-        "@miurajs/miura-architect": "^0.1.1"
+        "@miurajs/miura-cli": "^0.1.2",
+        "@miurajs/miura-architect": "^0.1.2"
     },
     "devDependencies": {
         "typescript": "^5.4.5"
