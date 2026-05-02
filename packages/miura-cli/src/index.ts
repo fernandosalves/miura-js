@@ -476,8 +476,10 @@ function packageJson(projectName: string, options: AppOptions) {
     }
 
     if (options.architect) {
-        devDependencies['@miurajs/miura-vite'] = '^0.1.0';
-        devDependencies['@miurajs/miura-architect'] = '^0.1.0';
+        devDependencies['@miurajs/miura-vite'] = '^0.1.2';
+        devDependencies['@miurajs/miura-architect'] = '^0.1.2';
+        scripts.dev = 'miura-architect dev -- vite';
+        scripts['dev:app'] = 'vite';
         scripts.architect = 'miura-architect dev';
     }
 
