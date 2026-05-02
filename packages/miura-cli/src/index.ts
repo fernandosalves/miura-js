@@ -69,7 +69,12 @@ Examples:
 async function main(argv = process.argv.slice(2)) {
     const parsed = parseArgs(argv);
 
-    if (!parsed.command || parsed.command === 'help' || parsed.command === '--help' || parsed.command === '-h') {
+    if (!parsed.command) {
+        await launchInteractive(parsed.options);
+        return;
+    }
+
+    if (parsed.command === 'help' || parsed.command === '--help' || parsed.command === '-h') {
         console.log(HELP);
         return;
     }
@@ -94,6 +99,46 @@ async function main(argv = process.argv.slice(2)) {
     }
 
     fail(`Unknown create target "${parsed.kind ?? ''}".\n\n${HELP}`);
+}
+
+async function launchInteractive(options: CliOptions) {
+    if (!input.isTTY || !output.isTTY) {
+        console.log(HELP);
+        return;
+    }
+
+    console.log(color.bold(color.magenta('Miura CLI')));
+    console.log(color.muted('Use arrow keys to move, enter to continue.'));
+    console.log('');
+
+    const action = await singleSelect(
+        'What do you want to create?',
+        [
+            { value: 'app', label: 'App', hint: 'scaffold a Miura application' },
+            { value: 'component', label: 'Component', hint: 'generate a MiuraElement component' },
+            { value: 'help', label: 'Help', hint: 'show CLI commands' },
+        ],
+        'app'
+    );
+
+    if (action === 'help') {
+        console.log(HELP);
+        return;
+    }
+
+    const rl = createInterface({ input, output });
+    try {
+        if (action === 'component') {
+            const name = await askRequired(rl, 'Component name');
+            createComponent(name, options);
+            return;
+        }
+
+        const name = await askRequired(rl, 'App name');
+        await createApp(name, options);
+    } finally {
+        rl.close();
+    }
 }
 
 function parseArgs(argv: string[]): ParsedCommand {
@@ -957,6 +1002,91 @@ async function askPackageManager(rl: ReturnType<typeof createInterface>, fallbac
     }
 
     return parsePackageManager(answer);
+}
+
+async function askRequired(rl: ReturnType<typeof createInterface>, label: string): Promise<string> {
+    const answer = (await rl.question(`${color.cyan(label)}: `)).trim();
+    if (!answer) {
+        fail(`${label} is required.`);
+    }
+
+    return answer;
+}
+
+async function singleSelect<T extends string>(
+    title: string,
+    choices: Array<Choice<T>>,
+    initialValue: T
+): Promise<T> {
+    if (!input.isTTY || !output.isTTY) {
+        return initialValue;
+    }
+
+    emitKeypressEvents(input);
+    input.setRawMode(true);
+
+    let activeIndex = Math.max(0, choices.findIndex((choice) => choice.value === initialValue));
+    let renderedLines = 0;
+
+    const render = () => {
+        if (renderedLines > 0) {
+            output.write(`\x1b[${renderedLines}A`);
+            output.write('\x1b[0J');
+        }
+
+        const lines = [
+            color.bold(title),
+            color.muted('Enter confirms.'),
+            ...choices.map((choice, index) => {
+                const active = index === activeIndex;
+                const selectedMark = active ? color.green('◉') : color.muted('○');
+                const cursor = active ? color.cyan('›') : ' ';
+                const hint = choice.hint ? ` ${color.muted(choice.hint)}` : '';
+                const label = active ? color.bold(choice.label) : choice.label;
+                return `${cursor} ${selectedMark} ${label}${hint}`;
+            }),
+            ''
+        ];
+
+        renderedLines = lines.length;
+        output.write(lines.join('\n'));
+    };
+
+    return await new Promise<T>((resolve) => {
+        const finish = () => {
+            input.setRawMode(false);
+            input.off('keypress', onKeypress);
+            output.write('\n');
+            resolve(choices[activeIndex].value);
+        };
+
+        const onKeypress = (_value: string, key: { name?: string; ctrl?: boolean }) => {
+            if (key.ctrl && key.name === 'c') {
+                input.setRawMode(false);
+                output.write('\n');
+                process.exit(130);
+            }
+
+            if (key.name === 'up') {
+                activeIndex = (activeIndex - 1 + choices.length) % choices.length;
+                render();
+                return;
+            }
+
+            if (key.name === 'down') {
+                activeIndex = (activeIndex + 1) % choices.length;
+                render();
+                return;
+            }
+
+            if (key.name === 'return' || key.name === 'enter') {
+                finish();
+            }
+        };
+
+        input.on('keypress', onKeypress);
+        render();
+    });
 }
 
 async function multiSelect<T extends string>(
