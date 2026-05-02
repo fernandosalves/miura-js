@@ -18,6 +18,9 @@ miura is a comprehensive, modular framework designed for building scalable and m
 ### UI & Dev Tools
 
 - **[miura UI](./miura-ui.md)**: 70+ pre-built UI components (primitives, navigation, overlay, data-display, layout, typography).
+- **[miura Architect](./miura-architect.md)**: Architecture-first devtools and graph viewer.
+- **[miura Mocks](./miura-mocks.md)**: Stateful mock server and sandbox.
+- **[miura Vite](./miura-vite.md)**: Official Vite plugin for manifest generation and HMR.
 - **[miura Debugger](./miura-debugger.md)**: Category/level logger for development.
 - **[miura Security](./miura-security.md)**: Auth, AuthZ, CSP, input validation.
 
