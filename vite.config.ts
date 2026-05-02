@@ -29,6 +29,8 @@ export default defineConfig({
       { find: '@miurajsjs/miura-ai', replacement: resolveFromRoot('packages/miura-ai/index.ts') },
       { find: '@miurajsjs/miura-vite', replacement: resolveFromRoot('packages/miura-vite/index.ts') },
       { find: '@miurajsjs/miura-ui', replacement: resolveFromRoot('packages/miura-ui/index.ts') },
+      { find: '@miurajsjs/miura-architect', replacement: resolveFromRoot('packages/miura-architect/src/bridge.ts') },
+      { find: '@miurajsjs/miura-mocks', replacement: resolveFromRoot('packages/miura-mocks/src/index.ts') },
       // Add @miurajs aliases (without extra 'js')
       { find: '@miurajs/miura-element/server', replacement: resolveFromRoot('packages/miura-element/server.ts') },
       { find: '@miurajs/miura-element', replacement: resolveFromRoot('packages/miura-element/index.ts') },
@@ -41,6 +43,8 @@ export default defineConfig({
       { find: '@miurajs/miura-i18n', replacement: resolveFromRoot('packages/miura-i18n/index.ts') },
       { find: '@miurajs/miura-computing', replacement: resolveFromRoot('packages/miura-computing/index.ts') },
       { find: '@miurajs/miura-ai', replacement: resolveFromRoot('packages/miura-ai/index.ts') },
+      { find: '@miurajs/miura-architect', replacement: resolveFromRoot('packages/miura-architect/src/bridge.ts') },
+      { find: '@miurajs/miura-mocks', replacement: resolveFromRoot('packages/miura-mocks/src/index.ts') },
     ],
   },
 });

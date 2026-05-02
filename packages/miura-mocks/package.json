@@ -1,0 +1,28 @@
+{
+  "name": "@miurajs/miura-mocks",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./plugin": "./dist/plugin.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "chokidar": "^4.0.3",
+    "fast-glob": "^3.3.3",
+    "h3": "^1.15.0",
+    "jiti": "^2.6.1",
+    "json5": "^2.2.3",
+    "listhen": "^1.9.0",
+    "smol-toml": "^1.6.1"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

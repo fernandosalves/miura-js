@@ -1,20 +1,23 @@
 {
     "name": "@miurajs/miura-vite",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "type": "module",
     "main": "./dist/index.js",
-    "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
-            "import": "./index.ts"
+            "import": "./dist/index.js"
         }
     },
     "scripts": {
         "build": "tsc"
     },
+    "peerDependencies": {
+        "vite": ">=5"
+    },
     "devDependencies": {
+        "@types/node": "^22.14.0",
         "typescript": "^5.4.5"
     },
     "license": "MIT"

@@ -94,6 +94,9 @@ All packages are published under the `@miurajs` organization:
 - **@miurajs/miura-debugger** - Debugging tools
 - **@miurajs/miura-security** - Security features
 - **@miurajs/miura-ui** - UI components
+- **@miurajs/miura-architect** - Architecture-first devtools
+- **@miurajs/miura-mocks** - Stateful mock server
+- **@miurajs/miura-vite** - Vite plugin for miura
 
 ## Installation
 
@@ -174,6 +177,9 @@ The framework is structured as a monorepo with the following packages:
 | **`@miurajs/miura-router`** | Client-side router — hash/history/memory modes, guards, loaders, nested routes, layout outlets |
 | **`@miurajs/miura-security`** | Auth, AuthZ, CSP, input validation |
 | **`@miurajs/miura-debugger`** | Diagnostics runtime with overlay, semantic error reporting, and component layers |
+| **`@miurajs/miura-architect`** | Architecture-first devtools and graph viewer |
+| **`@miurajs/miura-mocks`** | Stateful mock server and sandbox |
+| **`@miurajs/miura-vite`** | Vite plugin for manifest generation and HMR integration |
 | **`@miurajs/miura-i18n`** | Internationalization — `t()`, dot-notation keys, pluralization, interpolation, fallback locale |
 | **`@miurajs/miura-computing`** | Reactive Web Worker bridge — `WorkerBridge`, `expose()`, typed call/stream protocol |
 | **`@miurajs/miura-graphics`** | *(Coming Soon)* 2D/3D rendering and animations |

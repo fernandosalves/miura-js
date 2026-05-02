@@ -1,0 +1,21 @@
+{
+    "name": "@miurajs/miura-architect",
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "server": "npx tsx src/server.ts",
+        "build": "tsc && vite build"
+    },
+    "dependencies": {
+        "@miurajs/miura-element": "^0.4.5",
+        "@miurajs/miura-ui": "^0.4.5",
+        "ws": "^8.16.0"
+    },
+    "devDependencies": {
+        "@types/ws": "^8.5.10",
+        "typescript": "^5.4.5",
+        "vite": "^5.2.11"
+    },
+    "license": "MIT"
+}
